@@ -13,8 +13,17 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject comboPointPrefab;
     [SerializeField] private int comboSpawnScoreThreshold = 5;
     [SerializeField] private float comboSpawnChance = 0.25f;
-
+    [SerializeField] private float comboCooldown = 5f;
+    private bool comboOnCooldown = false;
     private GameObject currentComboPoint;
+
+    [SerializeField] private float comboDuration = 10f;
+
+    [SerializeField] private GameObject normalPointGoldPrefab;
+    [SerializeField] private GameObject swipePointGoldPrefab;
+
+    private bool isGoldModeActive = false;
+    [SerializeField] private ArcanePortalFlash portalFlash;
 
     [SerializeField] private PortalSpawnBeam portalBeam;
 
@@ -356,9 +365,22 @@ public class MixedPointSpawner : MonoBehaviour
         bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
 
         GameObject prefabToSpawn;
-        if (forceSwipe) prefabToSpawn = swipePointPrefab;
-        else if (forceNormal) prefabToSpawn = normalPointPrefab;
-        else prefabToSpawn = (Random.value < swipeChance) ? swipePointPrefab : normalPointPrefab;
+
+        bool spawnSwipe;
+
+        if (forceSwipe) spawnSwipe = true;
+        else if (forceNormal) spawnSwipe = false;
+        else spawnSwipe = Random.value < swipeChance;
+
+        // 👉 GOLD MODE entscheidet Prefab
+        if (isGoldModeActive)
+        {
+            prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
+        }
+        else
+        {
+            prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
+        }
 
         if (prefabToSpawn == swipePointPrefab) { swipesInRow++; normalsInRow = 0; }
         else { normalsInRow++; swipesInRow = 0; }
@@ -379,16 +401,15 @@ public class MixedPointSpawner : MonoBehaviour
 
         TrySpawnComboPoint();
 
-        var portal = FindAnyObjectByType<ArcanePortalFlash>();
-        if (portal != null)
-        {
-            portal.FlashParticles();
-        }
+        if (portalFlash != null)
+{
+    portalFlash.FlashParticles();
+}
     }
 
     private void TrySpawnComboPoint()
     {
-        if (currentComboPoint != null) return;
+        if (currentComboPoint != null || comboOnCooldown) return;
 
         if (ScoreManager.Instance == null) return;
 
@@ -414,19 +435,11 @@ public class MixedPointSpawner : MonoBehaviour
 
         currentComboPoint = combo;
 
-        // automatisch wieder freigeben wenn zerstört
-        StartCoroutine(TrackComboLifetime(combo));
+        // Cooldown starten
+        comboOnCooldown = true;
+        StartCoroutine(ComboCooldownRoutine());
     }
 
-    private IEnumerator TrackComboLifetime(GameObject combo)
-    {
-        while (combo != null)
-        {
-            yield return null;
-        }
-
-        currentComboPoint = null;
-    }
 
     public void CreatePoint(GameObject prefab, Vector3 worldPos)
     {
@@ -1491,4 +1504,49 @@ public class MixedPointSpawner : MonoBehaviour
             yield return null;
     }
 
+    public void OnComboDestroyed()
+    {
+        currentComboPoint = null;
+    }
+
+    private IEnumerator ComboCooldownRoutine()
+    {
+        yield return new WaitForSeconds(comboCooldown);
+        comboOnCooldown = false;
+    }
+
+    public bool IsGoldModeActive()
+    {
+        return isGoldModeActive;
+    }
+
+    public void ActivateGoldMode()
+    {
+        if (isGoldModeActive) return;
+
+        StartCoroutine(GoldModeRoutine());
+    }
+
+    private IEnumerator GoldModeRoutine()
+    {
+        isGoldModeActive = true;
+
+        Debug.Log("GOLD MODE START!");
+
+        // 👉 ALLES aktivieren
+        portalFlash?.SetGoldMode(true);
+        portalBeam?.SetGoldMode(true);
+        FindAnyObjectByType<SlashTrail>()?.SetGoldMode(true);
+
+        yield return new WaitForSeconds(comboDuration);
+
+        // 👉 ALLES zurücksetzen
+        portalFlash?.SetGoldMode(false);
+        portalBeam?.SetGoldMode(false);
+        FindAnyObjectByType<SlashTrail>()?.SetGoldMode(false);
+
+        isGoldModeActive = false;
+
+        Debug.Log("GOLD MODE ENDE!");
+    }
 }

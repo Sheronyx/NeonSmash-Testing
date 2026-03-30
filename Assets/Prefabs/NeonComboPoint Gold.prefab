@@ -58,7 +58,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1ceecbce7c5b64d23a923f908cae6e23, type: 2}
+  - {fileID: 2100000, guid: 69578c2b26dd14581b0e74c317f9ab3b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ede7420ec463340909c992e67cfa4d6e, type: 3}
-  m_Color: {r: 1, g: 0.5, b: 0.7678571, a: 1}
+  m_Color: {r: 1, g: 0.8235294, b: 0.38431373, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -296,7 +296,7 @@ GameObject:
   - component: {fileID: -2735477753363479214}
   - component: {fileID: 2217010074238497214}
   m_Layer: 0
-  m_Name: NeonPoint Gold
+  m_Name: NeonComboPoint Gold
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -331,7 +331,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawner: {fileID: 0}
-  explodeVFXPrefab: {fileID: 7636390409669451756, guid: a7fcc8844b5b6490ab4cc934c486f602, type: 3}
+  explodeVFXPrefab: {fileID: 7636390409669451756, guid: 01bd759c2b28f42f795b86988d06a9e0, type: 3}
 --- !u!61 &-2735477753363479214
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -533,7 +533,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 01d00ef5195a54fc0992a3b165bd08f9, type: 2}
+  - {fileID: 2100000, guid: 69578c2b26dd14581b0e74c317f9ab3b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -557,7 +557,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1088205902967396284, guid: b15d80d72d9e64e35baede90f26cd6ee, type: 3}
-  m_Color: {r: 1, g: 0.5, b: 0.7678571, a: 1}
+  m_Color: {r: 1, g: 0.8222409, b: 0.3820755, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

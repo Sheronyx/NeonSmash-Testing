@@ -5,7 +5,10 @@ public class SlashTrail : MonoBehaviour
 
 
     [Header("Trail Prefab")]
-    public TrailRenderer trailPrefab;     // dein Prefab "SlashTrail"
+    [SerializeField] private GameObject trailPrefab;
+    [SerializeField] private GameObject goldTrailPrefab;
+
+    private bool isGold = false;
 
     [Header("Sorting")]
     public string sortingLayerName = "Default";
@@ -22,30 +25,36 @@ public class SlashTrail : MonoBehaviour
 
     /// <summary>Swipe beginnt – z.B. bei TouchBegan aufrufen.</summary>
     public void Begin(Vector3 worldPos)
-{
-    swiping = true;
-    prevPos = worldPos;
-
-    if (activeTrail == null && trailPrefab != null)
     {
-        activeTrail = Instantiate(trailPrefab);
+        swiping = true;
+        prevPos = worldPos;
 
-        activeTrail.sortingLayerName = sortingLayerName;
-        activeTrail.sortingOrder = sortingOrder;
+        if (activeTrail == null)
+        {
+            GameObject prefabToUse = isGold ? goldTrailPrefab : trailPrefab;
+
+            if (prefabToUse != null)
+            {
+                GameObject trailObj = Instantiate(prefabToUse);
+                activeTrail = trailObj.GetComponent<TrailRenderer>();
+            }
+
+            activeTrail.sortingLayerName = sortingLayerName;
+            activeTrail.sortingOrder = sortingOrder;
+        }
+
+        if (activeTrail != null)
+        {
+            activeTrail.emitting = false;
+            activeTrail.transform.position = worldPos;
+            activeTrail.Clear();
+
+            activeTrail.widthMultiplier = width;
+            activeTrail.time = trailTime;
+
+            activeTrail.emitting = true;
+        }
     }
-
-    if (activeTrail != null)
-    {
-        activeTrail.emitting = false;
-        activeTrail.transform.position = worldPos;
-        activeTrail.Clear();
-
-        activeTrail.widthMultiplier = width;
-        activeTrail.time = trailTime;
-
-        activeTrail.emitting = true;
-    }
-}
 
     /// <summary>Swipe wird bewegt – z.B. bei TouchMove aufrufen.</summary>
     public void Move(Vector3 worldPos)
@@ -68,5 +77,10 @@ public class SlashTrail : MonoBehaviour
             Destroy(activeTrail.gameObject, activeTrail.time + 0.1f);
             activeTrail = null;
         }
+    }
+
+    public void SetGoldMode(bool active)
+    {
+        isGold = active;
     }
 }

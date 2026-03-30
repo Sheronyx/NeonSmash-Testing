@@ -48,7 +48,7 @@ public class SwipePoint : MonoBehaviour
             : 10f;
 
         Vector2 worldStart = cam.ScreenToWorldPoint(new Vector3(screenStart.x, screenStart.y, z));
-        Vector2 worldEnd   = cam.ScreenToWorldPoint(new Vector3(screenEnd.x,   screenEnd.y,   z));
+        Vector2 worldEnd = cam.ScreenToWorldPoint(new Vector3(screenEnd.x, screenEnd.y, z));
 
         return TryStrikeWorld(worldStart, worldEnd);
     }
@@ -69,7 +69,7 @@ public class SwipePoint : MonoBehaviour
             return false;
 
         bool startOutside = Vector2.Distance(worldStart, center) > effectiveRadius * 0.85f;
-        bool endOutside   = Vector2.Distance(worldEnd,   center) > effectiveRadius * 0.85f;
+        bool endOutside = Vector2.Distance(worldEnd, center) > effectiveRadius * 0.85f;
 
         if (!(startOutside || endOutside))
             return false;
@@ -78,7 +78,14 @@ public class SwipePoint : MonoBehaviour
             return false;
 
         // ✅ SUCCESS
-        ScoreManager.Instance?.AddPoint();
+        int points = 1;
+
+        if (spawner != null && spawner.IsGoldModeActive())
+        {
+            points = 2;
+        }
+
+        ScoreManager.Instance?.AddPoints(points);
         AudioManager.Instance?.PlaySwipePoint();
 
         SpawnExplosion();
@@ -117,14 +124,14 @@ public class SwipePoint : MonoBehaviour
 
         Vector2 target = direction switch
         {
-            SwipeDirection.Up        => Vector2.up,
-            SwipeDirection.Down      => Vector2.down,
-            SwipeDirection.Left      => Vector2.left,
-            SwipeDirection.Right     => Vector2.right,
-            SwipeDirection.UpRight   => (Vector2.up + Vector2.right).normalized,
-            SwipeDirection.UpLeft    => (Vector2.up + Vector2.left).normalized,
+            SwipeDirection.Up => Vector2.up,
+            SwipeDirection.Down => Vector2.down,
+            SwipeDirection.Left => Vector2.left,
+            SwipeDirection.Right => Vector2.right,
+            SwipeDirection.UpRight => (Vector2.up + Vector2.right).normalized,
+            SwipeDirection.UpLeft => (Vector2.up + Vector2.left).normalized,
             SwipeDirection.DownRight => (Vector2.down + Vector2.right).normalized,
-            SwipeDirection.DownLeft  => (Vector2.down + Vector2.left).normalized,
+            SwipeDirection.DownLeft => (Vector2.down + Vector2.left).normalized,
             _ => Vector2.up
         };
 
@@ -200,14 +207,14 @@ public class SwipePoint : MonoBehaviour
     {
         float angle = dir switch
         {
-            SwipeDirection.Up        => 0f,
-            SwipeDirection.Right     => -90f,
-            SwipeDirection.Down      => 180f,
-            SwipeDirection.Left      => 90f,
-            SwipeDirection.UpRight   => -45f,
-            SwipeDirection.UpLeft    => 45f,
+            SwipeDirection.Up => 0f,
+            SwipeDirection.Right => -90f,
+            SwipeDirection.Down => 180f,
+            SwipeDirection.Left => 90f,
+            SwipeDirection.UpRight => -45f,
+            SwipeDirection.UpLeft => 45f,
             SwipeDirection.DownRight => -135f,
-            SwipeDirection.DownLeft  => 135f,
+            SwipeDirection.DownLeft => 135f,
             _ => 0f
         };
 

@@ -32,7 +32,10 @@ public class ComboPoint : MonoBehaviour
 
         Debug.Log("COMBO GETRIGGERT!");
 
-        // 👉 später: Gold Mode starten
+        if (spawner != null)
+        {
+            spawner.ActivateGoldMode();
+        }
 
         DestroySelf();
     }
@@ -41,12 +44,9 @@ public class ComboPoint : MonoBehaviour
     {
         if (spawner != null)
         {
-            // Combo zählt NICHT als normaler Punkt!
-            Destroy(gameObject);
+            spawner.OnComboDestroyed();
         }
-        else
-        {
-            Destroy(gameObject);
-        }
+
+        Destroy(gameObject);
     }
 }

@@ -19,7 +19,7 @@ public class ScoreManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-        private void OnEnable()
+    private void OnEnable()
     {
         UpdateUI();
     }
@@ -30,7 +30,13 @@ public class ScoreManager : MonoBehaviour
         UpdateUI();
     }
 
-        public void ResetScore()
+    public void AddPoints(int amount)
+    {
+        score += amount;
+        UpdateUI();
+    }
+
+    public void ResetScore()
     {
         score = 0;
         UpdateUI();

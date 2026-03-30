@@ -11,6 +11,10 @@ public class PortalSpawnBeam : MonoBehaviour
     [Header("Beam Settings")]
     [SerializeField] private float projectileSpeed = 25f;
 
+    [SerializeField] private GameObject goldProjectilePrefab;
+
+    private bool isGoldMode = false;
+
     public void SpawnWithBeam(GameObject prefab, Vector3 targetPosition)
     {
         StartCoroutine(Co_SpawnProjectile(prefab, targetPosition));
@@ -22,7 +26,9 @@ public class PortalSpawnBeam : MonoBehaviour
         start.z = 0f;
         target.z = 0f;
 
-        GameObject projectile = Instantiate(projectilePrefab, start, Quaternion.identity);
+        GameObject prefabToUse = isGoldMode ? goldProjectilePrefab : projectilePrefab;
+
+        GameObject projectile = Instantiate(prefabToUse, start, Quaternion.identity);
 
         while (projectile != null && Vector3.Distance(projectile.transform.position, target) > 0.05f)
         {
@@ -36,5 +42,10 @@ public class PortalSpawnBeam : MonoBehaviour
             Destroy(projectile);
 
         spawner.CreatePoint(pointPrefab, target);
+    }
+
+    public void SetGoldMode(bool active)
+    {
+        isGoldMode = active;
     }
 }

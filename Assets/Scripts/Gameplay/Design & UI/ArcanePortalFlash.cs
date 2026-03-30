@@ -7,10 +7,13 @@ public class ArcanePortalFlash : MonoBehaviour
     public VisualEffect vfx;
 
     public float fadeInTime = 0.15f;
-    public float holdTime   = 0.05f;
+    public float holdTime = 0.05f;
     public float fadeOutTime = 0.25f;
 
-    Coroutine flashRoutine;
+    [Header("Flash Strength")]
+    [SerializeField] private float flashMultiplier = 2.5f;
+
+    private Coroutine flashRoutine;
 
     public void FlashParticles()
     {
@@ -22,11 +25,24 @@ public class ArcanePortalFlash : MonoBehaviour
 
     IEnumerator CoFlash()
     {
-        Vector4 normalParticles = vfx.GetVector4("Color Particles");
-        Vector4 normalVoronoi   = vfx.GetVector4("Color Voronoi");
+        if (vfx == null)
+            yield break;
 
-        Vector4 clearedParticles = vfx.GetVector4("Color ParticlesPointCleared");
-        Vector4 clearedVoronoi   = vfx.GetVector4("Color VoronoiPointCleared");
+        bool isGold = vfx.GetBool("IsGoldMode");
+
+        // 👉 richtige Property je nach Mode
+        string particlesName = isGold ? "Color Particles Gold" : "Color Particles Normal";
+
+        // aktuelle Farbe holen
+        Vector4 normalParticles = vfx.GetVector4(particlesName);
+
+        // Ziel = heller machen (wie früher "cleared")
+        Vector4 clearedParticles = normalParticles * flashMultiplier;
+
+        // DEBUG
+        Debug.Log($"[FLASH] Mode: {(isGold ? "GOLD" : "NORMAL")}");
+        Debug.Log($"[FLASH] Normal: {normalParticles}");
+        Debug.Log($"[FLASH] Target: {clearedParticles}");
 
         // --- Fade IN ---
         float t = 0f;
@@ -34,16 +50,14 @@ public class ArcanePortalFlash : MonoBehaviour
         {
             float n = t / fadeInTime;
 
-            vfx.SetVector4("Color Particles", Vector4.Lerp(normalParticles, clearedParticles, n));
-            vfx.SetVector4("Color Voronoi",   Vector4.Lerp(normalVoronoi, clearedVoronoi, n));
+            vfx.SetVector4(particlesName, Vector4.Lerp(normalParticles, clearedParticles, n));
 
             t += Time.deltaTime;
             yield return null;
         }
 
-        // Sicherstellen dass Ziel exakt gesetzt ist
-        vfx.SetVector4("Color Particles", clearedParticles);
-        vfx.SetVector4("Color Voronoi", clearedVoronoi);
+        // exakt setzen
+        vfx.SetVector4(particlesName, clearedParticles);
 
         yield return new WaitForSeconds(holdTime);
 
@@ -53,17 +67,24 @@ public class ArcanePortalFlash : MonoBehaviour
         {
             float n = t / fadeOutTime;
 
-            vfx.SetVector4("Color Particles", Vector4.Lerp(clearedParticles, normalParticles, n));
-            vfx.SetVector4("Color Voronoi",   Vector4.Lerp(clearedVoronoi, normalVoronoi, n));
+            vfx.SetVector4(particlesName, Vector4.Lerp(clearedParticles, normalParticles, n));
 
             t += Time.deltaTime;
             yield return null;
         }
 
-        // Zurücksetzen exakt
-        vfx.SetVector4("Color Particles", normalParticles);
-        vfx.SetVector4("Color Voronoi", normalVoronoi);
+        // exakt zurücksetzen
+        vfx.SetVector4(particlesName, normalParticles);
+
+        Debug.Log("[FLASH] Done");
 
         flashRoutine = null;
+    }
+
+    public void SetGoldMode(bool active)
+    {
+        if (vfx == null) return;
+
+        vfx.SetBool("IsGoldMode", active);
     }
 }

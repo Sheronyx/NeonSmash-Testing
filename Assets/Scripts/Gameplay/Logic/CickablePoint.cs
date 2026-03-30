@@ -20,7 +20,14 @@ public class ClickablePoint : MonoBehaviour
         }
 
         // Score
-        ScoreManager.Instance?.AddPoint();
+        int points = 1;
+
+        if (spawner != null && spawner.IsGoldModeActive())
+        {
+            points = 2;
+        }
+
+        ScoreManager.Instance?.AddPoints(points);
 
         // VFX Explosion
         SpawnExplosion();
