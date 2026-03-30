@@ -131,7 +131,7 @@ GameObject:
   - component: {fileID: 21555487}
   - component: {fileID: 21555486}
   m_Layer: 5
-  m_Name: Background (2)
+  m_Name: Time Image Fill Bar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1327,7 +1327,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 3}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0, y: 57}
+  m_AnchoredPosition: {x: 0, y: 57}
   m_SizeDelta: {x: 500, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &262990616
@@ -4547,8 +4547,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   timeLimitSeconds: 60
-  timerLabel: {fileID: 1336234871}
-  ringTimerImage: {fileID: 1197284267}
+  timerLabel: {fileID: 104329295}
+  ringTimerImage: {fileID: 21555486}
   spawner: {fileID: 190732374}
   playerInput: {fileID: 2063600739}
   scoreManager: {fileID: 413701484}
