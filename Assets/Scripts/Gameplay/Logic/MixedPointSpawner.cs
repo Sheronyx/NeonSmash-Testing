@@ -5,6 +5,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System.Globalization;
+using System.Collections.Generic;
 
 public class MixedPointSpawner : MonoBehaviour
 {
@@ -16,6 +17,7 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private float comboCooldown = 5f;
     private bool comboOnCooldown = false;
     private GameObject currentComboPoint;
+    private bool isConvertingPoints = false;
 
     [SerializeField] private float comboDuration = 10f;
 
@@ -359,7 +361,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void SpawnNextPoint()
     {
-        if (!running || spawnPausedForBanner || currentPoint != null) return;
+        if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
 
         bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
         bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
@@ -402,9 +404,9 @@ public class MixedPointSpawner : MonoBehaviour
         TrySpawnComboPoint();
 
         if (portalFlash != null)
-{
-    portalFlash.FlashParticles();
-}
+        {
+            portalFlash.FlashParticles();
+        }
     }
 
     private void TrySpawnComboPoint()
@@ -473,6 +475,14 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void PointCleared(GameObject point)
     {
+        Debug.Log($"[PointCleared] START | converting={isConvertingPoints} | point={point.name}");
+        if (isConvertingPoints)
+        {
+            Debug.Log("[PointCleared] ABORTED wegen isConvertingPoints");
+            Destroy(point);
+            return;
+        }
+
         if (point == currentPoint) { StopPointTimer(); currentPoint = null; }
         if (CurrentSwipePoint != null && point == CurrentSwipePoint.gameObject) CurrentSwipePoint = null;
 
@@ -1533,14 +1543,15 @@ public class MixedPointSpawner : MonoBehaviour
 
         Debug.Log("GOLD MODE START!");
 
-        // 👉 ALLES aktivieren
+        // 👉 NEU: alles konvertieren + zerstören
+        ConvertAllPointsToGoldAndDestroy();
+
         portalFlash?.SetGoldMode(true);
         portalBeam?.SetGoldMode(true);
         FindAnyObjectByType<SlashTrail>()?.SetGoldMode(true);
 
         yield return new WaitForSeconds(comboDuration);
 
-        // 👉 ALLES zurücksetzen
         portalFlash?.SetGoldMode(false);
         portalBeam?.SetGoldMode(false);
         FindAnyObjectByType<SlashTrail>()?.SetGoldMode(false);
@@ -1548,5 +1559,134 @@ public class MixedPointSpawner : MonoBehaviour
         isGoldModeActive = false;
 
         Debug.Log("GOLD MODE ENDE!");
+    }
+    public void ConvertAllPointsToGoldAndDestroy()
+    {
+        StartCoroutine(CoConvertAndDestroyAllPoints());
+    }
+
+    private IEnumerator CoConvertAndDestroyAllPoints()
+    {
+
+        GameObject mainGold = null;
+        isConvertingPoints = true;
+
+        currentPoint = null;
+        CurrentSwipePoint = null;
+
+        ClickablePoint[] normalPoints = FindObjectsByType<ClickablePoint>(FindObjectsSortMode.None);
+        SwipePoint[] swipePoints = FindObjectsByType<SwipePoint>(FindObjectsSortMode.None);
+
+        List<GameObject> spawnedGolds = new List<GameObject>();
+
+        // --- NORMAL POINTS ---
+        foreach (var point in normalPoints)
+        {
+            if (point == null) continue;
+
+            // 👉 ComboOrb sofort zerstören
+            if (point.GetComponent<ComboPoint>() != null)
+            {
+                Destroy(point.gameObject);
+                continue;
+            }
+
+            Vector3 pos = point.transform.position;
+
+            // 👉 SCORE hinzufügen
+            ScoreManager.Instance?.AddPoints(2);
+
+            Destroy(point.gameObject);
+
+            if (normalPointGoldPrefab != null)
+            {
+                var gold = Instantiate(normalPointGoldPrefab, pos, Quaternion.identity);
+
+                // 👉 NUR EINMAL setzen!
+                if (mainGold == null)
+                {
+                    mainGold = gold;
+
+                    currentPoint = gold;
+
+                    var click = gold.GetComponent<ClickablePoint>();
+                    if (click)
+                    {
+                        click.spawner = this;
+                    }
+
+                    var swipe = gold.GetComponent<SwipePoint>();
+                    if (swipe)
+                    {
+                        swipe.spawner = this;
+                        CurrentSwipePoint = swipe;
+                    }
+                }
+
+                spawnedGolds.Add(gold);
+            }
+        }
+
+        // --- SWIPE POINTS ---
+        foreach (var point in swipePoints)
+        {
+            if (point == null) continue;
+
+            Vector3 pos = point.transform.position;
+            Destroy(point.gameObject);
+
+            if (swipePointGoldPrefab != null)
+            {
+                var gold = Instantiate(swipePointGoldPrefab, pos, Quaternion.identity);
+                spawnedGolds.Add(gold);
+            }
+        }
+
+        // 👉 kurz sichtbar lassen
+        yield return new WaitForSeconds(0.7f);
+
+        if (mainGold == null && spawnedGolds.Count > 0)
+        {
+            mainGold = spawnedGolds[0];
+            Debug.Log("[Convert] Fallback mainGold gesetzt!");
+        }
+
+        isConvertingPoints = false;
+
+        foreach (var gold in spawnedGolds)
+        {
+            if (gold == null) continue;
+
+            if (gold == mainGold)
+            {
+                PointCleared(gold); // 👉 echtes Gameplay
+            }
+            else
+            {
+                Destroy(gold); // 👉 nur VFX
+            }
+        }
+
+        isConvertingPoints = false;
+
+        if (!spawnPausedForBanner)
+        {
+            SpawnNextPoint();
+        }
+    }
+
+    public void PauseSpawning(bool pause)
+    {
+        spawnPausedForBanner = pause;
+
+        if (pause)
+        {
+            StopPointTimer();
+        }
+    }
+
+    public void SetGoldVisualState(bool active)
+    {
+        isGoldModeActive = active;
     }
 }
