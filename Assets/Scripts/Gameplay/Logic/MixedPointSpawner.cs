@@ -10,6 +10,9 @@ using System.Collections.Generic;
 public class MixedPointSpawner : MonoBehaviour
 {
 
+    private int CurrentScore =>
+    ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
+
     [Header("Combo System")]
     [SerializeField] private GameObject comboPointPrefab;
     [SerializeField] private int comboSpawnScoreThreshold = 5;
@@ -255,7 +258,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (ScoreManager.Instance == null) return;
 
-        int score = ScoreManager.Instance.CurrentScore;
+        int score = CurrentScore;
 
         if (score < comboSpawnScoreThreshold) return;
 
@@ -301,7 +304,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (IsInfinityMode)
         {
-            int score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0;
+            int score = CurrentScore;
             float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
 
             timeoutRoutine = StartCoroutine(Co_PointTimeout(newPoint, dynamicTime, useUnscaledTime));
@@ -335,7 +338,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (IsInfinityMode)
         {
-            int score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0;
+            int score = CurrentScore;
             if (levelUp.TryTriggerLevelUp(score))
             {
                 float newRT = levelUp.GetReactionTimeForScore(score, reactionTime);
@@ -400,7 +403,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
         CurrentSwipePoint = null;
 
-        int score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0;
+        int score = CurrentScore;
 
         Debug.Log("GAME OVER ERREICHT");
         if (InAppReviewManager.Instance == null)
@@ -675,15 +678,6 @@ public class MixedPointSpawner : MonoBehaviour
         cg.blocksRaycasts = visible && makeInteractableWhenVisible;
     }
 
-    // ====== Animationen ======
-
-    
-
-    private IEnumerator WaitWhileGamePaused()
-    {
-        while (PauseMenuController.IsPaused)
-            yield return null;
-    }
 
     public void OnComboDestroyed()
     {
