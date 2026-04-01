@@ -314,6 +314,7 @@ Transform:
   m_Children:
   - {fileID: 923186572}
   - {fileID: 788322450}
+  - {fileID: 828360783}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &108319525
@@ -1502,7 +1503,6 @@ GameObject:
   m_Component:
   - component: {fileID: 413701485}
   - component: {fileID: 413701484}
-  - component: {fileID: 413701486}
   m_Layer: 0
   m_Name: ScoreManager
   m_TagString: Untagged
@@ -1522,8 +1522,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a055a5ecc78c19946a553e4fb5c8a31b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scoreUI: {fileID: 231073070}
-  scoreImage: {fileID: 832122092}
   scoreText: {fileID: 426629088}
   endscoreText: {fileID: 426629088}
 --- !u!4 &413701485
@@ -1541,21 +1539,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &413701486
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 413701483}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35be92b225d114a078390c542f17be81, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScoreSpawnBeam
-  scoreTarget: {fileID: 832122092}
-  projectilePrefab: {fileID: 6237600531714503956, guid: ec9e8130924f0451ba12a4caedb29cab, type: 3}
-  projectileSpeed: 50
 --- !u!1 &426629086
 GameObject:
   m_ObjectHideFlags: 0
@@ -2534,14 +2517,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 828360781}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.3, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1066228979}
   - {fileID: 825561377}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 102259398}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832122091
 GameObject:
@@ -6370,22 +6353,21 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 519420032}
-  - {fileID: 1967027723}
-  - {fileID: 1008593550}
-  - {fileID: 286445853}
-  - {fileID: 1942897535}
-  - {fileID: 190732375}
-  - {fileID: 413701485}
+  - {fileID: 1460804117}
   - {fileID: 2063600740}
+  - {fileID: 286445853}
+  - {fileID: 265687246}
+  - {fileID: 1942897535}
+  - {fileID: 1618122601}
+  - {fileID: 413701485}
+  - {fileID: 190732375}
   - {fileID: 614854638}
   - {fileID: 250744644}
+  - {fileID: 1967027723}
+  - {fileID: 1008593550}
   - {fileID: 5155509009424421634}
-  - {fileID: 265687246}
-  - {fileID: 1460804117}
-  - {fileID: 1618122601}
   - {fileID: 1963985506755837929}
   - {fileID: 102259398}
-  - {fileID: 828360783}
   - {fileID: 1571563407}
   - {fileID: 1025626519}
   - {fileID: 2004575652}
