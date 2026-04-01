@@ -1,12 +1,9 @@
 using UnityEngine;
 using UnityEngine.VFX;
 
-public class ClickablePoint : MonoBehaviour
+public class ClickablePoint : BasePoint
 {
     public MixedPointSpawner spawner;
-
-    [Header("VFX")]
-    [SerializeField] private VisualEffect explodeVFXPrefab;
 
  public void TryClick()
 {
@@ -18,34 +15,10 @@ public class ClickablePoint : MonoBehaviour
         return;
     }
 
-    int points = 1;
-
-    if (spawner != null && spawner.IsGoldModeActive())
-    {
-        points = 2;
-    }
-
-    ScoreManager.Instance?.AddPoints(points);
-
-    SpawnExplosion();
+    int points = spawner != null ? spawner.GetPointsForCurrentMode() : 1;
 
     AudioManager.Instance?.PlayNormalPoint();
 
-    if (spawner != null)
-        spawner.PointCleared(gameObject);
-    else
-        Destroy(gameObject);
-}
-
-    private void SpawnExplosion()
-    {
-        if (explodeVFXPrefab == null)
-            return;
-
-        Instantiate(
-            explodeVFXPrefab,
-            transform.position,
-            Quaternion.identity
-        );
+    spawner?.HandlePointHit(gameObject);
     }
 }

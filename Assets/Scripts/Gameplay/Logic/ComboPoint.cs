@@ -101,8 +101,7 @@ public class ComboPoint : MonoBehaviour
 
             if (spawner != null)
             {
-                spawner.SetGoldVisualState(true);
-                spawner.ConvertAllPointsToGoldAndDestroy();
+                GoldModeSystem.Instance?.Activate();
             }
             portal.FlashParticles();
         }
@@ -137,7 +136,7 @@ public class ComboPoint : MonoBehaviour
     {
         if (spawner != null)
         {
-            spawner.ActivateGoldMode();
+            GoldModeSystem.Instance?.Activate();
             spawner.Begin();
         }
 

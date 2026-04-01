@@ -10,6 +10,11 @@ using System.Collections.Generic;
 public class MixedPointSpawner : MonoBehaviour
 {
 
+    [SerializeField] private GameObject normalPointGoldPrefab;
+[SerializeField] private GameObject swipePointGoldPrefab;
+
+    [SerializeField] private GameUIManager uiManager;
+
     private int CurrentScore =>
     ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
 
@@ -22,12 +27,7 @@ public class MixedPointSpawner : MonoBehaviour
     private GameObject currentComboPoint;
     private bool isConvertingPoints = false;
 
-    [SerializeField] private float comboDuration = 10f;
-
-    [SerializeField] private GameObject normalPointGoldPrefab;
-    [SerializeField] private GameObject swipePointGoldPrefab;
-
-    private bool isGoldModeActive = false;
+    
     [SerializeField] private ArcanePortalFlash portalFlash;
 
     [SerializeField] private PortalSpawnBeam portalBeam;
@@ -42,10 +42,10 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private float extraBottomGesturePixels = 160f;
 
     [Header("Spawn-Area (Prozent)")]
-    [Range(0f, 0.45f)] public float leftPercent = 0.08f;
-    [Range(0f, 0.45f)] public float rightPercent = 0.08f;
-    [Range(0f, 0.45f)] public float topPercent = 0.10f;
-    [Range(0f, 0.45f)] public float bottomPercent = 0.10f;
+    [Range(0f, 0.45f)] public float leftPercent = 0.1f;
+    [Range(0f, 0.45f)] public float rightPercent = 0.1f;
+    [Range(0f, 0.45f)] public float topPercent = 0.20f;
+    [Range(0f, 0.45f)] public float bottomPercent = 0.20f;
 
     [Header("Abstand & Padding")]
     [SerializeField] private bool minDistanceAsPercent = true;
@@ -86,7 +86,6 @@ public class MixedPointSpawner : MonoBehaviour
     public Color spawnAreaBorder = new Color(0f, 1f, 1f, 0.9f);
     public float spawnAreaBorderThickness = 2f;
 
-    // Laufzeit
     public SwipePoint CurrentSwipePoint { get; private set; }
     private GameObject currentPoint;
     private GameObject lastPoint;
@@ -99,47 +98,6 @@ public class MixedPointSpawner : MonoBehaviour
     private Coroutine timeoutRoutine;
     private bool spawnPausedForBanner = false;
 
-    // === GAME OVER / FINISHED UI ===
-    [Header("Game Over UI")]
-    [SerializeField] private Canvas topBarCanvas;
-    [SerializeField] private CanvasGroup gameOverBanner;
-    [SerializeField] private TextMeshProUGUI gameOverTextTMP;
-    [SerializeField] private AudioClip sfxGameOver;
-    [SerializeField] private float resultPanelDelay = 2.0f;
-    [SerializeField] private float gameOverBannerFade = 0.25f;
-    [SerializeField] private float gameOverBannerHold = 0.6f;
-    [SerializeField] private float resultPanelFade = 0.25f;
-
-    [Header("Ergebnisfenster (per Inspector anpassbar)")]
-    [SerializeField] private CanvasGroup resultPanel;
-    [SerializeField] private TextMeshProUGUI resultHeadlineTMP;
-    [SerializeField] private TextMeshProUGUI resultScoreTMP;
-    [SerializeField] private Button restartButton;
-    [SerializeField] private Button backToMenuButton;
-
-    [Header("Ergebnis-Callbacks")]
-    public UnityEvent onRestartRequested;
-    public UnityEvent onBackToMenuRequested;
-
-    // -------------------------------------------------
-    // Hilfsfunktionen: Raycast für „Deko“-Overlays killen
-    // -------------------------------------------------
-    private static void MakeCanvasNonBlocking(Canvas canvasRoot)
-    {
-        if (!canvasRoot) return;
-        var gr = canvasRoot.GetComponent<GraphicRaycaster>();
-        if (gr) gr.enabled = false;
-        var graphics = canvasRoot.GetComponentsInChildren<Graphic>(true);
-        foreach (var g in graphics) g.raycastTarget = false;
-    }
-    private static void MakeTransformNonBlocking(Transform t)
-    {
-        if (!t) return;
-        var canvas = t.GetComponentInParent<Canvas>();
-        if (canvas) MakeCanvasNonBlocking(canvas);
-        var graphics = t.GetComponentsInChildren<Graphic>(true);
-        foreach (var g in graphics) g.raycastTarget = false;
-    }
 
     void Awake()
     {
@@ -152,28 +110,6 @@ public class MixedPointSpawner : MonoBehaviour
             if (suggested > spawnPaddingPixels) spawnPaddingPixels = suggested;
             if (debugLogs) Debug.Log($"[Spawner] Auto-Padding gesetzt: {spawnPaddingPixels:F1}px (half={halfSizePx:F1}px + extra={extraPaddingPixels})");
         }
-
-        if (restartButton != null)
-        {
-            restartButton.onClick.RemoveAllListeners();
-            restartButton.onClick.AddListener(() =>
-            {
-                HideGameOverUIImmediate();
-                onRestartRequested?.Invoke();
-            });
-        }
-        if (backToMenuButton != null)
-        {
-            backToMenuButton.onClick.RemoveAllListeners();
-            backToMenuButton.onClick.AddListener(() =>
-            {
-                HideGameOverUIImmediate();
-                onBackToMenuRequested?.Invoke();
-            });
-        }
-
-        if (gameOverBanner != null) gameOverBanner.alpha = 0f;
-        if (resultPanel != null) resultPanel.alpha = 0f;
     }
 
     void Start()
@@ -217,18 +153,25 @@ public class MixedPointSpawner : MonoBehaviour
         else if (forceNormal) spawnSwipe = false;
         else spawnSwipe = Random.value < swipeChance;
 
-        // 👉 GOLD MODE entscheidet Prefab
-        if (isGoldModeActive)
-        {
-            prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
-        }
-        else
-        {
-            prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
-        }
+        if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
+{
+    prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
+}
+else
+{
+    prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
+}
 
-        if (prefabToSpawn == swipePointPrefab) { swipesInRow++; normalsInRow = 0; }
-        else { normalsInRow++; swipesInRow = 0; }
+if (spawnSwipe)
+{
+    swipesInRow++;
+    normalsInRow = 0;
+}
+else
+{
+    normalsInRow++;
+    swipesInRow = 0;
+}
 
         Rect allowedScreen = GetAllowedSpawnRect();
         Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
@@ -317,7 +260,7 @@ public class MixedPointSpawner : MonoBehaviour
     }
 
     public void PointCleared(GameObject point)
-    {        
+    {
 
         Debug.Log($"[PointCleared] START | converting={isConvertingPoints} | point={point.name}");
         if (isConvertingPoints && point != currentPoint)
@@ -432,7 +375,7 @@ public class MixedPointSpawner : MonoBehaviour
         SfxManager.Instance?.PlayInfinityGameOver();
 
         onGameOver?.Invoke();
-        StartCoroutine(Co_ShowGameOverSequence(score));
+        uiManager?.ShowGameOver(score, IsInfinityMode);
     }
 
     // === Aufruf aus dem TIME-Mode ===
@@ -452,7 +395,7 @@ public class MixedPointSpawner : MonoBehaviour
         InAppReviewManager.Instance?.OnGameFinished();
 
         onGameOver?.Invoke();
-        StartCoroutine(Co_ShowGameOverSequence(finalScore));
+        uiManager?.ShowGameOver(finalScore, IsInfinityMode);
     }
 
 
@@ -570,49 +513,6 @@ public class MixedPointSpawner : MonoBehaviour
     }
 
 
-    private void HideGameOverUIImmediate()
-    {
-        if (gameOverBanner != null) SetCGState(gameOverBanner, false);
-        if (resultPanel != null) SetCGState(resultPanel, false);
-        if (topBarCanvas != null) topBarCanvas.enabled = true;
-    }
-
-    private IEnumerator Co_ShowGameOverSequence(int score)
-    {
-        if (topBarCanvas != null) topBarCanvas.enabled = false;
-
-        string bannerText = IsInfinityMode ? "GAME OVER" : "FINISHED";
-
-        if (gameOverBanner != null && gameOverTextTMP != null)
-        {
-            gameOverTextTMP.text = bannerText;
-            if (sfxGameOver != null) SfxManager.Instance?.PlayOneShot(sfxGameOver);
-
-            yield return StartCoroutine(Co_FadeCanvasGroup(gameOverBanner, 0f, 1f, gameOverBannerFade, false));
-            float tHold = 0f;
-            while (tHold < gameOverBannerHold) { tHold += Time.unscaledDeltaTime; yield return null; }
-            yield return StartCoroutine(Co_FadeCanvasGroup(gameOverBanner, 1f, 0f, gameOverBannerFade, false));
-        }
-
-        float tDelay = 0f;
-        while (tDelay < resultPanelDelay) { tDelay += Time.unscaledDeltaTime; yield return null; }
-
-        if (resultPanel != null)
-        {
-            if (resultHeadlineTMP != null) resultHeadlineTMP.text = bannerText;
-            if (resultScoreTMP != null) resultScoreTMP.text = $"{score}";
-
-            var cv = resultPanel.GetComponent<Canvas>();
-            if (cv != null) cv.sortingOrder = Mathf.Max(cv.sortingOrder, 50);
-
-            yield return StartCoroutine(Co_FadeCanvasGroup(resultPanel, 0f, 1f, resultPanelFade, true));
-        }
-        else
-        {
-            Debug.LogWarning("[Spawner] resultPanel ist nicht zugewiesen.");
-        }
-    }
-
     [SerializeField] private float restartMinFadeDelay = 0.05f;
 
     public void RestartScene()
@@ -627,56 +527,7 @@ public class MixedPointSpawner : MonoBehaviour
             UnityEngine.SceneManagement.SceneManager.LoadScene(current, LoadSceneMode.Single);
     }
 
-    private void SetCGState(CanvasGroup cg, bool visibleInteractable)
-    {
-        if (!cg) return;
-        if (visibleInteractable)
-        {
-            cg.alpha = 1f;
-            cg.interactable = true;
-            cg.blocksRaycasts = true;
-        }
-        else
-        {
-            cg.alpha = 0f;
-            cg.interactable = false;
-            cg.blocksRaycasts = false;
-        }
-    }
-
-    private IEnumerator Co_FadeCanvasGroup(CanvasGroup cg, float from, float to, float duration, bool makeInteractableWhenVisible)
-    {
-        if (!cg) yield break;
-
-        cg.gameObject.SetActive(true);
-        cg.interactable = false;
-        cg.blocksRaycasts = false;
-
-        if (duration <= 0f)
-        {
-            cg.alpha = to;
-            if (to > 0.99f && makeInteractableWhenVisible)
-            {
-                cg.interactable = true;
-                cg.blocksRaycasts = true;
-            }
-            yield break;
-        }
-
-        cg.alpha = from;
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.unscaledDeltaTime;
-            cg.alpha = Mathf.Lerp(from, to, t / duration);
-            yield return null;
-        }
-        cg.alpha = to;
-
-        bool visible = to > 0.99f;
-        cg.interactable = visible && makeInteractableWhenVisible;
-        cg.blocksRaycasts = visible && makeInteractableWhenVisible;
-    }
+  
 
 
     public void OnComboDestroyed()
@@ -690,136 +541,7 @@ public class MixedPointSpawner : MonoBehaviour
         comboOnCooldown = false;
     }
 
-    public bool IsGoldModeActive()
-    {
-        return isGoldModeActive;
-    }
-
-    public void ActivateGoldMode()
-    {
-        if (isGoldModeActive) return;
-
-        StartCoroutine(GoldModeRoutine());
-    }
-
-    private IEnumerator GoldModeRoutine()
-    {
-        isGoldModeActive = true;
-
-        Debug.Log("GOLD MODE START!");
-
-        // 👉 NEU: alles konvertieren + zerstören
-        ConvertAllPointsToGoldAndDestroy();
-
-        portalFlash?.SetGoldMode(true);
-        portalBeam?.SetGoldMode(true);
-        FindAnyObjectByType<SlashTrail>()?.SetGoldMode(true);
-
-        yield return new WaitForSeconds(comboDuration);
-
-        portalFlash?.SetGoldMode(false);
-        portalBeam?.SetGoldMode(false);
-        FindAnyObjectByType<SlashTrail>()?.SetGoldMode(false);
-
-        isGoldModeActive = false;
-
-        Debug.Log("GOLD MODE ENDE!");
-    }
-    public void ConvertAllPointsToGoldAndDestroy()
-    {
-        StartCoroutine(CoConvertAndDestroyAllPoints());
-    }
-
-    private IEnumerator CoConvertAndDestroyAllPoints()
-    {
-
-        GameObject mainGold = null;
-        isConvertingPoints = true;
-
-        currentPoint = null;
-        CurrentSwipePoint = null;
-
-        ClickablePoint[] normalPoints = FindObjectsByType<ClickablePoint>(FindObjectsSortMode.None);
-        SwipePoint[] swipePoints = FindObjectsByType<SwipePoint>(FindObjectsSortMode.None);
-
-        List<GameObject> spawnedGolds = new List<GameObject>();
-
-        // --- NORMAL POINTS ---
-        foreach (var point in normalPoints)
-        {
-            if (point == null) continue;
-
-            // 👉 ComboOrb sofort zerstören
-            if (point.GetComponent<ComboPoint>() != null)
-            {
-                Destroy(point.gameObject);
-                continue;
-            }
-
-            Vector3 pos = point.transform.position;
-
-            // 👉 SCORE hinzufügen
-            ScoreManager.Instance?.AddPoints(2);
-
-            Destroy(point.gameObject);
-
-            if (normalPointGoldPrefab != null)
-            {
-                var gold = Instantiate(normalPointGoldPrefab, pos, Quaternion.identity);
-
-                // 👉 NUR EINMAL setzen!
-                if (mainGold == null)
-                {
-                    mainGold = gold;
-
-                    currentPoint = gold;
-
-                    var clickGold = gold.GetComponent<ClickablePoint>();
-                    if (clickGold)
-                    {
-                        clickGold.spawner = this;
-                    }
-
-                    var swipeGold = gold.GetComponent<SwipePoint>();
-                    if (swipeGold)
-                    {
-                        swipeGold.spawner = this;
-                        CurrentSwipePoint = swipeGold;
-                    }
-                }
-
-                spawnedGolds.Add(gold);
-            }
-        }
-
-        // --- SWIPE POINTS ---
-        foreach (var point in swipePoints)
-        {
-            if (point == null) continue;
-
-            Vector3 pos = point.transform.position;
-            Destroy(point.gameObject);
-
-            if (swipePointGoldPrefab != null)
-            {
-                var gold = Instantiate(swipePointGoldPrefab, pos, Quaternion.identity);
-                spawnedGolds.Add(gold);
-            }
-        }
-
-        yield return new WaitForSeconds(0.7f);
-
-        if (mainGold != null)
-        {
-            PointCleared(mainGold);
-            yield break;
-        }
-
-
-
-        isConvertingPoints = false;
-        yield break;
-    }
+    
 
     public void PauseSpawning(bool pause)
     {
@@ -831,8 +553,29 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    public void SetGoldVisualState(bool active)
+    public int GetPointsForCurrentMode()
     {
-        isGoldModeActive = active;
+        int basePoints = 1;
+
+        if (GoldModeSystem.Instance != null)
+            return GoldModeSystem.Instance.ModifyPoints(basePoints);
+
+        return basePoints;
+    }
+
+    public void HandlePointHit(GameObject point)
+    {
+        int points = GetPointsForCurrentMode();
+
+        ScoreManager.Instance?.AddPoints(points);
+
+        // Explosion (zentral)
+        var basePoint = point.GetComponent<BasePoint>();
+        if (basePoint != null)
+        {
+            basePoint.SendMessage("SpawnExplosion");
+        }
+
+        PointCleared(point);
     }
 }

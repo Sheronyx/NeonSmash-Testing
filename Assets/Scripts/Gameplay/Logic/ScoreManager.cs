@@ -65,7 +65,7 @@ public class ScoreManager : MonoBehaviour
     {
         RectTransform rect = scoreText.GetComponent<RectTransform>();
 
-        Vector3 start = rect.localScale;
+        Vector3 start = Vector3.one;
         Vector3 target = start * 1.2f;
 
         float upDuration = 0.08f;

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.VFX;
 
-public class SwipePoint : MonoBehaviour
+public class SwipePoint : BasePoint
 {
     [Header("Refs")]
     public MixedPointSpawner spawner;
@@ -17,9 +17,6 @@ public class SwipePoint : MonoBehaviour
     [Header("Direction Settings")]
     [SerializeField] private bool allowBidirectional = true;
     [SerializeField] private bool onlyBidirectionalOnDiagonals = false;
-
-    [Header("VFX")]
-    [SerializeField] private VisualEffect explodeVFXPrefab;
 
     private SwipeDirection direction;
     private float effectiveRadius;
@@ -53,8 +50,12 @@ public class SwipePoint : MonoBehaviour
         return TryStrikeWorld(worldStart, worldEnd);
     }
 
+    private bool isHit = false;
+
     public bool TryStrikeWorld(Vector2 worldStart, Vector2 worldEnd)
     {
+        if (isHit) return false;
+
         Vector2 seg = worldEnd - worldStart;
 
         if (seg.magnitude < minSwipeLengthWorld)
@@ -78,40 +79,13 @@ public class SwipePoint : MonoBehaviour
             return false;
 
         // ✅ SUCCESS
-        int points = 1;
+        isHit = true;
 
-        if (spawner != null && spawner.IsGoldModeActive())
-        {
-            points = 2;
-        }
-
-        ScoreManager.Instance?.AddPoints(points);
         AudioManager.Instance?.PlaySwipePoint();
 
-        SpawnExplosion();
-
-        if (spawner != null)
-            spawner.PointCleared(gameObject);
-        else
-            Destroy(gameObject);
+        spawner?.HandlePointHit(gameObject);
 
         return true;
-    }
-
-    // =========================================================
-    // SIMPLE VFX SPAWN
-    // =========================================================
-
-    private void SpawnExplosion()
-    {
-        if (explodeVFXPrefab == null)
-            return;
-
-        Instantiate(
-            explodeVFXPrefab,
-            transform.position,
-            Quaternion.identity
-        );
     }
 
     // =========================================================
