@@ -1,11 +1,15 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 using System.Collections;
 using TMPro;
 using System.Globalization;
 
 public class LevelUp : MonoBehaviour
 {
+    public event Action<int> OnLevelChanged;
+    public int CurrentLevel => currentLevel;
+
     [Header("Level Panel")]
     [SerializeField] private CanvasGroup levelPanel;
     [SerializeField] private RectTransform panelRoot;
@@ -107,18 +111,20 @@ public class LevelUp : MonoBehaviour
         return defaultTime;
     }
 
-    public bool TryTriggerLevelUp(int score)
+public bool TryTriggerLevelUp(int score)
+{
+    int level = GetLevelForScore(score);
+
+    if (level > currentLevel)
     {
-        int level = GetLevelForScore(score);
+        currentLevel = level;
 
-        if (level > currentLevel)
-        {
-            currentLevel = level;
-            return true;
-        }
-
-        return false;
+        OnLevelChanged?.Invoke(currentLevel);
+        return true;
     }
+
+    return false;
+}
 
     // ------------------------------------------------
     // Panel Sequence

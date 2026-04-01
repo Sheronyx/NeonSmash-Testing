@@ -342,7 +342,7 @@ public class MixedPointSpawner : MonoBehaviour
 
                 MusicManager.Instance?.IncreaseGameMusicSpeed();
 
-                StartCoroutine(LevelRoutine(score, newRT));
+                StartCoroutine(LevelRoutine(newRT));
 
                 return;
             }
@@ -351,11 +351,11 @@ public class MixedPointSpawner : MonoBehaviour
         SpawnNextPoint();
     }
 
-    private IEnumerator LevelRoutine(int score, float newRT)
+    private IEnumerator LevelRoutine(float newRT)
     {
         spawnPausedForBanner = true;
 
-        yield return levelUp.ShowLevelPanel(levelUp.GetLevelForScore(score), newRT);
+        yield return levelUp.ShowLevelPanel(levelUp.CurrentLevel, newRT);
 
         spawnPausedForBanner = false;
 

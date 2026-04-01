@@ -9,19 +9,30 @@ public class LevelHUD : MonoBehaviour
 
     private int currentLevel = -1;
 
-    void Update()
+
+    void Start()
     {
-        if (levelSystem == null) return;
-
-        int level = levelSystem.GetLevelForScore(
-            ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0
-        );
-
-        if (level != currentLevel)
+        if (levelSystem != null)
         {
-            currentLevel = level;
-            UpdateUI(level);
+            UpdateUI(levelSystem.CurrentLevel);
         }
+    }
+
+    private void OnEnable()
+    {
+        if (levelSystem != null)
+            levelSystem.OnLevelChanged += HandleLevelChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (levelSystem != null)
+            levelSystem.OnLevelChanged -= HandleLevelChanged;
+    }
+
+    private void HandleLevelChanged(int level)
+    {
+        UpdateUI(level);
     }
 
     private IEnumerator Pulse()
