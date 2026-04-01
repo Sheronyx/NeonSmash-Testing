@@ -121,8 +121,19 @@ public class PlayerInputHandler : MonoBehaviour
         trailStarted = false;
     }
 
-    private void OnEnable() => controls.Enable();
-    private void OnDisable() => controls.Disable();
+    private void OnEnable()
+    {
+        if (controls == null)
+            controls = new GameControls();
+
+        controls.Enable();
+    }
+
+    private void OnDisable()
+    {
+        if (controls != null)
+            controls.Disable();
+    }
 
     private Vector3 ScreenToWorld2D(Vector2 screenPos)
     {

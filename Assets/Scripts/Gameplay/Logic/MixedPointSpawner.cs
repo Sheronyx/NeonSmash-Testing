@@ -475,20 +475,25 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void PointCleared(GameObject point)
     {
+
+        
+
         Debug.Log($"[PointCleared] START | converting={isConvertingPoints} | point={point.name}");
-        if (isConvertingPoints)
+        if (isConvertingPoints && point != currentPoint)
         {
             Debug.Log("[PointCleared] ABORTED wegen isConvertingPoints");
-            Destroy(point);
             return;
         }
 
-        if (point == currentPoint) { StopPointTimer(); currentPoint = null; }
+        if (point == currentPoint)
+        {
+            StopPointTimer(); currentPoint = null;
+        }
         if (CurrentSwipePoint != null && point == CurrentSwipePoint.gameObject) CurrentSwipePoint = null;
 
         Destroy(point);
 
-        if (!running) return;
+
 
         if (IsInfinityMode)
         {
@@ -1609,17 +1614,17 @@ public class MixedPointSpawner : MonoBehaviour
 
                     currentPoint = gold;
 
-                    var click = gold.GetComponent<ClickablePoint>();
-                    if (click)
+                    var clickGold = gold.GetComponent<ClickablePoint>();
+                    if (clickGold)
                     {
-                        click.spawner = this;
+                        clickGold.spawner = this;
                     }
 
-                    var swipe = gold.GetComponent<SwipePoint>();
-                    if (swipe)
+                    var swipeGold = gold.GetComponent<SwipePoint>();
+                    if (swipeGold)
                     {
-                        swipe.spawner = this;
-                        CurrentSwipePoint = swipe;
+                        swipeGold.spawner = this;
+                        CurrentSwipePoint = swipeGold;
                     }
                 }
 
@@ -1642,29 +1647,50 @@ public class MixedPointSpawner : MonoBehaviour
             }
         }
 
-        // 👉 kurz sichtbar lassen
         yield return new WaitForSeconds(0.7f);
 
-        if (mainGold == null && spawnedGolds.Count > 0)
+        if (mainGold != null)
         {
-            mainGold = spawnedGolds[0];
-            Debug.Log("[Convert] Fallback mainGold gesetzt!");
+            PointCleared(mainGold);
+            yield break;
         }
 
+
+
         isConvertingPoints = false;
+        yield break;
+
+        // 👉 DEBUG HIER REIN
+        Debug.Log($"[FINAL CHECK] mainGold == currentPoint ? {mainGold == currentPoint}");
 
         foreach (var gold in spawnedGolds)
         {
             if (gold == null) continue;
 
-            if (gold == mainGold)
+            if (gold != mainGold)
             {
-                PointCleared(gold); // 👉 echtes Gameplay
+                Destroy(gold);
             }
-            else
-            {
-                Destroy(gold); // 👉 nur VFX
-            }
+        }
+
+        // 👉 wichtig: Spawner-Referenzen setzen
+        var click = mainGold.GetComponent<ClickablePoint>();
+        if (click) click.spawner = this;
+
+        var swipe = mainGold.GetComponent<SwipePoint>();
+        if (swipe)
+        {
+            swipe.spawner = this;
+            CurrentSwipePoint = swipe;
+        }
+
+        // 👉 Timer starten wie normal
+        if (IsInfinityMode)
+        {
+            int score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0;
+            float dynamicTime = GetReactionTimeForScore(score);
+
+            timeoutRoutine = StartCoroutine(Co_PointTimeout(mainGold, dynamicTime, useUnscaledTime));
         }
 
         isConvertingPoints = false;

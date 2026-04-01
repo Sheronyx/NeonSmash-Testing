@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &6289792914184658287
+--- !u!1 &1041921155991871192
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,42 +8,43 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6194460597175154472}
-  - component: {fileID: 8412157516853936876}
-  - component: {fileID: 5045515032426513647}
-  - component: {fileID: 823659826551060700}
-  - component: {fileID: 9013113540762397234}
+  - component: {fileID: 2872777341090896195}
+  - component: {fileID: 5006670019834392434}
+  - component: {fileID: 1289516320573264572}
+  - component: {fileID: 8407219425519794270}
+  - component: {fileID: 1567818505604964841}
+  - component: {fileID: 6731009479353845390}
   m_Layer: 0
-  m_Name: VFX Graph Orb Gold
+  m_Name: ComboAcitivationPointBoxForm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6194460597175154472
+--- !u!4 &2872777341090896195
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6289792914184658287}
+  m_GameObject: {fileID: 1041921155991871192}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.9848078, w: 0.17364825}
-  m_LocalPosition: {x: 1.74, y: 0.74, z: 0}
+  m_LocalPosition: {x: -0.51, y: -0.42, z: 0}
   m_LocalScale: {x: 0.24, y: 0.24, z: 0.24}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -160}
---- !u!2083052967 &8412157516853936876
+--- !u!2083052967 &5006670019834392434
 VisualEffect:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6289792914184658287}
+  m_GameObject: {fileID: 1041921155991871192}
   m_Enabled: 1
-  m_Asset: {fileID: 8926484042661614526, guid: ca26b7f620eae4985b5dd0213e8c3e31, type: 3}
+  m_Asset: {fileID: 8926484042661614526, guid: 20c3e0eacb1bd4242a980d9c9371d230, type: 3}
   m_InitialEventName: OnPlay
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
@@ -73,14 +74,14 @@ VisualEffect:
       m_Array: []
     m_Bool:
       m_Array: []
---- !u!73398921 &5045515032426513647
+--- !u!73398921 &1289516320573264572
 VFXRenderer:
   serializedVersion: 1
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6289792914184658287}
+  m_GameObject: {fileID: 1041921155991871192}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 0
@@ -120,27 +121,27 @@ VFXRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 2
   m_MaskInteraction: 0
---- !u!114 &823659826551060700
+--- !u!114 &8407219425519794270
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6289792914184658287}
+  m_GameObject: {fileID: 1041921155991871192}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 22b9c315e9ff88d4e862184938fc4c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   spawner: {fileID: 0}
-  explodeVFXPrefab: {fileID: 0}
---- !u!58 &9013113540762397234
+  explodeVFXPrefab: {fileID: 7636390409669451756, guid: 01bd759c2b28f42f795b86988d06a9e0, type: 3}
+--- !u!58 &1567818505604964841
 CircleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6289792914184658287}
+  m_GameObject: {fileID: 1041921155991871192}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -170,3 +171,20 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 1.4
+--- !u!114 &6731009479353845390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1041921155991871192}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99936712daa904349ab573fa6912b0e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ComboPoint
+  spawner: {fileID: 0}
+  lifetime: 3
+  flySpeed: 10
+  delayBeforeGoldMode: 1
+  absorbVFXPrefab: {fileID: 4164893359058680202, guid: f15187329382845f78c811e86791909a, type: 3}

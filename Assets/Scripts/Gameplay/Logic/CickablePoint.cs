@@ -8,39 +8,34 @@ public class ClickablePoint : MonoBehaviour
     [Header("VFX")]
     [SerializeField] private VisualEffect explodeVFXPrefab;
 
-    public void TryClick()
+ public void TryClick()
+{
+    ComboPoint combo = GetComponent<ComboPoint>();
+
+    if (combo != null)
     {
-        // 👉 NEU: prüfen ob es ein ComboPoint ist
-        ComboPoint combo = GetComponent<ComboPoint>();
-
-        if (combo != null)
-        {
-            combo.OnTapped();
-            return; // ❗ wichtig: stoppt normalen Ablauf
-        }
-
-        // Score
-        int points = 1;
-
-        if (spawner != null && spawner.IsGoldModeActive())
-        {
-            points = 2;
-        }
-
-        ScoreManager.Instance?.AddPoints(points);
-
-        // VFX Explosion
-        SpawnExplosion();
-
-        // SFX
-        AudioManager.Instance?.PlayNormalPoint();
-
-        // Spawner benachrichtigen
-        if (spawner != null)
-            spawner.PointCleared(gameObject);
-        else
-            Destroy(gameObject);
+        combo.OnTapped();
+        return;
     }
+
+    int points = 1;
+
+    if (spawner != null && spawner.IsGoldModeActive())
+    {
+        points = 2;
+    }
+
+    ScoreManager.Instance?.AddPoints(points);
+
+    SpawnExplosion();
+
+    AudioManager.Instance?.PlayNormalPoint();
+
+    if (spawner != null)
+        spawner.PointCleared(gameObject);
+    else
+        Destroy(gameObject);
+}
 
     private void SpawnExplosion()
     {
