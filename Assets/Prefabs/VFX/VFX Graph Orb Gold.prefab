@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 6194460597175154472}
   - component: {fileID: 8412157516853936876}
   - component: {fileID: 5045515032426513647}
-  - component: {fileID: 823659826551060700}
   - component: {fileID: 9013113540762397234}
+  - component: {fileID: -5050223084341916249}
   m_Layer: 0
   m_Name: VFX Graph Orb Gold
   m_TagString: Untagged
@@ -120,20 +120,6 @@ VFXRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 2
   m_MaskInteraction: 0
---- !u!114 &823659826551060700
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6289792914184658287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 22b9c315e9ff88d4e862184938fc4c9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawner: {fileID: 0}
-  explodeVFXPrefab: {fileID: 0}
 --- !u!58 &9013113540762397234
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -170,3 +156,20 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 1.4
+--- !u!114 &-5050223084341916249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6289792914184658287}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99936712daa904349ab573fa6912b0e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoldModeActivationPoint
+  spawner: {fileID: 0}
+  lifetime: 3
+  flySpeed: 10
+  delayBeforeGoldMode: 0.5
+  SlashVFXPrefab: {fileID: 4164893359058680202, guid: f15187329382845f78c811e86791909a, type: 3}

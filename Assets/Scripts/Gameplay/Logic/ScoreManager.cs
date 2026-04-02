@@ -25,15 +25,21 @@ public class ScoreManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void AddPoint()
-    {
-        score++;
-        UpdateUI();
-    }
-
     public void AddPoints(int amount)
     {
         score += amount;
+        UpdateUI();
+    }
+
+    public void AddPointsFromHit(int basePoints = 1)
+    {
+        int finalPoints = basePoints;
+
+        if (GoldModeSystem.Instance != null)
+            finalPoints = GoldModeSystem.Instance.ModifyPoints(finalPoints);
+
+        score += finalPoints;
+
         UpdateUI();
     }
 
@@ -97,4 +103,6 @@ public class ScoreManager : MonoBehaviour
 
         rect.localScale = start;
     }
+
+
 }

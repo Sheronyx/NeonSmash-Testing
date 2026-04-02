@@ -82,6 +82,8 @@ public class GameUIManager : MonoBehaviour
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
+        MusicManager.ForceRestartGameMusicNextLoad = true;
+
         string current = SceneManager.GetActiveScene().name;
 
         if (SceneFader.Instance != null)

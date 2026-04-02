@@ -93,11 +93,19 @@ public class PlayerInputHandler : MonoBehaviour
 
             if (hit.collider != null)
             {
-                var clickPoint = hit.collider.GetComponent<ClickablePoint>();
-
-                if (clickPoint != null)
+                // 🟡 1. Gold Mode Activation Point (PRIORITÄT!)
+                var goldPoint = hit.collider.GetComponent<GoldModeActivationPoint>();
+                if (goldPoint != null)
                 {
-                    clickPoint.TryClick();
+                    goldPoint.OnTapped();
+                    return;
+                }
+
+                // 🔵 2. Normale Tap Points
+                var tapPoint = hit.collider.GetComponent<TapPoint>();
+                if (tapPoint != null)
+                {
+                    tapPoint.TryTap();
                     return;
                 }
             }
@@ -111,6 +119,8 @@ public class PlayerInputHandler : MonoBehaviour
         if (swipePoint != null)
             swipePoint.TryStrikeScreen(screenStart, screenEnd, cam);
     }
+
+
 
     public void ResetTouch()
     {

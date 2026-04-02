@@ -328,7 +328,7 @@ GameObject:
   - component: {fileID: 190732375}
   - component: {fileID: 190732374}
   m_Layer: 0
-  m_Name: NeonElementManager
+  m_Name: SpawnManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -346,13 +346,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34b224f38de560e418e9220fccd52381, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  uiManager: {fileID: 1942897538}
-  comboPointPrefab: {fileID: 8852830624963706024, guid: a9399114f613b414b8ad814f92f3335a, type: 3}
-  comboSpawnScoreThreshold: 5
-  comboSpawnChance: 1
-  comboCooldown: 60
   normalPointGoldPrefab: {fileID: 7634417711000780290, guid: 0236b3b4c26674f6480befca046eb7a1, type: 3}
   swipePointGoldPrefab: {fileID: 723352877289022949, guid: c712b213a35a94248ad2f65939f12c3d, type: 3}
+  uiManager: {fileID: 1942897538}
+  goldModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c878f24f6e5944512829675b4a9dce8d, type: 3}
+  goldModeSpawnScoreThreshold: 5
+  goldModeSpawnChance: 1
+  goldModeCooldown: 60
   portalFlash: {fileID: 911621390}
   portalBeam: {fileID: 911621388}
   useSafeAreaForSpawns: 1
@@ -387,7 +387,6 @@ MonoBehaviour:
   spawnAreaFill: {r: 0, g: 1, b: 1, a: 0.08}
   spawnAreaBorder: {r: 0, g: 1, b: 1, a: 0.9}
   spawnAreaBorderThickness: 2
-  restartMinFadeDelay: 0.05
 --- !u!4 &190732375
 Transform:
   m_ObjectHideFlags: 0
@@ -719,6 +718,7 @@ GameObject:
   m_Component:
   - component: {fileID: 265687246}
   - component: {fileID: 265687245}
+  - component: {fileID: 265687247}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -758,6 +758,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &265687247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265687244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c34968c23e0404721bb8701b372ce60a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenShakeManager
+  cameraTransform: {fileID: 519420032}
 --- !u!1 &286445850
 GameObject:
   m_ObjectHideFlags: 0
@@ -2150,10 +2163,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PortalSpawnBeam
   spawner: {fileID: 190732374}
-  portalOrigin: {fileID: 911621387}
-  projectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
-  projectileSpeed: 50
   goldProjectilePrefab: {fileID: 6237600531714503956, guid: 2723edac540a449c98dad3e7e3712b09, type: 3}
+  projectileSpeed: 50
+  projectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
+  portalOrigin: {fileID: 911621387}
 --- !u!114 &911621390 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
@@ -4200,6 +4213,8 @@ GameObject:
   - component: {fileID: 1942897536}
   - component: {fileID: 1942897537}
   - component: {fileID: 1942897538}
+  - component: {fileID: 1942897539}
+  - component: {fileID: 1942897540}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -4356,6 +4371,38 @@ MonoBehaviour:
   resultScoreTMP: {fileID: 420104929167995070}
   restartButton: {fileID: 8883828862646325282}
   backToMenuButton: {fileID: 944890180084663000}
+--- !u!114 &1942897539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1942897533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 113774476ef5143799b0499835aa6b7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoldModeSystem
+  duration: 10
+  goldMultiplier: 3
+--- !u!114 &1942897540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1942897533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ea3286d851014c6783ed545865d0c49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoldUIMaterialSwitcher
+  targetImages:
+  - {fileID: 1241259586}
+  - {fileID: 587059756}
+  normalMaterial: {fileID: 2100000, guid: 377a592334a914be1a678ce3250e03b5, type: 2}
+  goldMaterial: {fileID: 2100000, guid: 7acc0d8c022cb49898041751690d7b88, type: 2}
+  delayBeforeSwitch: 0.1
 --- !u!1 &1967027719
 GameObject:
   m_ObjectHideFlags: 0
@@ -5263,9 +5310,9 @@ SceneRoots:
   - {fileID: 2063600740}
   - {fileID: 286445853}
   - {fileID: 265687246}
-  - {fileID: 1942897535}
   - {fileID: 1618122601}
   - {fileID: 413701485}
+  - {fileID: 1942897535}
   - {fileID: 190732375}
   - {fileID: 614854638}
   - {fileID: 250744644}

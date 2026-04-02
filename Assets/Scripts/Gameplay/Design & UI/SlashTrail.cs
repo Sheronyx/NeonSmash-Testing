@@ -10,6 +10,30 @@ public class SlashTrail : MonoBehaviour
 
     private bool isGold = false;
 
+    private void OnEnable()
+    {
+        GoldModeSystem.OnGoldModeStarted += EnableGold;
+        GoldModeSystem.OnGoldModeEnded += DisableGold;
+    }
+
+    private void OnDisable()
+    {
+        GoldModeSystem.OnGoldModeStarted -= EnableGold;
+        GoldModeSystem.OnGoldModeEnded -= DisableGold;
+    }
+
+    private void EnableGold()
+    {
+        isGold = true;
+        SetGoldVisual();
+    }
+
+    private void DisableGold()
+    {
+        isGold = false;
+        SetNormalVisual();
+    }
+
     [Header("Sorting")]
     public string sortingLayerName = "Default";
     public int sortingOrder = 2;
@@ -82,5 +106,25 @@ public class SlashTrail : MonoBehaviour
     public void SetGoldMode(bool active)
     {
         isGold = active;
+    }
+
+    private void SetGoldVisual()
+    {
+        // Optional: laufenden Trail ersetzen
+        if (activeTrail != null)
+        {
+            Destroy(activeTrail.gameObject);
+            activeTrail = null;
+        }
+    }
+
+    private void SetNormalVisual()
+    {
+        // Gleiches Verhalten wie oben
+        if (activeTrail != null)
+        {
+            Destroy(activeTrail.gameObject);
+            activeTrail = null;
+        }
     }
 }

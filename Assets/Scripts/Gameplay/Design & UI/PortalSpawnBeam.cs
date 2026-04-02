@@ -5,15 +5,28 @@ public class PortalSpawnBeam : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private MixedPointSpawner spawner;
-    [SerializeField] private Transform portalOrigin;
-    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private GameObject goldProjectilePrefab;
+    private bool isGoldMode = false;
 
     [Header("Beam Settings")]
-    [SerializeField] private float projectileSpeed = 25f;
+    [SerializeField] private float projectileSpeed = 50f;
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform portalOrigin;
 
-    [SerializeField] private GameObject goldProjectilePrefab;
+    private void OnEnable()
+    {
+        GoldModeSystem.OnGoldModeStarted += EnableGold;
+        GoldModeSystem.OnGoldModeEnded += DisableGold;
+    }
 
-    private bool isGoldMode = false;
+    private void OnDisable()
+    {
+        GoldModeSystem.OnGoldModeStarted -= EnableGold;
+        GoldModeSystem.OnGoldModeEnded -= DisableGold;
+    }
+
+    private void EnableGold() => isGoldMode = true;
+    private void DisableGold() => isGoldMode = false;
 
     public void SpawnWithBeam(GameObject prefab, Vector3 targetPosition)
     {
@@ -32,8 +45,11 @@ public class PortalSpawnBeam : MonoBehaviour
 
         while (projectile != null && Vector3.Distance(projectile.transform.position, target) > 0.05f)
         {
-            projectile.transform.position =
-                Vector3.MoveTowards(projectile.transform.position, target, projectileSpeed * Time.deltaTime);
+            projectile.transform.position = Vector3.MoveTowards(
+                projectile.transform.position,
+                target,
+                projectileSpeed * Time.deltaTime
+            );
 
             yield return null;
         }
@@ -41,11 +57,7 @@ public class PortalSpawnBeam : MonoBehaviour
         if (projectile != null)
             Destroy(projectile);
 
+        // 🔥 DAS ist der wichtigste Moment
         spawner.CreatePoint(pointPrefab, target);
-    }
-
-    public void SetGoldMode(bool active)
-    {
-        isGoldMode = active;
     }
 }

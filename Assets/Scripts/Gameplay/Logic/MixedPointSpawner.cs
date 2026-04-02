@@ -1,33 +1,28 @@
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.Events;
 using System.Collections;
-using TMPro;
-using UnityEngine.SceneManagement;
-using System.Globalization;
-using System.Collections.Generic;
 
 public class MixedPointSpawner : MonoBehaviour
 {
 
     [SerializeField] private GameObject normalPointGoldPrefab;
-[SerializeField] private GameObject swipePointGoldPrefab;
+    [SerializeField] private GameObject swipePointGoldPrefab;
 
     [SerializeField] private GameUIManager uiManager;
 
     private int CurrentScore =>
     ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
 
-    [Header("Combo System")]
-    [SerializeField] private GameObject comboPointPrefab;
-    [SerializeField] private int comboSpawnScoreThreshold = 5;
-    [SerializeField] private float comboSpawnChance = 0.25f;
-    [SerializeField] private float comboCooldown = 5f;
-    private bool comboOnCooldown = false;
-    private GameObject currentComboPoint;
+    [Header("Gold Mode")]
+    [SerializeField] private GameObject goldModeActivationPointPrefab;
+    [SerializeField] private int goldModeSpawnScoreThreshold = 5;
+    [SerializeField] private float goldModeSpawnChance = 1f;
+    [SerializeField] private float goldModeCooldown = 60f;
+    private bool goldModeOnCooldown = false;
+    private GameObject currentGoldModePoint;
     private bool isConvertingPoints = false;
 
-    
+
     [SerializeField] private ArcanePortalFlash portalFlash;
 
     [SerializeField] private PortalSpawnBeam portalBeam;
@@ -154,28 +149,60 @@ public class MixedPointSpawner : MonoBehaviour
         else spawnSwipe = Random.value < swipeChance;
 
         if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
-{
-    prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
-}
-else
-{
-    prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
-}
+        {
+            prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
+        }
+        else
+        {
+            prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
+        }
 
-if (spawnSwipe)
-{
-    swipesInRow++;
-    normalsInRow = 0;
-}
-else
-{
-    normalsInRow++;
-    swipesInRow = 0;
-}
+        if (spawnSwipe)
+        {
+            swipesInRow++;
+            normalsInRow = 0;
+        }
+        else
+        {
+            normalsInRow++;
+            swipesInRow = 0;
+        }
 
         Rect allowedScreen = GetAllowedSpawnRect();
         Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-        Vector2 viewportPos = GetRandomViewportPosition(allowedViewport);
+        Vector2 viewportPos;
+        int attempts = 0;
+
+        do
+        {
+            viewportPos = new Vector2(
+                Random.Range(allowedViewport.xMin, allowedViewport.xMax),
+                Random.Range(allowedViewport.yMin, allowedViewport.yMax)
+            );
+
+            attempts++;
+
+            bool farFromLast = true;
+            bool farFromGold = true;
+
+            // Abstand zu letztem Punkt
+            if (lastPoint != null)
+            {
+                Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
+                farFromLast = IsFarEnough(viewportPos, lastVP);
+            }
+
+            // Abstand zu GoldOrb
+            if (currentGoldModePoint != null)
+            {
+                Vector2 goldVP = mainCamera.WorldToViewportPoint(currentGoldModePoint.transform.position);
+                farFromGold = IsFarEnough(viewportPos, goldVP);
+            }
+
+            if (farFromLast && farFromGold)
+                break;
+
+        } while (attempts < 30);
 
         Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
         if (portalBeam != null)
@@ -186,46 +213,69 @@ else
         {
             CreatePoint(prefabToSpawn, worldPos);
         }
-
-        TrySpawnComboPoint();
+        TrySpawnGoldModePoint();
 
         if (portalFlash != null)
         {
             portalFlash.FlashParticles();
         }
     }
+    
 
-    private void TrySpawnComboPoint()
+    private bool IsFarEnough(Vector2 candidateVP, Vector2 targetVP)
     {
-        if (currentComboPoint != null || comboOnCooldown) return;
+        Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
+        Vector2 targetPx = targetVP * new Vector2(Screen.width, Screen.height);
+
+        float minDist = minDistanceAsPercent
+            ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
+            : minScreenDistancePixels;
+
+        return Vector2.Distance(candidatePx, targetPx) >= minDist;
+    }
+
+    private void TrySpawnGoldModePoint()
+    {
+        if (currentGoldModePoint != null || goldModeOnCooldown) return;
 
         if (ScoreManager.Instance == null) return;
 
         int score = CurrentScore;
 
-        if (score < comboSpawnScoreThreshold) return;
+        if (score < goldModeSpawnScoreThreshold) return;
 
-        if (Random.value > comboSpawnChance) return;
+        if (Random.value > goldModeSpawnChance) return;
 
         Rect allowedScreen = GetAllowedSpawnRect();
         Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-        Vector2 viewportPos = GetRandomViewportPosition(allowedViewport);
+        Vector2 viewportPos;
+        int attempts = 0;
+
+        do
+        {
+            viewportPos = GetRandomViewportPosition(allowedViewport);
+            attempts++;
+
+            if (IsFarEnoughFromCurrentPoint(viewportPos))
+                break;
+
+        } while (attempts < 20);
 
         Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
 
-        var combo = Instantiate(comboPointPrefab, worldPos, Quaternion.identity);
+        var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
 
-        var comboScript = combo.GetComponent<ComboPoint>();
-        if (comboScript != null)
+        var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
+        if (goldModeScript != null)
         {
-            comboScript.spawner = this;
+            goldModeScript.spawner = this;
         }
 
-        currentComboPoint = combo;
+        currentGoldModePoint = goldModePoint;
 
         // Cooldown starten
-        comboOnCooldown = true;
-        StartCoroutine(ComboCooldownRoutine());
+        goldModeOnCooldown = true;
+        StartCoroutine(GoldModeCooldownRoutine());
     }
 
 
@@ -235,8 +285,8 @@ else
 
         var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
 
-        var click = newPoint.GetComponent<ClickablePoint>();
-        if (click) click.spawner = this;
+        var tap = newPoint.GetComponent<TapPoint>();
+        if (tap) tap.spawner = this;
 
         var swipe = newPoint.GetComponent<SwipePoint>();
         if (swipe) { swipe.spawner = this; CurrentSwipePoint = swipe; }
@@ -297,6 +347,16 @@ else
         SpawnNextPoint();
     }
 
+
+    public void ForceClearCurrentPoint()
+    {
+        if (currentPoint != null)
+        {
+            HandlePointHit(currentPoint);
+        }
+    }
+
+
     private IEnumerator LevelRoutine(float newRT)
     {
         spawnPausedForBanner = true;
@@ -333,8 +393,7 @@ else
         }
     }
 
-    // === Aufruf im Infinity-Mode (Missed/Timeout) ===
-    private async void GameOver()
+    private async void EndGame(int score, bool isInfinityMode)
     {
         if (gameOver) return;
         gameOver = true;
@@ -346,56 +405,45 @@ else
         if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
         CurrentSwipePoint = null;
 
-        int score = CurrentScore;
+        Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
 
-        Debug.Log("GAME OVER ERREICHT");
-        if (InAppReviewManager.Instance == null)
-        {
-            Debug.LogError("InAppReviewManager ist NULL!!!");
-        }
-        else
-        {
-            InAppReviewManager.Instance.OnGameFinished();
-        }
+        // 🎯 ScreenShake
+        ScreenShakeManager.Instance?.Shake(
+            isInfinityMode ? 0.3f : 0.2f,
+            isInfinityMode ? 0.2f : 0.15f
+        );
 
-        if (IsInfinityMode)
+        InAppReviewManager.Instance?.OnGameFinished();
+
+        if (isInfinityMode)
         {
             try
             {
                 bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.InfinityId);
-                if (uploaded) Debug.Log($"[LB] Infinity-Bestwert {score} zu '{LeaderboardApi.InfinityId}' hochgeladen.");
+                if (uploaded)
+                    Debug.Log($"[LB] Infinity-Bestwert {score} hochgeladen.");
             }
             catch (System.Exception e)
             {
-                Debug.LogWarning($"[LB] Infinity-Upload fehlgeschlagen: {e.Message}");
+                Debug.LogWarning($"[LB] Upload fehlgeschlagen: {e.Message}");
             }
+
+            MusicManager.Instance?.ResetGameOnGameOver();
+            SfxManager.Instance?.PlayInfinityGameOver();
         }
 
-        if (IsInfinityMode) MusicManager.Instance?.ResetGameOnGameOver();
-        SfxManager.Instance?.PlayInfinityGameOver();
-
         onGameOver?.Invoke();
-        uiManager?.ShowGameOver(score, IsInfinityMode);
+        uiManager?.ShowGameOver(score, isInfinityMode);
     }
 
-    // === Aufruf aus dem TIME-Mode ===
+    private void GameOver()
+    {
+        EndGame(CurrentScore, true);
+    }
+
     public void ShowFinishedFromTimeMode(int finalScore)
     {
-        if (gameOver) return;
-
-        gameOver = true;
-        running = false;
-        spawnPausedForBanner = false;
-        StopPointTimer();
-
-        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
-        CurrentSwipePoint = null;
-
-        Debug.Log("TIME MODE FINISHED ERREICHT");
-        InAppReviewManager.Instance?.OnGameFinished();
-
-        onGameOver?.Invoke();
-        uiManager?.ShowGameOver(finalScore, IsInfinityMode);
+        EndGame(finalScore, false);
     }
 
 
@@ -512,36 +560,17 @@ else
         return half;
     }
 
-
-    [SerializeField] private float restartMinFadeDelay = 0.05f;
-
-    public void RestartScene()
+    public void OnGoldModePointDestroyed()
     {
-        MusicManager.ForceRestartGameMusicNextLoad = true;
-
-        string current = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-
-        if (SceneFader.Instance != null)
-            SceneFader.Instance.LoadSceneDelayed(current, restartMinFadeDelay);
-        else
-            UnityEngine.SceneManagement.SceneManager.LoadScene(current, LoadSceneMode.Single);
+        currentGoldModePoint = null;
     }
 
-  
-
-
-    public void OnComboDestroyed()
+    private IEnumerator GoldModeCooldownRoutine()
     {
-        currentComboPoint = null;
+        yield return new WaitForSeconds(goldModeCooldown);
+        goldModeOnCooldown = false;
     }
 
-    private IEnumerator ComboCooldownRoutine()
-    {
-        yield return new WaitForSeconds(comboCooldown);
-        comboOnCooldown = false;
-    }
-
-    
 
     public void PauseSpawning(bool pause)
     {
@@ -553,23 +582,11 @@ else
         }
     }
 
-    public int GetPointsForCurrentMode()
-    {
-        int basePoints = 1;
-
-        if (GoldModeSystem.Instance != null)
-            return GoldModeSystem.Instance.ModifyPoints(basePoints);
-
-        return basePoints;
-    }
 
     public void HandlePointHit(GameObject point)
     {
-        int points = GetPointsForCurrentMode();
+        ScoreManager.Instance?.AddPointsFromHit();
 
-        ScoreManager.Instance?.AddPoints(points);
-
-        // Explosion (zentral)
         var basePoint = point.GetComponent<BasePoint>();
         if (basePoint != null)
         {
@@ -577,5 +594,41 @@ else
         }
 
         PointCleared(point);
+    }
+
+    private bool IsFarEnoughFromCurrentPoint(Vector2 candidateVP)
+    {
+        if (currentPoint == null) return true;
+
+        Vector3 currentWorld = currentPoint.transform.position;
+        Vector3 currentVP3 = mainCamera.WorldToViewportPoint(currentWorld);
+
+        Vector2 currentVP = new Vector2(currentVP3.x, currentVP3.y);
+
+        Vector2 candidatePx = new Vector2(candidateVP.x * Screen.width, candidateVP.y * Screen.height);
+        Vector2 currentPx = new Vector2(currentVP.x * Screen.width, currentVP.y * Screen.height);
+
+        float minDistPixels = minDistanceAsPercent
+            ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
+            : minScreenDistancePixels;
+
+        return Vector2.Distance(candidatePx, currentPx) >= minDistPixels;
+    }
+
+    public void ResetCurrentPointTimer()
+    {
+        if (currentPoint == null) return;
+
+        StopPointTimer();
+
+        if (IsInfinityMode)
+        {
+            int score = CurrentScore;
+            float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
+
+            timeoutRoutine = StartCoroutine(
+                Co_PointTimeout(currentPoint, dynamicTime, useUnscaledTime)
+            );
+        }
     }
 }

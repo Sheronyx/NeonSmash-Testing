@@ -1,17 +1,17 @@
 using UnityEngine;
 using System.Collections;
 
-public class ComboPoint : MonoBehaviour
+public class GoldModeActivationPoint : MonoBehaviour
 {
     public MixedPointSpawner spawner;
 
     [Header("Settings")]
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float flySpeed = 10f;
-    [SerializeField] private float delayBeforeGoldMode = 5f;
+    [SerializeField] private float delayBeforeGoldMode = 0.5f;
 
     [Header("VFX")]
-    [SerializeField] private GameObject absorbVFXPrefab;
+    [SerializeField] private GameObject SlashVFXPrefab;
 
     private ArcanePortalFlash portal;
     private Transform portalTransform;
@@ -21,7 +21,6 @@ public class ComboPoint : MonoBehaviour
 
     void Start()
     {
-        // 👉 Portal automatisch finden (kein Inspector nötig)
         portal = FindFirstObjectByType<ArcanePortalFlash>();
 
         if (portal != null)
@@ -42,15 +41,16 @@ public class ComboPoint : MonoBehaviour
 
     public void OnTapped()
     {
+
+        if (spawner != null)
+        {
+            spawner.PauseSpawning(true); // ⏸ Timer pausieren
+        }
+
         if (isDestroyed || isFinishing) return;
 
         isDestroyed = true;
         isFinishing = true;
-
-        if (spawner != null)
-        {
-            spawner.StopSpawning();
-        }
 
         Debug.Log("COMBO GETRIGGERT!");
 
@@ -89,9 +89,9 @@ public class ComboPoint : MonoBehaviour
         transform.position = endPos;
 
         // 👉 VFX am Portal
-        if (absorbVFXPrefab != null)
+        if (SlashVFXPrefab != null)
         {
-            Instantiate(absorbVFXPrefab, endPos, Quaternion.identity);
+            Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
         }
 
         // 👉 Portal sofort visuell gold + flash
@@ -99,10 +99,6 @@ public class ComboPoint : MonoBehaviour
         {
             portal.SetGoldMode(true);
 
-            if (spawner != null)
-            {
-                GoldModeSystem.Instance?.Activate();
-            }
             portal.FlashParticles();
         }
 
@@ -136,8 +132,14 @@ public class ComboPoint : MonoBehaviour
     {
         if (spawner != null)
         {
+            // 🟡 GoldMode starten
             GoldModeSystem.Instance?.Activate();
-            spawner.Begin();
+
+            // ▶ Spawning wieder erlauben
+            spawner.PauseSpawning(false);
+
+            // 💥 Punkt killen (triggert Spawn!)
+            spawner.ForceClearCurrentPoint();
         }
 
         DestroySelf();
@@ -147,7 +149,7 @@ public class ComboPoint : MonoBehaviour
     {
         if (spawner != null)
         {
-            spawner.OnComboDestroyed();
+            spawner.OnGoldModePointDestroyed();
         }
 
         Destroy(gameObject);

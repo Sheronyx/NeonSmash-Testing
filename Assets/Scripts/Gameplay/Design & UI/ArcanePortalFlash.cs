@@ -15,6 +15,29 @@ public class ArcanePortalFlash : MonoBehaviour
 
     private Coroutine flashRoutine;
 
+
+    private void OnEnable()
+    {
+        GoldModeSystem.OnGoldModeStarted += HandleGoldStart;
+        GoldModeSystem.OnGoldModeEnded += HandleGoldEnd;
+    }
+
+    private void OnDisable()
+    {
+        GoldModeSystem.OnGoldModeStarted -= HandleGoldStart;
+        GoldModeSystem.OnGoldModeEnded -= HandleGoldEnd;
+    }
+
+    private void HandleGoldStart()
+    {
+        SetGoldMode(true);
+    }
+
+    private void HandleGoldEnd()
+    {
+        SetGoldMode(false);
+    }
+
     public void FlashParticles()
     {
         if (flashRoutine != null)
