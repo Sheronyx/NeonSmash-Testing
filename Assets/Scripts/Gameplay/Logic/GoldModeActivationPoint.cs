@@ -149,6 +149,7 @@ public class GoldModeActivationPoint : MonoBehaviour
         if (spawner != null)
         {
             spawner.OnGoldModePointDestroyed();
+            spawner.ClearActivationPoint(); 
         }
 
         Destroy(gameObject);

@@ -80,33 +80,33 @@ public class LevelUp : MonoBehaviour
 
     public int GetLevelForScore(int score)
     {
-        if (score >= 400) return 12;
-        if (score >= 350) return 11;
-        if (score >= 300) return 10;
-        if (score >= 250) return 9;
-        if (score >= 200) return 8;
-        if (score >= 150) return 7;
-        if (score >= 100) return 6;
-        if (score >= 80) return 5;
-        if (score >= 60) return 4;
-        if (score >= 40) return 3;
-        if (score >= 20) return 2;
+        if (score >= 700) return 12;
+        if (score >= 600) return 11;
+        if (score >= 500) return 10;
+        if (score >= 400) return 9;
+        if (score >= 350) return 8;
+        if (score >= 300) return 7;
+        if (score >= 250) return 6;
+        if (score >= 200) return 5;
+        if (score >= 150) return 4;
+        if (score >= 100) return 3;
+        if (score >= 50) return 2;
         return 1;
     }
 
     public float GetReactionTimeForScore(int score, float defaultTime)
     {
-        if (score >= 400) return 0.3f;
-        if (score >= 350) return 0.4f;
-        if (score >= 300) return 0.5f;
-        if (score >= 250) return 0.6f;
-        if (score >= 200) return 0.7f;
-        if (score >= 150) return 0.8f;
-        if (score >= 100) return 0.9f;
-        if (score >= 80) return 1.0f;
-        if (score >= 60) return 1.5f;
-        if (score >= 40) return 2.0f;
-        if (score >= 20) return 2.5f;
+        if (score >= 700) return 0.3f;
+        if (score >= 600) return 0.4f;
+        if (score >= 500) return 0.5f;
+        if (score >= 400) return 0.6f;
+        if (score >= 350) return 0.7f;
+        if (score >= 300) return 0.8f;
+        if (score >= 250) return 0.9f;
+        if (score >= 200) return 1.0f;
+        if (score >= 150) return 1.5f;
+        if (score >= 100) return 2.0f;
+        if (score >= 50) return 2.5f;
 
         return defaultTime;
     }
