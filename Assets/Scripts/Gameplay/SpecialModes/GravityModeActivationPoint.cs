@@ -124,7 +124,6 @@ public class GravityModeActivationPoint : MonoBehaviour
                 SpecialModeManager.Instance.StartMode(SpecialMode.Gravity);
             }
 
-            spawner.PauseSpawning(false);
             spawner.ForceClearCurrentPoint();
         }
 

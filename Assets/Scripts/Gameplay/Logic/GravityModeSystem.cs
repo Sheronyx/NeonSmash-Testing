@@ -60,6 +60,8 @@ public class GravityModeSystem : MonoBehaviour
         // 👉 normalen Spawner pausieren
         spawner.PauseSpawning(true);
 
+        spawner.ClearAllGameplayPoints();
+
         for (int i = 0; i < elementCount; i++)
         {
             SpawnGravityPoint();
@@ -73,6 +75,7 @@ public class GravityModeSystem : MonoBehaviour
 
         EndMode();
     }
+
 
     private void SpawnGravityPoint()
     {

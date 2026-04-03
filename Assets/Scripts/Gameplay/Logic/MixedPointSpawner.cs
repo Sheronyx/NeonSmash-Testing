@@ -658,4 +658,29 @@ public class MixedPointSpawner : MonoBehaviour
         script.spawner = this;
     }
 }
+
+public void ClearAllGameplayPoints()
+{
+    // 👉 aktueller Punkt sauber entfernen
+    ForceClearCurrentPoint();
+
+    // 👉 Swipe Points entfernen
+    var swipes = FindObjectsByType<SwipePoint>(FindObjectsSortMode.None);
+    foreach (var s in swipes)
+        Destroy(s.gameObject);
+
+    // 👉 Tap Points entfernen
+    var taps = FindObjectsByType<TapPoint>(FindObjectsSortMode.None);
+    foreach (var t in taps)
+        Destroy(t.gameObject);
+
+    // 👉 Gold Orb entfernen
+    var golds = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
+    foreach (var g in golds)
+        Destroy(g.gameObject);
+
+    // 👉 interne Referenzen resetten
+    currentPoint = null;
+    CurrentSwipePoint = null;
+}
 }
