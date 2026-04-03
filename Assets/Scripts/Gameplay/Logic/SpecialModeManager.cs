@@ -19,16 +19,23 @@ public class SpecialModeManager : MonoBehaviour
 
     public bool IsModeActive => currentMode != SpecialMode.None;
 
-    public void StartMode(SpecialMode mode)
+public void StartMode(SpecialMode mode)
+{
+    if (currentMode != SpecialMode.None) return;
+
+    currentMode = mode;
+
+    Debug.Log($"🚀 Mode START: {mode}");
+
+    // 🔥 NEU: alle Activation Orbs löschen
+    var spawner = FindFirstObjectByType<MixedPointSpawner>();
+    if (spawner != null)
     {
-        if (currentMode != SpecialMode.None) return;
-
-        currentMode = mode;
-
-        Debug.Log($"🚀 Mode START: {mode}");
-
-        OnModeStarted?.Invoke(mode);
+        spawner.ClearAllActivationOrbs();
     }
+
+    OnModeStarted?.Invoke(mode);
+}
 
     public void EndCurrentMode()
     {

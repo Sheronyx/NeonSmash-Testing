@@ -683,4 +683,17 @@ public void ClearAllGameplayPoints()
     currentPoint = null;
     CurrentSwipePoint = null;
 }
+
+public void ClearAllActivationOrbs()
+{
+    // 🔴 Gravity Orbs
+    var gravityOrbs = FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None);
+    foreach (var orb in gravityOrbs)
+        Destroy(orb.gameObject);
+
+    // 🟡 Gold Orbs
+    var goldOrbs = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
+    foreach (var orb in goldOrbs)
+        Destroy(orb.gameObject);
+}
 }
