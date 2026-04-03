@@ -8,6 +8,8 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject normalPointGoldPrefab;
     [SerializeField] private GameObject swipePointGoldPrefab;
 
+    [SerializeField] private GameObject gravityModeActivationPointPrefab;
+
     [SerializeField] private GameUIManager uiManager;
 
     private int CurrentScore =>
@@ -213,7 +215,9 @@ public class MixedPointSpawner : MonoBehaviour
         {
             CreatePoint(prefabToSpawn, worldPos);
         }
+        
         TrySpawnGoldModePoint();
+        TrySpawnGravityModePoint();
 
         if (portalFlash != null)
         {
@@ -631,4 +635,27 @@ public class MixedPointSpawner : MonoBehaviour
             );
         }
     }
+
+    private void TrySpawnGravityModePoint()
+{
+    if (SpecialModeManager.Instance != null &&
+        SpecialModeManager.Instance.IsModeActive)
+        return;
+
+    if (Random.value > 0.3f) return; // Spawn Chance
+
+    Rect allowedScreen = GetAllowedSpawnRect();
+    Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
+
+    Vector2 vp = GetRandomViewportPosition(allowedViewport);
+    Vector3 worldPos = ViewportToWorldOnZ0(vp);
+
+    var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
+
+    var script = orb.GetComponent<GravityModeActivationPoint>();
+    if (script != null)
+    {
+        script.spawner = this;
+    }
+}
 }

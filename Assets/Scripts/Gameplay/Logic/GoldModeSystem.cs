@@ -3,7 +3,6 @@ using System.Collections;
 
 public class GoldModeSystem : MonoBehaviour
 {
-
     public static event System.Action OnGoldModeStarted;
     public static event System.Action OnGoldModeEnded;
 
@@ -22,24 +21,37 @@ public class GoldModeSystem : MonoBehaviour
         Instance = this;
     }
 
-    public void Activate()
+    private void OnEnable()
     {
-        if (isActive) return;
+        SpecialModeManager.OnModeStarted += HandleModeStart;
+    }
 
-        StartCoroutine(Co_GoldMode());
+    private void OnDisable()
+    {
+        SpecialModeManager.OnModeStarted -= HandleModeStart;
+    }
+
+    private void HandleModeStart(SpecialMode mode)
+    {
+        if (mode == SpecialMode.Gold)
+        {
+            StartCoroutine(Co_GoldMode());
+        }
     }
 
     private IEnumerator Co_GoldMode()
     {
-        isActive = true;
+        if (isActive) yield break; // 🛡️ Safety
 
-        OnGoldModeStarted?.Invoke(); // 🟡 START
+        isActive = true;
+        OnGoldModeStarted?.Invoke();
 
         yield return new WaitForSeconds(duration);
 
         isActive = false;
+        OnGoldModeEnded?.Invoke();
 
-        OnGoldModeEnded?.Invoke(); // 🔵 END
+        SpecialModeManager.Instance.EndCurrentMode();
     }
 
     public int ModifyPoints(int basePoints)

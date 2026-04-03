@@ -1,14 +1,14 @@
 using UnityEngine;
 using System.Collections;
 
-public class GoldModeActivationPoint : MonoBehaviour
+public class GravityModeActivationPoint : MonoBehaviour
 {
     public MixedPointSpawner spawner;
 
     [Header("Settings")]
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float flySpeed = 10f;
-    [SerializeField] private float delayBeforeGoldMode = 0.5f;
+    [SerializeField] private float delayBeforeGravityMode = 0.5f;
 
     [Header("VFX")]
     [SerializeField] private GameObject SlashVFXPrefab;
@@ -41,10 +41,9 @@ public class GoldModeActivationPoint : MonoBehaviour
 
     public void OnTapped()
     {
-
         if (spawner != null)
         {
-            spawner.PauseSpawning(true); // ⏸ Timer pausieren
+            spawner.PauseSpawning(true);
         }
 
         if (isDestroyed || isFinishing) return;
@@ -52,7 +51,7 @@ public class GoldModeActivationPoint : MonoBehaviour
         isDestroyed = true;
         isFinishing = true;
 
-        Debug.Log("COMBO GETRIGGERT!");
+        Debug.Log("🌪️ GRAVITY ORB GETRIGGERT!");
 
         StartCoroutine(CoFlyToPortal());
     }
@@ -70,7 +69,6 @@ public class GoldModeActivationPoint : MonoBehaviour
         Vector3 endPos = portalTransform.position;
 
         float t = 0f;
-
         Vector3 startScale = transform.localScale;
 
         while (t < 1f)
@@ -78,7 +76,7 @@ public class GoldModeActivationPoint : MonoBehaviour
             t += Time.deltaTime * flySpeed;
 
             float progress = Mathf.Clamp01(t);
-            float eased = progress * progress; // 👉 Ease-In
+            float eased = progress * progress;
 
             transform.position = Vector3.Lerp(startPos, endPos, eased);
             transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
@@ -88,33 +86,21 @@ public class GoldModeActivationPoint : MonoBehaviour
 
         transform.position = endPos;
 
-        // 👉 VFX am Portal
+        // 🔥 VFX
         if (SlashVFXPrefab != null)
         {
             Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
         }
 
-        // 👉 Portal sofort visuell gold + flash
+        // 🔴 Portal Effekt (optional später anders färben)
         if (portal != null)
         {
-            portal.SetGoldMode(true);
-
             portal.FlashParticles();
         }
 
-        // 👉 Orb "unsichtbar" machen (KEIN SetActive false!)
         DisableVisuals();
 
-        // 👉 Delay bevor echter GoldMode startet
-        yield return new WaitForSeconds(delayBeforeGoldMode);
-
-
-
-        // 👉 VISUAL RESET
-        if (portal != null)
-        {
-            portal.SetGoldMode(false);
-        }
+        yield return new WaitForSeconds(delayBeforeGravityMode);
 
         FinishCombo();
     }
@@ -132,9 +118,10 @@ public class GoldModeActivationPoint : MonoBehaviour
     {
         if (spawner != null)
         {
-            if (!SpecialModeManager.Instance.IsModeActive)
+            if (SpecialModeManager.Instance != null &&
+                !SpecialModeManager.Instance.IsModeActive)
             {
-                SpecialModeManager.Instance.StartMode(SpecialMode.Gold);
+                SpecialModeManager.Instance.StartMode(SpecialMode.Gravity);
             }
 
             spawner.PauseSpawning(false);
@@ -146,11 +133,11 @@ public class GoldModeActivationPoint : MonoBehaviour
 
     private void DestroySelf()
     {
-        if (spawner != null)
-        {
-            spawner.OnGoldModePointDestroyed();
-        }
-
         Destroy(gameObject);
     }
+
+    public void TryTap()
+{
+    OnTapped();
+}
 }

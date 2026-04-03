@@ -91,24 +91,40 @@ public class PlayerInputHandler : MonoBehaviour
 
             RaycastHit2D hit = Physics2D.Raycast(worldStart, Vector2.zero, 0f, tapLayerMask);
 
-            if (hit.collider != null)
-            {
-                // 🟡 1. Gold Mode Activation Point (PRIORITÄT!)
-                var goldPoint = hit.collider.GetComponent<GoldModeActivationPoint>();
-                if (goldPoint != null)
-                {
-                    goldPoint.OnTapped();
-                    return;
-                }
+if (hit.collider != null)
+{
+    // 🟡 1. Gold Orb (höchste Priorität)
+    var goldPoint = hit.collider.GetComponent<GoldModeActivationPoint>();
+    if (goldPoint != null)
+    {
+        goldPoint.OnTapped();
+        return;
+    }
 
-                // 🔵 2. Normale Tap Points
-                var tapPoint = hit.collider.GetComponent<TapPoint>();
-                if (tapPoint != null)
-                {
-                    tapPoint.TryTap();
-                    return;
-                }
-            }
+    // 🔴 2. Gravity Orb
+    var gravityOrb = hit.collider.GetComponent<GravityModeActivationPoint>();
+    if (gravityOrb != null)
+    {
+        gravityOrb.TryTap();
+        return;
+    }
+
+    // 🔴 3. Gravity Falling Points
+    var gravityPoint = hit.collider.GetComponent<GravityPoint>();
+    if (gravityPoint != null)
+    {
+        gravityPoint.TryTap();
+        return;
+    }
+
+    // 🔵 4. Normale Tap Points
+    var tapPoint = hit.collider.GetComponent<TapPoint>();
+    if (tapPoint != null)
+    {
+        tapPoint.TryTap();
+        return;
+    }
+}
 
             return;
         }
