@@ -10,8 +10,8 @@ public class GravityModeSystem : MonoBehaviour
     [SerializeField] private GameObject gravityTapPrefab;
 
     [Header("Settings")]
-    [SerializeField] private int elementCount = 20;
-    [SerializeField] private float spawnInterval = 1f;
+    [SerializeField] private int elementCount = 30;
+    [SerializeField] private float spawnInterval = 2f;
 
     private int remaining;
     private bool isActive = false;
@@ -31,23 +31,23 @@ public class GravityModeSystem : MonoBehaviour
     }
 
 
-private void OnEnable()
-{
-    SpecialModeManager.OnModeStarted += HandleModeStart;
-}
-
-private void OnDisable()
-{
-    SpecialModeManager.OnModeStarted -= HandleModeStart;
-}
-
-private void HandleModeStart(SpecialMode mode)
-{
-    if (mode == SpecialMode.Gravity)
+    private void OnEnable()
     {
-        Activate();
+        SpecialModeManager.OnModeStarted += HandleModeStart;
     }
-}
+
+    private void OnDisable()
+    {
+        SpecialModeManager.OnModeStarted -= HandleModeStart;
+    }
+
+    private void HandleModeStart(SpecialMode mode)
+    {
+        if (mode == SpecialMode.Gravity)
+        {
+            Activate();
+        }
+    }
 
 
     private IEnumerator Co_GravityMode()
@@ -88,8 +88,11 @@ private void HandleModeStart(SpecialMode mode)
 
         GameObject obj = Instantiate(gravityTapPrefab, worldPos, Quaternion.identity);
 
-        var gp = obj.AddComponent<GravityPoint>();
-        gp.Init(this);
+        var gp = obj.GetComponent<GravityPoint>();
+        if (gp != null)
+        {
+            gp.Init(this);
+        }
     }
 
     public void OnPointDestroyed(bool tapped)
