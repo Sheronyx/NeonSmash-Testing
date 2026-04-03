@@ -132,11 +132,16 @@ public class GravityModeActivationPoint : MonoBehaviour
 
     private void DestroySelf()
     {
+        if (spawner != null)
+        {
+            spawner.ClearActivationPoint();
+        }
+
         Destroy(gameObject);
     }
 
     public void TryTap()
-{
-    OnTapped();
-}
+    {
+        OnTapped();
+    }
 }

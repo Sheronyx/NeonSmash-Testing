@@ -11,6 +11,8 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject gravityModeActivationPointPrefab;
 
     [SerializeField] private GameUIManager uiManager;
+    private GameObject currentActivationPoint;
+
 
     private int CurrentScore =>
     ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
@@ -215,7 +217,7 @@ public class MixedPointSpawner : MonoBehaviour
         {
             CreatePoint(prefabToSpawn, worldPos);
         }
-        
+
         TrySpawnGoldModePoint();
         TrySpawnGravityModePoint();
 
@@ -224,7 +226,7 @@ public class MixedPointSpawner : MonoBehaviour
             portalFlash.FlashParticles();
         }
     }
-    
+
 
     private bool IsFarEnough(Vector2 candidateVP, Vector2 targetVP)
     {
@@ -238,49 +240,7 @@ public class MixedPointSpawner : MonoBehaviour
         return Vector2.Distance(candidatePx, targetPx) >= minDist;
     }
 
-    private void TrySpawnGoldModePoint()
-    {
-        if (currentGoldModePoint != null || goldModeOnCooldown) return;
 
-        if (ScoreManager.Instance == null) return;
-
-        int score = CurrentScore;
-
-        if (score < goldModeSpawnScoreThreshold) return;
-
-        if (Random.value > goldModeSpawnChance) return;
-
-        Rect allowedScreen = GetAllowedSpawnRect();
-        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-        Vector2 viewportPos;
-        int attempts = 0;
-
-        do
-        {
-            viewportPos = GetRandomViewportPosition(allowedViewport);
-            attempts++;
-
-            if (IsFarEnoughFromCurrentPoint(viewportPos))
-                break;
-
-        } while (attempts < 20);
-
-        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
-
-        var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
-
-        var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
-        if (goldModeScript != null)
-        {
-            goldModeScript.spawner = this;
-        }
-
-        currentGoldModePoint = goldModePoint;
-
-        // Cooldown starten
-        goldModeOnCooldown = true;
-        StartCoroutine(GoldModeCooldownRoutine());
-    }
 
 
     public void CreatePoint(GameObject prefab, Vector3 worldPos)
@@ -636,64 +596,121 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    private void TrySpawnGravityModePoint()
-{
-    if (SpecialModeManager.Instance != null &&
-        SpecialModeManager.Instance.IsModeActive)
-        return;
-
-    if (Random.value > 0.3f) return; // Spawn Chance
-
-    Rect allowedScreen = GetAllowedSpawnRect();
-    Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-
-    Vector2 vp = GetRandomViewportPosition(allowedViewport);
-    Vector3 worldPos = ViewportToWorldOnZ0(vp);
-
-    var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
-
-    var script = orb.GetComponent<GravityModeActivationPoint>();
-    if (script != null)
+    private void TrySpawnGoldModePoint()
     {
-        script.spawner = this;
+        if (currentActivationPoint != null) return;
+        if (currentGoldModePoint != null || goldModeOnCooldown) return;
+
+        if (ScoreManager.Instance == null) return;
+
+        int score = CurrentScore;
+
+        if (score < goldModeSpawnScoreThreshold) return;
+
+        if (Random.value > goldModeSpawnChance) return;
+
+        Rect allowedScreen = GetAllowedSpawnRect();
+        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
+        Vector2 viewportPos;
+        int attempts = 0;
+
+        do
+        {
+            viewportPos = GetRandomViewportPosition(allowedViewport);
+            attempts++;
+
+            if (IsFarEnoughFromCurrentPoint(viewportPos))
+                break;
+
+        } while (attempts < 20);
+
+        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+
+        var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
+
+        var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
+        if (goldModeScript != null)
+        {
+            goldModeScript.spawner = this;
+        }
+
+        currentGoldModePoint = goldModePoint;
+        currentActivationPoint = goldModePoint;
+
+        // Cooldown starten
+        goldModeOnCooldown = true;
+        StartCoroutine(GoldModeCooldownRoutine());
     }
-}
 
-public void ClearAllGameplayPoints()
+
+
+    private void TrySpawnGravityModePoint()
+    {
+
+        if (currentActivationPoint != null) return;
+
+        if (SpecialModeManager.Instance != null &&
+            SpecialModeManager.Instance.IsModeActive)
+            return;
+
+        if (Random.value > 0.3f) return; // Spawn Chance
+
+        Rect allowedScreen = GetAllowedSpawnRect();
+        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
+
+        Vector2 vp = GetRandomViewportPosition(allowedViewport);
+        Vector3 worldPos = ViewportToWorldOnZ0(vp);
+
+        var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
+        currentActivationPoint = orb;
+
+        var script = orb.GetComponent<GravityModeActivationPoint>();
+        if (script != null)
+        {
+            script.spawner = this;
+        }
+    }
+
+    public void ClearAllGameplayPoints()
+    {
+        // 👉 aktueller Punkt sauber entfernen
+        ForceClearCurrentPoint();
+
+        // 👉 Swipe Points entfernen
+        var swipes = FindObjectsByType<SwipePoint>(FindObjectsSortMode.None);
+        foreach (var s in swipes)
+            Destroy(s.gameObject);
+
+        // 👉 Tap Points entfernen
+        var taps = FindObjectsByType<TapPoint>(FindObjectsSortMode.None);
+        foreach (var t in taps)
+            Destroy(t.gameObject);
+
+        // 👉 Gold Orb entfernen
+        var golds = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
+        foreach (var g in golds)
+            Destroy(g.gameObject);
+
+        // 👉 interne Referenzen resetten
+        currentPoint = null;
+        CurrentSwipePoint = null;
+    }
+
+    public void ClearAllActivationOrbs()
+    {
+        // 🔴 Gravity Orbs
+        var gravityOrbs = FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None);
+        foreach (var orb in gravityOrbs)
+            Destroy(orb.gameObject);
+
+        // 🟡 Gold Orbs
+        var goldOrbs = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
+        foreach (var orb in goldOrbs)
+            Destroy(orb.gameObject);
+    }
+
+    public void ClearActivationPoint()
 {
-    // 👉 aktueller Punkt sauber entfernen
-    ForceClearCurrentPoint();
-
-    // 👉 Swipe Points entfernen
-    var swipes = FindObjectsByType<SwipePoint>(FindObjectsSortMode.None);
-    foreach (var s in swipes)
-        Destroy(s.gameObject);
-
-    // 👉 Tap Points entfernen
-    var taps = FindObjectsByType<TapPoint>(FindObjectsSortMode.None);
-    foreach (var t in taps)
-        Destroy(t.gameObject);
-
-    // 👉 Gold Orb entfernen
-    var golds = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
-    foreach (var g in golds)
-        Destroy(g.gameObject);
-
-    // 👉 interne Referenzen resetten
-    currentPoint = null;
-    CurrentSwipePoint = null;
-}
-
-public void ClearAllActivationOrbs()
-{
-    // 🔴 Gravity Orbs
-    var gravityOrbs = FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None);
-    foreach (var orb in gravityOrbs)
-        Destroy(orb.gameObject);
-
-    // 🟡 Gold Orbs
-    var goldOrbs = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
-    foreach (var orb in goldOrbs)
-        Destroy(orb.gameObject);
+    currentActivationPoint = null;
 }
 }
