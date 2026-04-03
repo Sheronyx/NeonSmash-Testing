@@ -142,6 +142,8 @@ public class GravityModeActivationPoint : MonoBehaviour
 
     public void TryTap()
     {
+        if (spawner != null && spawner.IsLevelUpActive())
+        return;
         OnTapped();
     }
 }

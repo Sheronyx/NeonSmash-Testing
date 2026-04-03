@@ -139,6 +139,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void SpawnNextPoint()
     {
+        if (levelUp != null && levelUp.IsShowingPanel) return;
         if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
 
         bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
@@ -598,6 +599,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void TrySpawnGoldModePoint()
     {
+        if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
         if (currentGoldModePoint != null || goldModeOnCooldown) return;
 
@@ -646,7 +648,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void TrySpawnGravityModePoint()
     {
-
+            if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
 
         if (SpecialModeManager.Instance != null &&
@@ -712,5 +714,10 @@ public class MixedPointSpawner : MonoBehaviour
     public void ClearActivationPoint()
 {
     currentActivationPoint = null;
+}
+
+public bool IsLevelUpActive()
+{
+    return levelUp != null && levelUp.IsShowingPanel;
 }
 }

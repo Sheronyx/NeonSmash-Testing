@@ -39,23 +39,26 @@ public class GoldModeActivationPoint : MonoBehaviour
         }
     }
 
-    public void OnTapped()
+public void OnTapped()
+{
+    // 🛑 BLOCK während LevelUp
+    if (spawner != null && spawner.IsLevelUpActive())
+        return;
+
+    if (spawner != null)
     {
-
-        if (spawner != null)
-        {
-            spawner.PauseSpawning(true); // ⏸ Timer pausieren
-        }
-
-        if (isDestroyed || isFinishing) return;
-
-        isDestroyed = true;
-        isFinishing = true;
-
-        Debug.Log("COMBO GETRIGGERT!");
-
-        StartCoroutine(CoFlyToPortal());
+        spawner.PauseSpawning(true);
     }
+
+    if (isDestroyed || isFinishing) return;
+
+    isDestroyed = true;
+    isFinishing = true;
+
+    Debug.Log("COMBO GETRIGGERT!");
+
+    StartCoroutine(CoFlyToPortal());
+}
 
     private IEnumerator CoFlyToPortal()
     {
