@@ -419,6 +419,7 @@ MonoBehaviour:
   minDistancePercent: 0.12
   minScreenDistancePixels: 100
   spawnPaddingPixels: 24
+  activationOrbVisualGapPixels: 40
   autoComputePaddingFromPrefab: 1
   paddingSamplePrefab: {fileID: 0}
   extraPaddingPixels: 12
@@ -1851,6 +1852,7 @@ MonoBehaviour:
   gravityTapPrefab: {fileID: 4156307227592253209, guid: a4b82a7a1a5154f708f5d836b0236cad, type: 3}
   elementCount: 30
   spawnInterval: 0.5
+  levelUp: {fileID: 250744643}
 --- !u!114 &697214887
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5120,6 +5122,10 @@ PrefabInstance:
       propertyPath: m_PixelsPerUnitMultiplier
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 2901176342370207652, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
+      propertyPath: m_IsOn
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3754020685755455921, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -5388,6 +5394,10 @@ PrefabInstance:
     - target: {fileID: 5966124456584278060, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6544216494581854752, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
+      propertyPath: m_IsOn
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7082993660523298638, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_SizeDelta.x

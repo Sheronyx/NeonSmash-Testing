@@ -9,7 +9,7 @@ public class GravityPoint : BasePoint
 
     [Header("Suck Settings")]
     [SerializeField] private float portalYOffset = -1.0f;
-    [SerializeField] private float suckStartDistance = 5f; // 👈 wann Sog startet
+    [SerializeField] private float suckStartDistance = 5f;
     [SerializeField] private float suckSpeed = 5f;
     [SerializeField] private float shrinkSpeed = 2f;
     [SerializeField] private float fadeSpeed = 2f;
@@ -35,7 +35,7 @@ void Start()
     trail = GetComponent<TrailRenderer>();
     sr = GetComponent<SpriteRenderer>();
 
-    initialScale = transform.localScale; // 👈 WICHTIG
+    initialScale = transform.localScale;
 
     var portal = FindFirstObjectByType<ArcanePortalFlash>();
     if (portal != null)
@@ -156,7 +156,6 @@ float distance = Vector3.Distance(transform.position, portalTarget);
         {
             isDestroyed = true;
 
-            // ❗ kein Explosion beim Portal → fühlt sich besser an
             gravitySystem?.OnPointDestroyed(false);
 
             Destroy(gameObject);
@@ -169,11 +168,19 @@ float distance = Vector3.Distance(transform.position, portalTarget);
 
         isDestroyed = true;
 
-        // 💥 Explosion nur beim Tap
         SpawnExplosion();
+        AudioManager.Instance?.PlayNormalPoint();
 
         gravitySystem?.OnPointDestroyed(true);
 
         Destroy(gameObject);
     }
+
+
+
+    public void SetSpeedMultiplier(float multiplier)
+{
+    fallSpeed *= multiplier;
+    maxSuckForce *= multiplier;
+}
 }

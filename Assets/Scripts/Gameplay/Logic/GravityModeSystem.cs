@@ -13,6 +13,8 @@ public class GravityModeSystem : MonoBehaviour
     [SerializeField] private int elementCount = 30;
     [SerializeField] private float spawnInterval = 2f;
 
+    [SerializeField] private LevelUp levelUp;
+
     private int remaining;
     private bool isActive = false;
 
@@ -87,31 +89,34 @@ public void Activate()
 
 
     private void SpawnGravityPoint()
+{
+    Camera cam = Camera.main;
+
+    float randomX = Random.Range(0.1f, 0.9f);
+    Vector2 vp = new Vector2(randomX, 1.1f);
+
+    Vector3 worldPos = cam.ViewportToWorldPoint(
+        new Vector3(vp.x, vp.y, Mathf.Abs(cam.transform.position.z))
+    );
+    worldPos.z = 0f;
+
+    GameObject obj = Instantiate(gravityTapPrefab, worldPos, Quaternion.identity);
+
+    var gp = obj.GetComponent<GravityPoint>();
+    if (gp != null)
     {
-        Camera cam = Camera.main;
+        gp.Init(this);
 
-        float randomX = Random.Range(0.1f, 0.9f);
-        Vector2 vp = new Vector2(randomX, 1.1f);
-
-        Vector3 worldPos = cam.ViewportToWorldPoint(
-            new Vector3(vp.x, vp.y, Mathf.Abs(cam.transform.position.z))
-        );
-        worldPos.z = 0f;
-
-        GameObject obj = Instantiate(gravityTapPrefab, worldPos, Quaternion.identity);
-
-        var gp = obj.GetComponent<GravityPoint>();
-        if (gp != null)
-        {
-            gp.Init(this);
-        }
+        float multiplier = GetSpeedMultiplier();
+        gp.SetSpeedMultiplier(multiplier);
     }
+}
 
     public void OnPointDestroyed(bool tapped)
     {
         if (tapped)
         {
-            ScoreManager.Instance?.AddPoints(2);
+            ScoreManager.Instance?.AddPoints(1);
         }
 
         remaining--;
@@ -129,5 +134,15 @@ private void EndMode()
     spawner.SpawnNextPoint();
 
     SpecialModeManager.Instance.EndCurrentMode();
+}
+
+private float GetSpeedMultiplier()
+{
+    if (levelUp == null) return 1f;
+
+    int level = levelUp.CurrentLevel;
+
+    // Beispiel Scaling
+    return 1f + (level - 1) * 0.8f;
 }
 }

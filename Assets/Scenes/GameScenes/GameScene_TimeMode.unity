@@ -980,9 +980,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 34b224f38de560e418e9220fccd52381, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  comboPointPrefab: {fileID: 0}
-  comboSpawnScoreThreshold: 5
-  comboSpawnChance: 0
+  normalPointGoldPrefab: {fileID: 0}
+  swipePointGoldPrefab: {fileID: 0}
+  gravityModeActivationPointPrefab: {fileID: 0}
+  uiManager: {fileID: 0}
+  goldModeActivationPointPrefab: {fileID: 0}
+  goldModeSpawnScoreThreshold: 5
+  goldModeSpawnChance: 1
+  goldModeCooldown: 60
+  portalFlash: {fileID: 0}
   portalBeam: {fileID: 518840799}
   useSafeAreaForSpawns: 1
   extraBottomGesturePixels: 200
@@ -994,6 +1000,7 @@ MonoBehaviour:
   minDistancePercent: 0.12
   minScreenDistancePixels: 100
   spawnPaddingPixels: 24
+  activationOrbVisualGapPixels: 40
   autoComputePaddingFromPrefab: 1
   paddingSamplePrefab: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
   extraPaddingPixels: 12
@@ -1008,114 +1015,6 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   levelUp: {fileID: 0}
-  autoSizeLevelPanel: 1
-  autoCenterContent: 1
-  contentPadding: {x: 40, y: 36}
-  outerPadding: {x: 80, y: 60}
-  minDarkSize: {x: 620, y: 420}
-  minOuterSize: {x: 800, y: 520}
-  bannerFadeDuration: 0.25
-  bannerPostDelay: 0.5
-  levelPanel: {fileID: 0}
-  levelPanelTMP: {fileID: 0}
-  gettingFasterTMP: {fileID: 0}
-  gettingFasterText: Getting faster!
-  gettingFasterColor: {r: 1, g: 0.85, b: 0.95, a: 1}
-  gfPulseOnPanelIn: 1
-  gfPulseDuration: 0.35
-  gfPulseScale: 1.08
-  gfGlowBoost: 0.15
-  gfGlowExtra: 0.1
-  gfPulseSpeedMultiplier: 1
-  gfPulseRepeats: 1
-  gfPulseRepeatGap: 0.05
-  timeLabelTMP: {fileID: 0}
-  timeValueTMP: {fileID: 0}
-  timeValuePulseSpeedMultiplier: 1
-  timeValuePulseRepeats: 1
-  timeValuePulseRepeatGap: 0.05
-  dotImages: []
-  dotInterval: 0.35
-  dotOnScale: 1.08
-  dotOnDuration: 0.15
-  afterAllDotsDelay: 0.25
-  dotOffColor: {r: 1, g: 1, b: 1, a: 0.18}
-  dotOnColor: {r: 1, g: 1, b: 1, a: 1}
-  sfxDot: {fileID: 0}
-  sfxPanelIn: {fileID: 0}
-  sfxPanelOut: {fileID: 0}
-  dotSprite: {fileID: 0}
-  dotSize: {x: 110, y: 110}
-  dotPreserveAspect: 1
-  dotUIMaterial: {fileID: 0}
-  levelTitleFont: {fileID: 0}
-  levelTitleFontStyle: 1
-  levelTitleAlign: 514
-  levelTitleFontSize: 86
-  levelTitleLetterSpacing: 0
-  levelTitleEnableOutline: 0
-  levelTitleOutlineWidth: 0
-  levelTitleOutlineColor: {r: 1, g: 1, b: 1, a: 1}
-  levelTitleEnableGlow: 0
-  levelTitleGlowColor: {r: 0, g: 0, b: 0, a: 1}
-  levelTitleGlowPower: 0
-  levelTitleEnableUnderlay: 0
-  levelTitleUnderlayColor: {r: 0, g: 0, b: 0, a: 1}
-  levelTitleUnderlayOffset: {x: 0, y: 0}
-  levelTitleUnderlaySoftness: 0
-  gfFont: {fileID: 0}
-  gfFontStyle: 1
-  gfAlign: 514
-  gfFontSize: 80
-  gfLetterSpacing: 0
-  gfEnableOutline: 0
-  gfOutlineWidth: 0
-  gfOutlineColor: {r: 1, g: 1, b: 1, a: 1}
-  gfEnableGlow: 0
-  gfGlowColor: {r: 0, g: 0, b: 0, a: 1}
-  gfGlowPower: 0
-  gfEnableUnderlay: 0
-  gfUnderlayColor: {r: 0, g: 0, b: 0, a: 1}
-  gfUnderlayOffset: {x: 0, y: 0}
-  gfUnderlaySoftness: 0
-  timeLabelFontSize: 48
-  timeValueFontSize: 64
-  timeValueBaseColor: {r: 1, g: 1, b: 1, a: 0.95}
-  timeValueFlashColor: {r: 1, g: 0.85, b: 0.3, a: 1}
-  timeValueFlashDuration: 0.35
-  timeValuePunchScale: 1.12
-  timeLabelFont: {fileID: 0}
-  timeLabelFontStyle: 0
-  timeLabelAlign: 513
-  timeLabelLetterSpacing: 0
-  timeLabelEnableOutline: 0
-  timeLabelOutlineWidth: 0
-  timeLabelOutlineColor: {r: 1, g: 1, b: 1, a: 1}
-  timeLabelEnableGlow: 0
-  timeLabelGlowColor: {r: 0, g: 0, b: 0, a: 1}
-  timeLabelGlowPower: 0
-  timeLabelEnableUnderlay: 0
-  timeLabelUnderlayColor: {r: 0, g: 0, b: 0, a: 1}
-  timeLabelUnderlayOffset: {x: 0, y: 0}
-  timeLabelUnderlaySoftness: 0
-  timeValueFont: {fileID: 0}
-  timeValueFontStyle: 1
-  timeValueAlign: 516
-  timeValueLetterSpacing: 0
-  timeValueEnableOutline: 0
-  timeValueOutlineWidth: 0
-  timeValueOutlineColor: {r: 1, g: 1, b: 1, a: 1}
-  timeValueEnableGlow: 0
-  timeValueGlowColor: {r: 0, g: 0, b: 0, a: 1}
-  timeValueGlowPower: 0
-  timeValueEnableUnderlay: 0
-  timeValueUnderlayColor: {r: 0, g: 0, b: 0, a: 1}
-  timeValueUnderlayOffset: {x: 0, y: 0}
-  timeValueUnderlaySoftness: 0
-  levelTitleY: -60
-  dotsY: -200
-  gettingFasterY: -320
-  timeRowY: -420
   swipeChance: 0.33
   maxNormalsInRow: 5
   maxSwipesInRow: 3
@@ -1124,38 +1023,6 @@ MonoBehaviour:
   spawnAreaFill: {r: 0, g: 1, b: 1, a: 0.08}
   spawnAreaBorder: {r: 0, g: 1, b: 1, a: 0.9}
   spawnAreaBorderThickness: 2
-  topBarCanvas: {fileID: 558865958}
-  gameOverBanner: {fileID: 0}
-  gameOverTextTMP: {fileID: 0}
-  sfxGameOver: {fileID: 0}
-  resultPanelDelay: 0.5
-  gameOverBannerFade: 0.25
-  gameOverBannerHold: 0.8
-  resultPanelFade: 0.25
-  resultPanel: {fileID: 856043435}
-  resultHeadlineTMP: {fileID: 0}
-  resultScoreTMP: {fileID: 856043438}
-  restartButton: {fileID: 856043437}
-  backToMenuButton: {fileID: 856043436}
-  onRestartRequested:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 190732374}
-        m_TargetAssemblyTypeName: MixedPointSpawner, Assembly-CSharp
-        m_MethodName: RestartScene
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onBackToMenuRequested:
-    m_PersistentCalls:
-      m_Calls: []
-  restartMinFadeDelay: 0.05
 --- !u!4 &190732375
 Transform:
   m_ObjectHideFlags: 0
@@ -1275,6 +1142,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scrollSpeed: 1.2
+  smoothTime: 0.5
 --- !u!4 &260029902
 Transform:
   m_ObjectHideFlags: 0
@@ -2262,9 +2130,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PortalSpawnBeam
   spawner: {fileID: 190732374}
-  portalOrigin: {fileID: 518840798}
-  projectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
+  goldProjectilePrefab: {fileID: 0}
   projectileSpeed: 50
+  projectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
+  portalOrigin: {fileID: 518840798}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -2915,6 +2784,10 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: ReturnToMainMenu
       objectReference: {fileID: 0}
+    - target: {fileID: 2901176342370207652, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
+      propertyPath: m_IsOn
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3754020685755455921, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -3016,44 +2889,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
---- !u!225 &856043435 stripped
-CanvasGroup:
-  m_CorrespondingSourceObject: {fileID: 5458278918862487249, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
-  m_PrefabInstance: {fileID: 856043434}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &856043436 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1633611555927908538, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
-  m_PrefabInstance: {fileID: 856043434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &856043437 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6608300963450841690, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
-  m_PrefabInstance: {fileID: 856043434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &856043438 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7130487836173239480, guid: c0241f149743c4d1a95acb481b7b8b4f, type: 3}
-  m_PrefabInstance: {fileID: 856043434}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &976838715
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3193,6 +3028,10 @@ PrefabInstance:
     - target: {fileID: 5966124456584278060, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6544216494581854752, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
+      propertyPath: m_IsOn
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7082993660523298638, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_SizeDelta.x
@@ -4898,6 +4737,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   scrollSpeed: 1.2
+  smoothTime: 0.5
 --- !u!4 &2020957454
 Transform:
   m_ObjectHideFlags: 0
@@ -4979,6 +4819,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trailPrefab: {fileID: 2291186409377428861, guid: 83c4fa8edc21e4524a7684e620195064, type: 3}
+  goldTrailPrefab: {fileID: 0}
   sortingLayerName: Default
   sortingOrder: 2
   width: 0.1

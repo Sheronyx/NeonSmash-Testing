@@ -52,6 +52,10 @@ public class MixedPointSpawner : MonoBehaviour
     public float minScreenDistancePixels = 100f;
     public float spawnPaddingPixels = 24f;
 
+    [Header("Abstand Neon ↔ Activation Orb")]
+    [Tooltip("Zusätzliche sichtbare Lücke zwischen NeonPoint- und Orb-Kante.")]
+    [SerializeField] private float activationOrbVisualGapPixels = 40f;
+
     [Header("Auto-Padding (empfohlen)")]
     [SerializeField] private bool autoComputePaddingFromPrefab = true;
     [SerializeField] private GameObject paddingSamplePrefab;
@@ -137,141 +141,207 @@ public class MixedPointSpawner : MonoBehaviour
         StopPointTimer();
     }
 
-public void SpawnNextPoint()
-{
-    if (levelUp != null && levelUp.IsShowingPanel) return;
-    if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
-
-    bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
-    bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
-
-    GameObject prefabToSpawn;
-    bool spawnSwipe;
-
-    if (forceSwipe) spawnSwipe = true;
-    else if (forceNormal) spawnSwipe = false;
-    else spawnSwipe = Random.value < swipeChance;
-
-    if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
+    public void SpawnNextPoint()
     {
-        prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
-    }
-    else
-    {
-        prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
-    }
+        if (levelUp != null && levelUp.IsShowingPanel) return;
+        if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
 
-    if (spawnSwipe)
-    {
-        swipesInRow++;
-        normalsInRow = 0;
-    }
-    else
-    {
-        normalsInRow++;
-        swipesInRow = 0;
-    }
+        bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+        bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
 
-    // 🔥 Größe vom Point berechnen
-    float pointSize = GetHalfSizePixels(prefabToSpawn);
+        GameObject prefabToSpawn;
+        bool spawnSwipe;
 
-    Rect allowedScreen = GetAllowedSpawnRect();
-    Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
+        if (forceSwipe) spawnSwipe = true;
+        else if (forceNormal) spawnSwipe = false;
+        else spawnSwipe = Random.value < swipeChance;
 
-    Vector2 viewportPos = Vector2.zero;
-    bool foundValid = false;
-
-    int maxAttempts = (currentActivationPoint != null) ? 80 : 40;
-    int attempts = 0;
-
-    while (attempts < maxAttempts)
-    {
-        viewportPos = new Vector2(
-            Random.Range(allowedViewport.xMin, allowedViewport.xMax),
-            Random.Range(allowedViewport.yMin, allowedViewport.yMax)
-        );
-
-        attempts++;
-
-        bool farFromLast = true;
-        bool farFromGold = true;
-        bool farFromActivation = true;
-
-        // Abstand zu letztem Punkt
-        if (lastPoint != null)
+        if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
         {
-            Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
-            farFromLast = IsFarEnough(viewportPos, lastVP);
+            prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
+        }
+        else
+        {
+            prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
         }
 
-        // Abstand zu Gold Orb
-        if (currentGoldModePoint != null)
+        if (spawnSwipe)
         {
-            Vector2 goldVP = mainCamera.WorldToViewportPoint(currentGoldModePoint.transform.position);
-            float goldSize = GetHalfSizePixels(currentGoldModePoint);
-
-            farFromGold = IsFarEnoughFromOrb(viewportPos, goldVP, pointSize, goldSize);
+            swipesInRow++;
+            normalsInRow = 0;
+        }
+        else
+        {
+            normalsInRow++;
+            swipesInRow = 0;
         }
 
-        // Abstand zu Activation Orb (Gravity etc.)
-        if (currentActivationPoint != null)
-        {
-            Vector2 activationVP = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
-            float activationSize = GetHalfSizePixels(currentActivationPoint);
+        // Größe des zu spawnenden Points berechnen
+        float spawnPointHalfSizePx = GetHalfSizePixels(prefabToSpawn);
 
-            farFromActivation = IsFarEnoughFromOrb(viewportPos, activationVP, pointSize, activationSize);
+        Rect allowedScreen = GetAllowedSpawnRect();
+        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
+
+        Vector2 viewportPos = new Vector2(0.5f, 0.5f);
+        bool foundValid = false;
+
+        int maxAttempts = (currentActivationPoint != null || currentGoldModePoint != null) ? 80 : 40;
+        int attempts = 0;
+
+        while (attempts < maxAttempts)
+        {
+            viewportPos = new Vector2(
+                Random.Range(allowedViewport.xMin, allowedViewport.xMax),
+                Random.Range(allowedViewport.yMin, allowedViewport.yMax)
+            );
+
+            attempts++;
+
+            bool farFromLast = true;
+            bool farFromGold = true;
+            bool farFromActivation = true;
+
+            // Abstand zu letztem Punkt
+            if (lastPoint != null)
+            {
+                Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
+                farFromLast = IsFarEnough(viewportPos, lastVP);
+            }
+
+            // Abstand zu Gold Orb — mit Größen beider Objekte
+            if (currentGoldModePoint != null)
+            {
+                Vector2 goldVP = mainCamera.WorldToViewportPoint(currentGoldModePoint.transform.position);
+                float goldHalfSizePx = GetHalfSizePixels(currentGoldModePoint);
+                farFromGold = IsFarEnoughFromOrb(viewportPos, goldVP, spawnPointHalfSizePx, goldHalfSizePx);
+            }
+
+            // Abstand zu Activation Orb (Gravity etc.) — mit Größen beider Objekte
+            if (currentActivationPoint != null)
+            {
+                Vector2 activationVP = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
+                float activationHalfSizePx = GetHalfSizePixels(currentActivationPoint);
+                farFromActivation = IsFarEnoughFromOrb(viewportPos, activationVP, spawnPointHalfSizePx, activationHalfSizePx);
+            }
+
+            if (farFromLast && farFromGold && farFromActivation)
+            {
+                foundValid = true;
+                break;
+            }
         }
 
-        if (farFromLast && farFromGold && farFromActivation)
+        if (!foundValid && debugLogs)
+            Debug.LogWarning("[Spawner] Kein gültiger Spawn gefunden → fallback Mitte");
+
+        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+
+        if (portalBeam != null)
         {
-            foundValid = true;
-            break;
+            portalBeam.SpawnWithBeam(prefabToSpawn, worldPos);
+        }
+        else
+        {
+            CreatePoint(prefabToSpawn, worldPos);
         }
     }
 
-    // ❗ FALLBACK wenn nichts gefunden wurde
-    if (!foundValid)
-    {
-        if (debugLogs) Debug.LogWarning("[Spawner] Kein gültiger Spawn gefunden → fallback Mitte");
 
-        viewportPos = new Vector2(0.5f, 0.5f);
+    // ─── Abstand-Helpers ───────────────────────────────────────────────────────
+
+    private float GetBaseMinDistancePixels()
+    {
+        return minDistanceAsPercent
+            ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
+            : minScreenDistancePixels;
     }
 
-    Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
-
-    if (portalBeam != null)
-    {
-        portalBeam.SpawnWithBeam(prefabToSpawn, worldPos);
-    }
-    else
-    {
-        CreatePoint(prefabToSpawn, worldPos);
-    }
-
-    TrySpawnGoldModePoint();
-    TrySpawnGravityModePoint();
-
-    if (portalFlash != null)
-    {
-        portalFlash.FlashParticles();
-    }
-}
-
-
+    /// <summary>Einfacher Mindestabstand (Point ↔ letzter Point).</summary>
     private bool IsFarEnough(Vector2 candidateVP, Vector2 targetVP)
     {
         Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
-        Vector2 targetPx = targetVP * new Vector2(Screen.width, Screen.height);
+        Vector2 targetPx    = targetVP    * new Vector2(Screen.width, Screen.height);
+        return Vector2.Distance(candidatePx, targetPx) >= GetBaseMinDistancePixels();
+    }
 
-        float minDist = minDistanceAsPercent
-            ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
-            : minScreenDistancePixels;
+    /// <summary>
+    /// Größen-bewusster Abstand: Mindestdistanz = Radius Point + Radius Orb + visueller Gap.
+    /// Verhindert, dass sich Objekte optisch berühren oder überlappen.
+    /// </summary>
+    private bool IsFarEnoughFromOrb(
+        Vector2 candidateVP,
+        Vector2 orbVP,
+        float pointHalfSizePx,
+        float orbHalfSizePx)
+    {
+        Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
+        Vector2 orbPx       = orbVP       * new Vector2(Screen.width, Screen.height);
 
-        return Vector2.Distance(candidatePx, targetPx) >= minDist;
+        float sizeBasedDist = pointHalfSizePx + orbHalfSizePx + Mathf.Max(0f, activationOrbVisualGapPixels);
+        float totalMinDist  = Mathf.Max(GetBaseMinDistancePixels(), sizeBasedDist);
+
+        return Vector2.Distance(candidatePx, orbPx) >= totalMinDist;
+    }
+
+    /// <summary>
+    /// Prüft ob eine Kandidatenposition weit genug vom aktuellen Point entfernt ist.
+    /// Wird von TrySpawnGoldModePoint / TrySpawnGravityModePoint genutzt.
+    /// </summary>
+    private bool IsFarEnoughFromCurrentPoint(Vector2 candidateVP, float orbHalfSizePx)
+    {
+        if (currentPoint == null) return true;
+
+        Vector2 currentVP = mainCamera.WorldToViewportPoint(currentPoint.transform.position);
+        float currentPointHalfSizePx = GetHalfSizePixels(currentPoint);
+
+        return IsFarEnoughFromOrb(candidateVP, currentVP, orbHalfSizePx, currentPointHalfSizePx);
     }
 
 
+    // ─── Größen-Berechnung ─────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Berechnet den Radius eines GameObjects in Pixeln.
+    /// Nutzt Collider2D (zuverlässiger) mit Fallback auf SpriteRenderer.
+    /// Funktioniert für Prefabs UND instanziierte Objekte.
+    /// </summary>
+    private float GetHalfSizePixels(GameObject go)
+    {
+        if (go == null || mainCamera == null) return 40f;
+
+        // Prefab? → kurz instanziieren, messen, zerstören
+        bool isPrefab = !go.scene.IsValid();
+        GameObject target = isPrefab
+            ? Instantiate(go, new Vector3(10000f, 10000f, 0f), Quaternion.identity)
+            : go;
+
+        float half = 40f;
+
+        var col = target.GetComponentInChildren<Collider2D>();
+        if (col != null)
+        {
+            Bounds b = col.bounds;
+            Vector3 spC = mainCamera.WorldToScreenPoint(b.center);
+            Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
+            half = Mathf.Max(half, Vector2.Distance(spC, spE));
+        }
+
+        var sr = target.GetComponentInChildren<SpriteRenderer>();
+        if (sr != null)
+        {
+            Bounds b = sr.bounds;
+            Vector3 spC = mainCamera.WorldToScreenPoint(b.center);
+            Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
+            half = Mathf.Max(half, Vector2.Distance(spC, spE));
+        }
+
+        if (isPrefab) Destroy(target);
+
+        return half;
+    }
+
+
+    // ─── CreatePoint & PointCleared ───────────────────────────────────────────
 
     public void CreatePoint(GameObject prefab, Vector3 worldPos)
     {
@@ -301,11 +371,18 @@ public void SpawnNextPoint()
         {
             if (debugLogs) Debug.Log("[Spawner] Kein Timer gestartet (Mode=Time).");
         }
+
+        TrySpawnGoldModePoint();
+        TrySpawnGravityModePoint();
+
+        if (portalFlash != null)
+        {
+            portalFlash.FlashParticles();
+        }
     }
 
     public void PointCleared(GameObject point)
     {
-
         Debug.Log($"[PointCleared] START | converting={isConvertingPoints} | point={point.name}");
         if (isConvertingPoints && point != currentPoint)
         {
@@ -321,26 +398,20 @@ public void SpawnNextPoint()
 
         Destroy(point);
 
-
-
         if (IsInfinityMode)
         {
             int score = CurrentScore;
             if (levelUp.TryTriggerLevelUp(score))
             {
                 float newRT = levelUp.GetReactionTimeForScore(score, reactionTime);
-
                 MusicManager.Instance?.IncreaseGameMusicSpeed();
-
                 StartCoroutine(LevelRoutine(newRT));
-
                 return;
             }
         }
 
         SpawnNextPoint();
     }
-
 
     public void ForceClearCurrentPoint()
     {
@@ -350,19 +421,16 @@ public void SpawnNextPoint()
         }
     }
 
-
     private IEnumerator LevelRoutine(float newRT)
     {
         spawnPausedForBanner = true;
-
         yield return levelUp.ShowLevelPanel(levelUp.CurrentLevel, newRT);
-
         spawnPausedForBanner = false;
-
         SpawnNextPoint();
     }
 
-    // ---------------- Countdown ----------------
+
+    // ─── Countdown ────────────────────────────────────────────────────────────
 
     private IEnumerator Co_PointTimeout(GameObject point, float seconds, bool unscaled)
     {
@@ -387,6 +455,9 @@ public void SpawnNextPoint()
         }
     }
 
+
+    // ─── Game Over ────────────────────────────────────────────────────────────
+
     private async void EndGame(int score, bool isInfinityMode)
     {
         if (gameOver) return;
@@ -401,7 +472,6 @@ public void SpawnNextPoint()
 
         Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
 
-        // 🎯 ScreenShake
         ScreenShakeManager.Instance?.Shake(
             isInfinityMode ? 0.3f : 0.2f,
             isInfinityMode ? 0.2f : 0.15f
@@ -441,47 +511,40 @@ public void SpawnNextPoint()
     }
 
 
-    // ---------------- Spawn-Area & Debug ----------------
+    // ─── Spawn-Area ───────────────────────────────────────────────────────────
 
     private Rect GetAllowedSpawnRect()
     {
         Rect sa = useSafeAreaForSpawns ? Screen.safeArea : new Rect(0f, 0f, Screen.width, Screen.height);
 
-        float left = Mathf.Lerp(sa.xMin, sa.xMax, leftPercent);
-        float right = Mathf.Lerp(sa.xMin, sa.xMax, 1f - rightPercent);
+        float left   = Mathf.Lerp(sa.xMin, sa.xMax, leftPercent);
+        float right  = Mathf.Lerp(sa.xMin, sa.xMax, 1f - rightPercent);
         float bottom = Mathf.Lerp(sa.yMin, sa.yMax, bottomPercent) + extraBottomGesturePixels;
-        float top = Mathf.Lerp(sa.yMin, sa.yMax, 1f - topPercent);
+        float top    = Mathf.Lerp(sa.yMin, sa.yMax, 1f - topPercent);
 
-        left += spawnPaddingPixels;
-        right -= spawnPaddingPixels;
+        left   += spawnPaddingPixels;
+        right  -= spawnPaddingPixels;
         bottom += spawnPaddingPixels;
-        top -= spawnPaddingPixels;
-
-
+        top    -= spawnPaddingPixels;
 
         float minW = 100f, minH = 100f;
-        left = Mathf.Clamp(left, 0, Screen.width - minW);
-        right = Mathf.Clamp(right, left + minW, Screen.width);
-        bottom = Mathf.Clamp(bottom, 0, Screen.height - minH);
-        top = Mathf.Clamp(top, bottom + minH, Screen.height);
+        left   = Mathf.Clamp(left,   0,          Screen.width  - minW);
+        right  = Mathf.Clamp(right,  left + minW, Screen.width);
+        bottom = Mathf.Clamp(bottom, 0,          Screen.height - minH);
+        top    = Mathf.Clamp(top,    bottom + minH, Screen.height);
 
         return Rect.MinMaxRect(left, bottom, right, top);
     }
 
     private static Rect ScreenRectToViewportRect(Rect r)
     {
-        float vx = r.x / Screen.width;
-        float vy = r.y / Screen.height;
-        float vw = r.width / Screen.width;
-        float vh = r.height / Screen.height;
-        return new Rect(vx, vy, vw, vh);
+        return new Rect(r.x / Screen.width, r.y / Screen.height,
+                        r.width / Screen.width, r.height / Screen.height);
     }
 
     private Vector2 GetRandomViewportPosition(Rect allowedViewport)
     {
-        float minDistPixels = minDistanceAsPercent
-            ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
-            : minScreenDistancePixels;
+        float minDistPixels = GetBaseMinDistancePixels();
 
         Vector2 candidateVP;
         int attempts = 0;
@@ -495,12 +558,9 @@ public void SpawnNextPoint()
 
             if (lastPoint == null || attempts >= 20) break;
 
-            Vector3 lastWorld = lastPoint.transform.position;
-            Vector3 lastVP3 = mainCamera.WorldToViewportPoint(lastWorld);
-            Vector2 lastVP = new Vector2(lastVP3.x, lastVP3.y);
-
-            Vector2 candidatePx = new Vector2(candidateVP.x * Screen.width, candidateVP.y * Screen.height);
-            Vector2 lastPx = new Vector2(lastVP.x * Screen.width, lastVP.y * Screen.height);
+            Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
+            Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
+            Vector2 lastPx      = lastVP      * new Vector2(Screen.width, Screen.height);
 
             if (Vector2.Distance(candidatePx, lastPx) >= minDistPixels) break;
 
@@ -513,7 +573,7 @@ public void SpawnNextPoint()
 
     private Vector3 ViewportToWorldOnZ0(Vector2 viewportPos)
     {
-        var ray = mainCamera.ViewportPointToRay(new Vector3(viewportPos.x, viewportPos.y, 0f));
+        var ray   = mainCamera.ViewportPointToRay(new Vector3(viewportPos.x, viewportPos.y, 0f));
         var plane = new Plane(Vector3.forward, Vector3.zero);
         if (plane.Raycast(ray, out float enter))
         {
@@ -528,31 +588,28 @@ public void SpawnNextPoint()
 
     private float ComputeHalfSizePixels(GameObject prefab)
     {
-        var go = Instantiate(prefab, new Vector3(10000, 10000, 0), Quaternion.identity);
+        var go   = Instantiate(prefab, new Vector3(10000, 10000, 0), Quaternion.identity);
         float half = 20f;
 
         var sr = go.GetComponentInChildren<SpriteRenderer>();
         if (sr != null)
         {
-            Bounds b = sr.bounds;
-            Vector3 c = b.center;
-            Vector3 wRU = c + new Vector3(b.extents.x, b.extents.y, 0f);
-            Vector3 spC = mainCamera.WorldToScreenPoint(c);
-            Vector3 spRU = mainCamera.WorldToScreenPoint(wRU);
-            float diagHalf = Vector2.Distance(new Vector2(spC.x, spC.y), new Vector2(spRU.x, spRU.y));
-            half = Mathf.Max(half, diagHalf);
+            Bounds b  = sr.bounds;
+            Vector3 spC = mainCamera.WorldToScreenPoint(b.center);
+            Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
+            half = Mathf.Max(half, Vector2.Distance(spC, spE));
         }
 
         var rt = go.GetComponentInChildren<RectTransform>();
         if (rt != null)
-        {
-            Vector2 size = rt.rect.size;
-            half = Mathf.Max(half, 0.5f * Mathf.Max(size.x, size.y));
-        }
+            half = Mathf.Max(half, 0.5f * Mathf.Max(rt.rect.size.x, rt.rect.size.y));
 
         Destroy(go);
         return half;
     }
+
+
+    // ─── Gold Mode ────────────────────────────────────────────────────────────
 
     public void OnGoldModePointDestroyed()
     {
@@ -565,249 +622,140 @@ public void SpawnNextPoint()
         goldModeOnCooldown = false;
     }
 
+    private void TrySpawnGoldModePoint()
+    {
+        if (levelUp != null && levelUp.IsShowingPanel) return;
+        if (currentActivationPoint != null) return;
+        if (currentGoldModePoint != null || goldModeOnCooldown) return;
+        if (ScoreManager.Instance == null) return;
+
+        int score = CurrentScore;
+        if (score < goldModeSpawnScoreThreshold) return;
+        if (Random.value > goldModeSpawnChance) return;
+
+        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        float goldOrbHalfSizePx = GetHalfSizePixels(goldModeActivationPointPrefab);
+
+        Vector2 viewportPos = Vector2.zero;
+        int attempts = 0;
+        do
+        {
+            viewportPos = GetRandomViewportPosition(allowedViewport);
+            attempts++;
+            if (IsFarEnoughFromCurrentPoint(viewportPos, goldOrbHalfSizePx)) break;
+        } while (attempts < 20);
+
+        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+
+        var goldModePoint  = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
+        var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
+        if (goldModeScript != null) goldModeScript.spawner = this;
+
+        currentGoldModePoint  = goldModePoint;
+        currentActivationPoint = goldModePoint;
+
+        goldModeOnCooldown = true;
+        StartCoroutine(GoldModeCooldownRoutine());
+    }
+
+
+    // ─── Gravity Mode ─────────────────────────────────────────────────────────
+
+    private void TrySpawnGravityModePoint()
+    {
+        if (levelUp != null && levelUp.IsShowingPanel) return;
+        if (currentActivationPoint != null) return;
+
+        if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
+            return;
+
+        if (Random.value > 0.3f) return;
+
+        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        float gravityOrbHalfSizePx = GetHalfSizePixels(gravityModeActivationPointPrefab);
+
+        Vector2 vp = Vector2.zero;
+        int attempts = 0;
+        do
+        {
+            vp = GetRandomViewportPosition(allowedViewport);
+            attempts++;
+            if (IsFarEnoughFromCurrentPoint(vp, gravityOrbHalfSizePx)) break;
+        } while (attempts < 20);
+
+        Vector3 worldPos = ViewportToWorldOnZ0(vp);
+
+        var orb    = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
+        var script = orb.GetComponent<GravityModeActivationPoint>();
+        if (script != null) script.spawner = this;
+
+        currentActivationPoint = orb;
+    }
+
+
+    // ─── Utility / Public ─────────────────────────────────────────────────────
 
     public void PauseSpawning(bool pause)
     {
         spawnPausedForBanner = pause;
-
-        if (pause)
-        {
-            StopPointTimer();
-        }
+        if (pause) StopPointTimer();
     }
-
 
     public void HandlePointHit(GameObject point)
     {
         ScoreManager.Instance?.AddPointsFromHit();
 
         var basePoint = point.GetComponent<BasePoint>();
-        if (basePoint != null)
-        {
-            basePoint.SendMessage("SpawnExplosion");
-        }
-
+        if (basePoint != null) basePoint.SendMessage("SpawnExplosion");
         PointCleared(point);
-    }
-
-    private bool IsFarEnoughFromCurrentPoint(Vector2 candidateVP)
-    {
-        if (currentPoint == null) return true;
-
-        Vector3 currentWorld = currentPoint.transform.position;
-        Vector3 currentVP3 = mainCamera.WorldToViewportPoint(currentWorld);
-
-        Vector2 currentVP = new Vector2(currentVP3.x, currentVP3.y);
-
-        Vector2 candidatePx = new Vector2(candidateVP.x * Screen.width, candidateVP.y * Screen.height);
-        Vector2 currentPx = new Vector2(currentVP.x * Screen.width, currentVP.y * Screen.height);
-
-        float minDistPixels = minDistanceAsPercent
-            ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
-            : minScreenDistancePixels;
-
-        return Vector2.Distance(candidatePx, currentPx) >= minDistPixels;
     }
 
     public void ResetCurrentPointTimer()
     {
         if (currentPoint == null) return;
-
         StopPointTimer();
 
         if (IsInfinityMode)
         {
             int score = CurrentScore;
             float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
-
-            timeoutRoutine = StartCoroutine(
-                Co_PointTimeout(currentPoint, dynamicTime, useUnscaledTime)
-            );
-        }
-    }
-
-    private void TrySpawnGoldModePoint()
-    {
-        if (levelUp != null && levelUp.IsShowingPanel) return;
-        if (currentActivationPoint != null) return;
-        if (currentGoldModePoint != null || goldModeOnCooldown) return;
-
-        if (ScoreManager.Instance == null) return;
-
-        int score = CurrentScore;
-
-        if (score < goldModeSpawnScoreThreshold) return;
-
-        if (Random.value > goldModeSpawnChance) return;
-
-        Rect allowedScreen = GetAllowedSpawnRect();
-        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-        Vector2 viewportPos;
-        int attempts = 0;
-
-        do
-        {
-            viewportPos = GetRandomViewportPosition(allowedViewport);
-            attempts++;
-
-            if (IsFarEnoughFromCurrentPoint(viewportPos))
-                break;
-
-        } while (attempts < 20);
-
-        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
-
-        var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
-
-        var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
-        if (goldModeScript != null)
-        {
-            goldModeScript.spawner = this;
-        }
-
-        currentGoldModePoint = goldModePoint;
-        currentActivationPoint = goldModePoint;
-
-        // Cooldown starten
-        goldModeOnCooldown = true;
-        StartCoroutine(GoldModeCooldownRoutine());
-    }
-
-
-
-    private void TrySpawnGravityModePoint()
-    {
-            if (levelUp != null && levelUp.IsShowingPanel) return;
-        if (currentActivationPoint != null) return;
-
-        if (SpecialModeManager.Instance != null &&
-            SpecialModeManager.Instance.IsModeActive)
-            return;
-
-        if (Random.value > 0.3f) return; // Spawn Chance
-
-        Rect allowedScreen = GetAllowedSpawnRect();
-        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-
-        Vector2 vp = GetRandomViewportPosition(allowedViewport);
-        Vector3 worldPos = ViewportToWorldOnZ0(vp);
-
-        var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
-        currentActivationPoint = orb;
-
-        var script = orb.GetComponent<GravityModeActivationPoint>();
-        if (script != null)
-        {
-            script.spawner = this;
+            timeoutRoutine = StartCoroutine(Co_PointTimeout(currentPoint, dynamicTime, useUnscaledTime));
         }
     }
 
     public void ClearAllGameplayPoints()
     {
-        // 👉 aktueller Punkt sauber entfernen
         ForceClearCurrentPoint();
 
-        // 👉 Swipe Points entfernen
-        var swipes = FindObjectsByType<SwipePoint>(FindObjectsSortMode.None);
-        foreach (var s in swipes)
+        foreach (var s in FindObjectsByType<SwipePoint>(FindObjectsSortMode.None))
             Destroy(s.gameObject);
 
-        // 👉 Tap Points entfernen
-        var taps = FindObjectsByType<TapPoint>(FindObjectsSortMode.None);
-        foreach (var t in taps)
+        foreach (var t in FindObjectsByType<TapPoint>(FindObjectsSortMode.None))
             Destroy(t.gameObject);
 
-        // 👉 Gold Orb entfernen
-        var golds = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
-        foreach (var g in golds)
+        foreach (var g in FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None))
             Destroy(g.gameObject);
 
-        // 👉 interne Referenzen resetten
-        currentPoint = null;
-        CurrentSwipePoint = null;
+        currentPoint       = null;
+        CurrentSwipePoint  = null;
     }
 
     public void ClearAllActivationOrbs()
     {
-        // 🔴 Gravity Orbs
-        var gravityOrbs = FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None);
-        foreach (var orb in gravityOrbs)
+        foreach (var orb in FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None))
             Destroy(orb.gameObject);
 
-        // 🟡 Gold Orbs
-        var goldOrbs = FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None);
-        foreach (var orb in goldOrbs)
+        foreach (var orb in FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None))
             Destroy(orb.gameObject);
     }
 
     public void ClearActivationPoint()
-{
-    currentActivationPoint = null;
-}
-
-public bool IsLevelUpActive()
-{
-    return levelUp != null && levelUp.IsShowingPanel;
-}
-
-private bool IsFarEnoughFromOrb(
-    Vector2 candidateVP,
-    Vector2 orbVP,
-    float pointHalfSizePx,
-    float orbHalfSizePx
-)
-{
-    Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
-    Vector2 orbPx = orbVP * new Vector2(Screen.width, Screen.height);
-
-    float baseMinDist = minDistanceAsPercent
-        ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
-        : minScreenDistancePixels;
-
-    float sizeBasedDist = pointHalfSizePx + orbHalfSizePx + 40f; // 👈 echter Abstand
-    float totalMinDist = Mathf.Max(baseMinDist, sizeBasedDist);
-
-    return Vector2.Distance(candidatePx, orbPx) >= totalMinDist;
-}
-
-private float GetHalfSizePixels(GameObject go)
-{
-    if (go == null || mainCamera == null) return 40f;
-
-    float half = 40f;
-
-    // 🔥 Collider ist zuverlässiger als Sprite
-    var col = go.GetComponentInChildren<Collider2D>();
-    if (col != null)
     {
-        Bounds b = col.bounds;
-
-        Vector3 center = b.center;
-        Vector3 edge = center + new Vector3(b.extents.x, b.extents.y, 0f);
-
-        Vector3 spC = mainCamera.WorldToScreenPoint(center);
-        Vector3 spE = mainCamera.WorldToScreenPoint(edge);
-
-        float size = Vector2.Distance(spC, spE);
-        half = Mathf.Max(half, size);
+        currentActivationPoint = null;
     }
 
-    // optional fallback auf Sprite
-    var sr = go.GetComponentInChildren<SpriteRenderer>();
-    if (sr != null)
+    public bool IsLevelUpActive()
     {
-        Bounds b = sr.bounds;
-
-        Vector3 center = b.center;
-        Vector3 edge = center + new Vector3(b.extents.x, b.extents.y, 0f);
-
-        Vector3 spC = mainCamera.WorldToScreenPoint(center);
-        Vector3 spE = mainCamera.WorldToScreenPoint(edge);
-
-        float size = Vector2.Distance(spC, spE);
-        half = Mathf.Max(half, size);
+        return levelUp != null && levelUp.IsShowingPanel;
     }
-
-    return half;
-}
 }
