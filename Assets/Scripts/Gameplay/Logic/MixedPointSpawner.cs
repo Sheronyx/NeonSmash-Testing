@@ -137,96 +137,125 @@ public class MixedPointSpawner : MonoBehaviour
         StopPointTimer();
     }
 
-    public void SpawnNextPoint()
+public void SpawnNextPoint()
+{
+    if (levelUp != null && levelUp.IsShowingPanel) return;
+    if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
+
+    bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+    bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
+
+    GameObject prefabToSpawn;
+    bool spawnSwipe;
+
+    if (forceSwipe) spawnSwipe = true;
+    else if (forceNormal) spawnSwipe = false;
+    else spawnSwipe = Random.value < swipeChance;
+
+    if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
     {
-        if (levelUp != null && levelUp.IsShowingPanel) return;
-        if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
+        prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
+    }
+    else
+    {
+        prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
+    }
 
-        bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
-        bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
+    if (spawnSwipe)
+    {
+        swipesInRow++;
+        normalsInRow = 0;
+    }
+    else
+    {
+        normalsInRow++;
+        swipesInRow = 0;
+    }
 
-        GameObject prefabToSpawn;
+    // 🔥 Größe vom Point berechnen
+    float pointSize = GetHalfSizePixels(prefabToSpawn);
 
-        bool spawnSwipe;
+    Rect allowedScreen = GetAllowedSpawnRect();
+    Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
 
-        if (forceSwipe) spawnSwipe = true;
-        else if (forceNormal) spawnSwipe = false;
-        else spawnSwipe = Random.value < swipeChance;
+    Vector2 viewportPos = Vector2.zero;
+    bool foundValid = false;
 
-        if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
+    int maxAttempts = (currentActivationPoint != null) ? 80 : 40;
+    int attempts = 0;
+
+    while (attempts < maxAttempts)
+    {
+        viewportPos = new Vector2(
+            Random.Range(allowedViewport.xMin, allowedViewport.xMax),
+            Random.Range(allowedViewport.yMin, allowedViewport.yMax)
+        );
+
+        attempts++;
+
+        bool farFromLast = true;
+        bool farFromGold = true;
+        bool farFromActivation = true;
+
+        // Abstand zu letztem Punkt
+        if (lastPoint != null)
         {
-            prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
-        }
-        else
-        {
-            prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
-        }
-
-        if (spawnSwipe)
-        {
-            swipesInRow++;
-            normalsInRow = 0;
-        }
-        else
-        {
-            normalsInRow++;
-            swipesInRow = 0;
-        }
-
-        Rect allowedScreen = GetAllowedSpawnRect();
-        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-        Vector2 viewportPos;
-        int attempts = 0;
-
-        do
-        {
-            viewportPos = new Vector2(
-                Random.Range(allowedViewport.xMin, allowedViewport.xMax),
-                Random.Range(allowedViewport.yMin, allowedViewport.yMax)
-            );
-
-            attempts++;
-
-            bool farFromLast = true;
-            bool farFromGold = true;
-
-            // Abstand zu letztem Punkt
-            if (lastPoint != null)
-            {
-                Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
-                farFromLast = IsFarEnough(viewportPos, lastVP);
-            }
-
-            // Abstand zu GoldOrb
-            if (currentGoldModePoint != null)
-            {
-                Vector2 goldVP = mainCamera.WorldToViewportPoint(currentGoldModePoint.transform.position);
-                farFromGold = IsFarEnough(viewportPos, goldVP);
-            }
-
-            if (farFromLast && farFromGold)
-                break;
-
-        } while (attempts < 30);
-
-        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
-        if (portalBeam != null)
-        {
-            portalBeam.SpawnWithBeam(prefabToSpawn, worldPos);
-        }
-        else
-        {
-            CreatePoint(prefabToSpawn, worldPos);
+            Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
+            farFromLast = IsFarEnough(viewportPos, lastVP);
         }
 
-        TrySpawnGoldModePoint();
-        TrySpawnGravityModePoint();
-
-        if (portalFlash != null)
+        // Abstand zu Gold Orb
+        if (currentGoldModePoint != null)
         {
-            portalFlash.FlashParticles();
+            Vector2 goldVP = mainCamera.WorldToViewportPoint(currentGoldModePoint.transform.position);
+            float goldSize = GetHalfSizePixels(currentGoldModePoint);
+
+            farFromGold = IsFarEnoughFromOrb(viewportPos, goldVP, pointSize, goldSize);
+        }
+
+        // Abstand zu Activation Orb (Gravity etc.)
+        if (currentActivationPoint != null)
+        {
+            Vector2 activationVP = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
+            float activationSize = GetHalfSizePixels(currentActivationPoint);
+
+            farFromActivation = IsFarEnoughFromOrb(viewportPos, activationVP, pointSize, activationSize);
+        }
+
+        if (farFromLast && farFromGold && farFromActivation)
+        {
+            foundValid = true;
+            break;
         }
     }
+
+    // ❗ FALLBACK wenn nichts gefunden wurde
+    if (!foundValid)
+    {
+        if (debugLogs) Debug.LogWarning("[Spawner] Kein gültiger Spawn gefunden → fallback Mitte");
+
+        viewportPos = new Vector2(0.5f, 0.5f);
+    }
+
+    Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+
+    if (portalBeam != null)
+    {
+        portalBeam.SpawnWithBeam(prefabToSpawn, worldPos);
+    }
+    else
+    {
+        CreatePoint(prefabToSpawn, worldPos);
+    }
+
+    TrySpawnGoldModePoint();
+    TrySpawnGravityModePoint();
+
+    if (portalFlash != null)
+    {
+        portalFlash.FlashParticles();
+    }
+}
 
 
     private bool IsFarEnough(Vector2 candidateVP, Vector2 targetVP)
@@ -719,5 +748,66 @@ public class MixedPointSpawner : MonoBehaviour
 public bool IsLevelUpActive()
 {
     return levelUp != null && levelUp.IsShowingPanel;
+}
+
+private bool IsFarEnoughFromOrb(
+    Vector2 candidateVP,
+    Vector2 orbVP,
+    float pointHalfSizePx,
+    float orbHalfSizePx
+)
+{
+    Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
+    Vector2 orbPx = orbVP * new Vector2(Screen.width, Screen.height);
+
+    float baseMinDist = minDistanceAsPercent
+        ? Mathf.Min(Screen.width, Screen.height) * minDistancePercent
+        : minScreenDistancePixels;
+
+    float sizeBasedDist = pointHalfSizePx + orbHalfSizePx + 40f; // 👈 echter Abstand
+    float totalMinDist = Mathf.Max(baseMinDist, sizeBasedDist);
+
+    return Vector2.Distance(candidatePx, orbPx) >= totalMinDist;
+}
+
+private float GetHalfSizePixels(GameObject go)
+{
+    if (go == null || mainCamera == null) return 40f;
+
+    float half = 40f;
+
+    // 🔥 Collider ist zuverlässiger als Sprite
+    var col = go.GetComponentInChildren<Collider2D>();
+    if (col != null)
+    {
+        Bounds b = col.bounds;
+
+        Vector3 center = b.center;
+        Vector3 edge = center + new Vector3(b.extents.x, b.extents.y, 0f);
+
+        Vector3 spC = mainCamera.WorldToScreenPoint(center);
+        Vector3 spE = mainCamera.WorldToScreenPoint(edge);
+
+        float size = Vector2.Distance(spC, spE);
+        half = Mathf.Max(half, size);
+    }
+
+    // optional fallback auf Sprite
+    var sr = go.GetComponentInChildren<SpriteRenderer>();
+    if (sr != null)
+    {
+        Bounds b = sr.bounds;
+
+        Vector3 center = b.center;
+        Vector3 edge = center + new Vector3(b.extents.x, b.extents.y, 0f);
+
+        Vector3 spC = mainCamera.WorldToScreenPoint(center);
+        Vector3 spE = mainCamera.WorldToScreenPoint(edge);
+
+        float size = Vector2.Distance(spC, spE);
+        half = Mathf.Max(half, size);
+    }
+
+    return half;
 }
 }
