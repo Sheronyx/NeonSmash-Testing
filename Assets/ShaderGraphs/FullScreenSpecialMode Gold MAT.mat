@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FullScreenSpecialMode_MAT
+  m_Name: FullScreenSpecialMode Gold MAT
   m_Shader: {fileID: -6465566751694194690, guid: 6dd228cd2ce3c4175bebf3c5d21fa896, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -37,12 +37,13 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _VignetteIntensity: 0.95
-    - _VignettePower: 8.4
+    - _Fade: 0
+    - _VignetteIntensity: 1.42
+    - _VignettePower: 19.5
     - _VoronoiIntensity: 2
-    - _VoronoiPower: 1.5
-    - _VoronoiSpeed: 2.5
+    - _VoronoiPower: 4.3
+    - _VoronoiSpeed: 1.74
     m_Colors:
-    - _VignetteColor: {r: 16, g: 6.1347103, b: 0, a: 1}
+    - _VignetteColor: {r: 21.361254, g: 9.056926, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -1,61 +1,153 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Rendering.Universal;
-using UnityEngine.InputSystem;
 
 public class FullScreenController : MonoBehaviour
 {
+    [Header("Renderer Features")]
+    [SerializeField] private ScriptableRendererFeature gravityFeature;
+    [SerializeField] private ScriptableRendererFeature goldFeature;
+    [SerializeField] private ScriptableRendererFeature chaosFeature;
 
-    [Header("Time Stats")]
-    [SerializeField] private float HurtDisplayTime = 1.5f;
-    [SerializeField] private float HurtFadeOutTime  = 0.5f;
+    private ScriptableRendererFeature currentFeature;
+    private Material currentMaterial;
 
-    [Header("References")]
-    [SerializeField] private ScriptableRendererFeature FullScreenDamage;
-    [SerializeField] private Material Material;
+    [Header("Materials")]
+    [SerializeField] private Material gravityMaterial;
+    [SerializeField] private Material goldMaterial;
+    [SerializeField] private Material chaosMaterial;
 
-    [Header("Intensity Stats")]
-    [SerializeField] private float VoronoiIntensityStats = 2.5f;
-    [SerializeField] private float VignetteIntensityStats = 1.25f;
+    [Header("Timing")]
+    [SerializeField] private float fadeInTime = 0.3f;
+    [SerializeField] private float fadeOutTime = 0.5f;
 
-    private int VoronoiIntensity = Shader.PropertyToID("_VoronoiIntensity");
-    private int VignetteIntensity = Shader.PropertyToID("_VignetteIntensity");
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private int FadeID = Shader.PropertyToID("_Fade");
+
+    private Coroutine activeRoutine;
+
+    private void Start()
     {
-        FullScreenDamage.SetActive(false);
+        DisableAllFeatures();
+
+        SetFade(gravityMaterial, 0f);
+        SetFade(goldMaterial, 0f);
+        SetFade(chaosMaterial, 0f);
     }
 
-    void Update()
+    private void OnEnable()
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        SpecialModeManager.OnModeStarted += HandleModeStarted;
+        SpecialModeManager.OnModeEnded += HandleModeEnded;
+    }
+
+private void OnDestroy()
+{
+    Cleanup();
+}
+
+private void OnDisable()
+{
+    SpecialModeManager.OnModeStarted -= HandleModeStarted;
+    SpecialModeManager.OnModeEnded -= HandleModeEnded;
+
+    Cleanup();
+}
+
+private void Cleanup()
+{
+    DisableAllFeatures();
+
+    SetFade(gravityMaterial, 0f);
+    SetFade(goldMaterial, 0f);
+    SetFade(chaosMaterial, 0f);
+
+    currentFeature = null;
+    currentMaterial = null;
+}
+
+    private void HandleModeStarted(SpecialMode mode)
+    {
+        DisableAllFeatures();
+
+        switch (mode)
         {
-            StartCoroutine(Hurt());
+            case SpecialMode.Gravity:
+                currentFeature = gravityFeature;
+                currentMaterial = gravityMaterial;
+                break;
+
+            case SpecialMode.Gold:
+                currentFeature = goldFeature;
+                currentMaterial = goldMaterial;
+                break;
+
+            case SpecialMode.Chaos:
+                currentFeature = chaosFeature;
+                currentMaterial = chaosMaterial;
+                break;
         }
+
+        if (currentFeature != null)
+            currentFeature.SetActive(true);
+
+        if (activeRoutine != null)
+            StopCoroutine(activeRoutine);
+
+        activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
     }
 
-
-    private IEnumerator Hurt()
+    private void HandleModeEnded(SpecialMode mode)
     {
-        FullScreenDamage.SetActive(true);
-        Material.SetFloat(VoronoiIntensity, VoronoiIntensityStats);
-        Material.SetFloat(VignetteIntensity, VignetteIntensityStats);
+        if (activeRoutine != null)
+            StopCoroutine(activeRoutine);
 
-        yield return new WaitForSeconds(HurtDisplayTime);
+        activeRoutine = StartCoroutine(Co_End());
+    }
 
-        float elapsedTime = 0f;
-        while (elapsedTime < HurtFadeOutTime)
+    private IEnumerator Co_End()
+    {
+        yield return Fade(1f, 0f, fadeOutTime);
+
+        if (currentFeature != null)
+            currentFeature.SetActive(false);
+    }
+
+    private IEnumerator Fade(float from, float to, float duration)
+    {
+        float elapsed = 0f;
+
+        while (elapsed < duration)
         {
-            elapsedTime += Time.deltaTime;
-            float lerpedVoronoi = Mathf.Lerp(VoronoiIntensityStats, 0f, elapsedTime / HurtFadeOutTime);
-            float lerpedVignette = Mathf.Lerp(VignetteIntensityStats, 0f, elapsedTime / HurtFadeOutTime);
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
 
-            Material.SetFloat(VoronoiIntensity, lerpedVoronoi);
-            Material.SetFloat(VignetteIntensity, lerpedVignette);
+            float eased = Mathf.SmoothStep(from, to, t);
+
+            ApplyFade(eased);
+
             yield return null;
         }
-    
-        FullScreenDamage.SetActive(false);
+
+        ApplyFade(to);
+    }
+
+    private void ApplyFade(float value)
+    {
+        if (currentMaterial == null) return;
+
+        currentMaterial.SetFloat(FadeID, value);
+    }
+
+    private void SetFade(Material mat, float value)
+    {
+        if (mat == null) return;
+        mat.SetFloat(FadeID, value);
+    }
+
+    private void DisableAllFeatures()
+    {
+        gravityFeature?.SetActive(false);
+        goldFeature?.SetActive(false);
+        chaosFeature?.SetActive(false);
     }
 }

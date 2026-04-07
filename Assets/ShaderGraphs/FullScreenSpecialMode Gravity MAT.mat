@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FullScreenSpecialMode Frost MAT
-  m_Shader: {fileID: -6465566751694194690, guid: 93e6696bcec2b4a30b04e8e1a93303d1, type: 3}
+  m_Name: FullScreenSpecialMode Gravity MAT
+  m_Shader: {fileID: -6465566751694194690, guid: 2c2c30003c1544c4fb280d5dfde619ef, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -38,13 +38,14 @@ Material:
     m_Ints: []
     m_Floats:
     - _Fade: 0
-    - _VignetteIntensity: 1.37
+    - _OutlineThickness: 0.05
+    - _VignetteIntensity: 1.4
     - _VignettePower: 10
-    - _VoronoiDensity: 52
-    - _VoronoiIntensity: 0.06
-    - _VoronoiPower: 2.67
+    - _VoronoiDensity: 48.5
+    - _VoronoiIntensity: 1
+    - _VoronoiPower: 10
     - _VoronoiSpeed: 2
     m_Colors:
-    - _VignetteColor: {r: 0, g: 14.259475, b: 13.10947, a: 1}
+    - _VignetteColor: {r: 2.2925336, g: 0, b: 13.766361, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

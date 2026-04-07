@@ -148,12 +148,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 445568edd082247ea88c909bebeedcbf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FullScreenManager
-  HurtDisplayTime: 10
-  HurtFadeOutTime: 2
-  FullScreenDamage: {fileID: 8376930454273509939, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
-  Material: {fileID: 2100000, guid: cbef78923e39c4cf79ecce0c6b239538, type: 2}
-  VoronoiIntensityStats: 2.5
-  VignetteIntensityStats: 1.25
+  gravityFeature: {fileID: -3947423171857660942, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
+  goldFeature: {fileID: 8376930454273509939, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
+  chaosFeature: {fileID: 1760235388702043137, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
+  gravityMaterial: {fileID: 2100000, guid: cbef78923e39c4cf79ecce0c6b239538, type: 2}
+  goldMaterial: {fileID: 2100000, guid: dcaf334c8947742c9a871546098188d5, type: 2}
+  chaosMaterial: {fileID: 2100000, guid: 6fa94c02c8b7549b4abf5aee44f16e85, type: 2}
+  fadeInTime: 0.4
+  fadeOutTime: 0.6
 --- !u!4 &52405495
 Transform:
   m_ObjectHideFlags: 0
