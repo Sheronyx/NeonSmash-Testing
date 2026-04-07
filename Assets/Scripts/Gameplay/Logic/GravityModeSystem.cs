@@ -23,12 +23,21 @@ public class GravityModeSystem : MonoBehaviour
         Instance = this;
     }
 
-    public void Activate()
-    {
-        if (isActive) return;
+    private BackgroundLooperPerfect looper;
 
-        StartCoroutine(Co_GravityMode());
-    }
+private void Start()
+{
+    looper = FindFirstObjectByType<BackgroundLooperPerfect>();
+}
+
+public void Activate()
+{
+    if (isActive) return;
+
+    looper?.SetGravityMode(true);
+
+    StartCoroutine(Co_GravityMode());
+}
 
 
     private void OnEnable()
@@ -108,15 +117,17 @@ public class GravityModeSystem : MonoBehaviour
         remaining--;
     }
 
-    private void EndMode()
-    {
-        Debug.Log("🌪️ Gravity Mode END");
+private void EndMode()
+{
+    Debug.Log("🌪️ Gravity Mode END");
 
-        isActive = false;
+    looper?.SetGravityMode(false);
 
-        spawner.PauseSpawning(false);
-        spawner.SpawnNextPoint();
+    isActive = false;
 
-        SpecialModeManager.Instance.EndCurrentMode();
-    }
+    spawner.PauseSpawning(false);
+    spawner.SpawnNextPoint();
+
+    SpecialModeManager.Instance.EndCurrentMode();
+}
 }
