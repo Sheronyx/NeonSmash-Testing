@@ -1,26 +1,37 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class PlayerInputHandler : MonoBehaviour
 {
     public static PlayerInputHandler Instance;
 
     private GameControls controls;
+
     private Vector2 touchStartPos;
-    private Vector2 touchEndPos;
+    private Vector2 touchCurrentPos;
+
     private bool isTouching;
     private bool trailStarted;
 
+    private Camera cam;
+
     [Header("Settings")]
     [SerializeField] private float swipeThresholdPixels = 80f;
-    [SerializeField] private float tapRadius = 0.5f;
-    [SerializeField] private LayerMask tapLayerMask = ~0;
+    [SerializeField] private float slashRadius = 0.45f;
+
+    [Header("Layer Masks")]
+    // 👉 Alle normalen Objekte (GravityPoints, TapPoints) – ActivationOrb Layer AUSSCHLIESSEN
+    [SerializeField] private LayerMask hitLayerMask = ~0;
+    // 👉 Nur der "ActivationOrb" Layer – für präzisen direkten Tap
+    [SerializeField] private LayerMask activationOrbLayerMask;
 
     [Header("Refs")]
     [SerializeField] private MixedPointSpawner spawner;
     [SerializeField] private SlashTrail slashTrail;
 
-    private Camera cam;
+    // 👉 verhindert mehrfaches Treffen desselben Objekts pro Swipe
+    private HashSet<GameObject> alreadyHit = new HashSet<GameObject>();
 
     private void Awake()
     {
@@ -36,9 +47,10 @@ public class PlayerInputHandler : MonoBehaviour
 
             isTouching = true;
             trailStarted = false;
+            alreadyHit.Clear();
 
             touchStartPos = controls.Player.TouchPosition.ReadValue<Vector2>();
-            touchEndPos = touchStartPos;
+            touchCurrentPos = touchStartPos;
         };
 
         // TOUCH MOVE
@@ -47,18 +59,26 @@ public class PlayerInputHandler : MonoBehaviour
             if (PauseMenuController.IsPaused) return;
             if (!isTouching) return;
 
-            var pos = ctx.ReadValue<Vector2>();
-            touchEndPos = pos;
+            Vector2 newPos = ctx.ReadValue<Vector2>();
 
+            Vector3 worldPrev = ScreenToWorld2D(touchCurrentPos);
+            Vector3 worldNow = ScreenToWorld2D(newPos);
+
+            touchCurrentPos = newPos;
+
+            // 👉 Trail zeichnen
             if (!trailStarted)
             {
                 trailStarted = true;
-                slashTrail?.Begin(ScreenToWorld2D(pos));
+                slashTrail?.Begin(worldNow);
             }
             else
             {
-                slashTrail?.Move(ScreenToWorld2D(pos));
+                slashTrail?.Move(worldNow);
             }
+
+            // 🔥 CONTINUOUS HIT DETECTION
+            ProcessSlash(worldPrev, worldNow);
         };
 
         // TOUCH END
@@ -72,104 +92,101 @@ public class PlayerInputHandler : MonoBehaviour
             isTouching = false;
             trailStarted = false;
 
-            touchEndPos = controls.Player.TouchPosition.ReadValue<Vector2>();
+            Vector2 touchEndPos = controls.Player.TouchPosition.ReadValue<Vector2>();
 
-            HandleTouchCompleted(touchStartPos, touchEndPos);
-        };
-    }
+            Vector2 delta = touchEndPos - touchStartPos;
 
-    private void HandleTouchCompleted(Vector2 screenStart, Vector2 screenEnd)
-    {
-        Vector2 delta = screenEnd - screenStart;
-
-        // =========================
-        // 🔥 TAP
-        // =========================
-        if (delta.magnitude < swipeThresholdPixels)
-        {
-            Vector3 worldStart = ScreenToWorld2D(screenStart);
-            Vector3 worldEnd = ScreenToWorld2D(screenEnd);
-
-            Vector2 direction = (worldEnd - worldStart);
-            float distance = direction.magnitude;
-
-            if (distance < 0.01f)
-                direction = Vector2.up; // fallback
-            else
-                direction.Normalize();
-
-            RaycastHit2D[] hits = Physics2D.CircleCastAll(
-                worldStart,
-                tapRadius,
-                direction,
-                distance,
-                tapLayerMask
-            );
-
-            // fallback wenn kein Treffer
-            if (hits.Length == 0)
+            // 👉 SWIPE
+            if (delta.magnitude >= swipeThresholdPixels)
             {
-                Collider2D[] overlapHits = Physics2D.OverlapCircleAll(worldStart, tapRadius, tapLayerMask);
+                var swipePoint = spawner != null ? spawner.CurrentSwipePoint : null;
 
-                if (overlapHits.Length > 0)
+                if (swipePoint != null)
                 {
-                    HandleBestOverlap(overlapHits, worldStart);
-                    return;
+                    swipePoint.TryStrikeScreen(touchStartPos, touchEndPos, cam);
                 }
             }
             else
             {
-                HandleBestRaycast(hits, worldStart);
-                return;
+                // 👉 TAP fallback
+                ProcessTap(ScreenToWorld2D(touchEndPos));
             }
-
-            return;
-        }
-
-        // =========================
-        // 🔥 SWIPE
-        // =========================
-        var swipePoint = spawner != null ? spawner.CurrentSwipePoint : null;
-
-        if (swipePoint != null)
-        {
-            swipePoint.TryStrikeScreen(screenStart, screenEnd, cam);
-        }
+        };
     }
 
     // =========================================
-    // 🔥 BEST HIT AUS RAYCAST
+    // 🔥 SLASH SYSTEM (Fruit Ninja Style)
     // =========================================
-    private void HandleBestRaycast(RaycastHit2D[] hits, Vector3 origin)
+    private void ProcessSlash(Vector3 from, Vector3 to)
     {
-        Collider2D best = null;
-        float bestDist = float.MaxValue;
+        Vector2 dir = (to - from);
+        float distance = dir.magnitude;
+
+        if (distance < 0.001f) return;
+
+        dir.Normalize();
+
+        RaycastHit2D[] hits = Physics2D.CircleCastAll(
+            from,
+            slashRadius,
+            dir,
+            distance,
+            hitLayerMask
+        );
 
         foreach (var hit in hits)
         {
-            float dist = Vector2.Distance(origin, hit.point);
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                best = hit.collider;
-            }
-        }
+            if (hit.collider == null) continue;
 
-        if (best != null)
-            ProcessHit(best);
+            GameObject obj = hit.collider.gameObject;
+
+            if (alreadyHit.Contains(obj)) continue;
+            alreadyHit.Add(obj);
+
+            ProcessHit(hit.collider);
+        }
     }
 
     // =========================================
-    // 🔥 BEST HIT AUS OVERLAP
+    // 🔥 TAP FALLBACK
     // =========================================
-    private void HandleBestOverlap(Collider2D[] hits, Vector3 origin)
+    private void ProcessTap(Vector3 worldPos)
     {
+        // ✅ SCHRITT 1: ActivationOrbs – nur bei präzisem direktem Tap (kleiner Radius)
+        Collider2D[] orbHits = Physics2D.OverlapCircleAll(worldPos, slashRadius * 0.55f, activationOrbLayerMask);
+
+        if (orbHits.Length > 0)
+        {
+            Collider2D bestOrb = null;
+            float bestOrbDist = float.MaxValue;
+
+            foreach (var col in orbHits)
+            {
+                float dist = Vector2.Distance(worldPos, col.transform.position);
+                if (dist < bestOrbDist)
+                {
+                    bestOrbDist = dist;
+                    bestOrb = col;
+                }
+            }
+
+            if (bestOrb != null)
+            {
+                ProcessHit(bestOrb);
+                return;
+            }
+        }
+
+        // ✅ SCHRITT 2: Normale Objekte – Collider-Offset erledigt die Prediction (in GravityPoint)
+        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, slashRadius, hitLayerMask);
+
         Collider2D best = null;
         float bestDist = float.MaxValue;
 
         foreach (var col in hits)
         {
-            float dist = Vector2.Distance(origin, col.transform.position);
+            float dist = Vector2.Distance(worldPos, col.transform.position);
+
             if (dist < bestDist)
             {
                 bestDist = dist;
@@ -182,11 +199,11 @@ public class PlayerInputHandler : MonoBehaviour
     }
 
     // =========================================
-    // 🔥 HIT LOGIK (PRIORITÄT)
+    // 🔥 HIT LOGIK (Priorität)
     // =========================================
     private void ProcessHit(Collider2D col)
     {
-        // 🟡 Gold
+        // 🟡 Gold Orb
         var gold = col.GetComponent<GoldModeActivationPoint>();
         if (gold != null)
         {
@@ -202,7 +219,7 @@ public class PlayerInputHandler : MonoBehaviour
             return;
         }
 
-        // 🔴 Gravity Point
+        // 🔴 Gravity Points
         var gravityPoint = col.GetComponent<GravityPoint>();
         if (gravityPoint != null)
         {
@@ -210,13 +227,15 @@ public class PlayerInputHandler : MonoBehaviour
             return;
         }
 
-        // 🔵 Normal
+        // 🔵 Normale Tap Points
         var tapPoint = col.GetComponent<TapPoint>();
         if (tapPoint != null)
         {
             tapPoint.TryTap();
         }
     }
+
+    // =========================================
 
     public void ResetTouch()
     {
@@ -225,6 +244,7 @@ public class PlayerInputHandler : MonoBehaviour
 
         isTouching = false;
         trailStarted = false;
+        alreadyHit.Clear();
     }
 
     private void OnEnable()

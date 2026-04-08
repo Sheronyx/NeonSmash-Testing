@@ -5022,11 +5022,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   swipeThresholdPixels: 50
-  tapLayerMask:
+  slashRadius: 0.45
+  hitLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 63
+  activationOrbLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
   spawner: {fileID: 190732374}
   slashTrail: {fileID: 2063600741}
+  tapPredictionFactor: 0.02
+  tapPredictionMin: 0.03
+  tapPredictionMax: 0.3
 --- !u!4 &2063600740
 Transform:
   m_ObjectHideFlags: 0
