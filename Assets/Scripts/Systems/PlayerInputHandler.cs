@@ -11,8 +11,9 @@ public class PlayerInputHandler : MonoBehaviour
     private bool isTouching;
     private bool trailStarted;
 
-    [Header("Einstellungen")]
+    [Header("Settings")]
     [SerializeField] private float swipeThresholdPixels = 80f;
+    [SerializeField] private float tapRadius = 0.5f;
     [SerializeField] private LayerMask tapLayerMask = ~0;
 
     [Header("Refs")]
@@ -52,14 +53,11 @@ public class PlayerInputHandler : MonoBehaviour
             if (!trailStarted)
             {
                 trailStarted = true;
-
-                if (slashTrail != null)
-                    slashTrail.Begin(ScreenToWorld2D(pos));
+                slashTrail?.Begin(ScreenToWorld2D(pos));
             }
             else
             {
-                if (slashTrail != null)
-                    slashTrail.Move(ScreenToWorld2D(pos));
+                slashTrail?.Move(ScreenToWorld2D(pos));
             }
         };
 
@@ -68,8 +66,8 @@ public class PlayerInputHandler : MonoBehaviour
         {
             if (PauseMenuController.IsPaused) return;
 
-            if (trailStarted && slashTrail != null)
-                slashTrail.End();
+            if (trailStarted)
+                slashTrail?.End();
 
             isTouching = false;
             trailStarted = false;
@@ -84,64 +82,146 @@ public class PlayerInputHandler : MonoBehaviour
     {
         Vector2 delta = screenEnd - screenStart;
 
-        // TAP
+        // =========================
+        // 🔥 TAP
+        // =========================
         if (delta.magnitude < swipeThresholdPixels)
         {
             Vector3 worldStart = ScreenToWorld2D(screenStart);
+            Vector3 worldEnd = ScreenToWorld2D(screenEnd);
 
-            RaycastHit2D hit = Physics2D.Raycast(worldStart, Vector2.zero, 0f, tapLayerMask);
+            Vector2 direction = (worldEnd - worldStart);
+            float distance = direction.magnitude;
 
-if (hit.collider != null)
-{
-    // 🟡 1. Gold Orb (höchste Priorität)
-    var goldPoint = hit.collider.GetComponent<GoldModeActivationPoint>();
-    if (goldPoint != null)
-    {
-        goldPoint.OnTapped();
-        return;
-    }
+            if (distance < 0.01f)
+                direction = Vector2.up; // fallback
+            else
+                direction.Normalize();
 
-    // 🔴 2. Gravity Orb
-    var gravityOrb = hit.collider.GetComponent<GravityModeActivationPoint>();
-    if (gravityOrb != null)
-    {
-        gravityOrb.TryTap();
-        return;
-    }
+            RaycastHit2D[] hits = Physics2D.CircleCastAll(
+                worldStart,
+                tapRadius,
+                direction,
+                distance,
+                tapLayerMask
+            );
 
-    // 🔴 3. Gravity Falling Points
-    var gravityPoint = hit.collider.GetComponent<GravityPoint>();
-    if (gravityPoint != null)
-    {
-        gravityPoint.TryTap();
-        return;
-    }
+            // fallback wenn kein Treffer
+            if (hits.Length == 0)
+            {
+                Collider2D[] overlapHits = Physics2D.OverlapCircleAll(worldStart, tapRadius, tapLayerMask);
 
-    // 🔵 4. Normale Tap Points
-    var tapPoint = hit.collider.GetComponent<TapPoint>();
-    if (tapPoint != null)
-    {
-        tapPoint.TryTap();
-        return;
-    }
-}
+                if (overlapHits.Length > 0)
+                {
+                    HandleBestOverlap(overlapHits, worldStart);
+                    return;
+                }
+            }
+            else
+            {
+                HandleBestRaycast(hits, worldStart);
+                return;
+            }
 
             return;
         }
 
-        // SWIPE
+        // =========================
+        // 🔥 SWIPE
+        // =========================
         var swipePoint = spawner != null ? spawner.CurrentSwipePoint : null;
 
         if (swipePoint != null)
+        {
             swipePoint.TryStrikeScreen(screenStart, screenEnd, cam);
+        }
     }
 
+    // =========================================
+    // 🔥 BEST HIT AUS RAYCAST
+    // =========================================
+    private void HandleBestRaycast(RaycastHit2D[] hits, Vector3 origin)
+    {
+        Collider2D best = null;
+        float bestDist = float.MaxValue;
 
+        foreach (var hit in hits)
+        {
+            float dist = Vector2.Distance(origin, hit.point);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = hit.collider;
+            }
+        }
+
+        if (best != null)
+            ProcessHit(best);
+    }
+
+    // =========================================
+    // 🔥 BEST HIT AUS OVERLAP
+    // =========================================
+    private void HandleBestOverlap(Collider2D[] hits, Vector3 origin)
+    {
+        Collider2D best = null;
+        float bestDist = float.MaxValue;
+
+        foreach (var col in hits)
+        {
+            float dist = Vector2.Distance(origin, col.transform.position);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = col;
+            }
+        }
+
+        if (best != null)
+            ProcessHit(best);
+    }
+
+    // =========================================
+    // 🔥 HIT LOGIK (PRIORITÄT)
+    // =========================================
+    private void ProcessHit(Collider2D col)
+    {
+        // 🟡 Gold
+        var gold = col.GetComponent<GoldModeActivationPoint>();
+        if (gold != null)
+        {
+            gold.OnTapped();
+            return;
+        }
+
+        // 🔴 Gravity Orb
+        var gravityOrb = col.GetComponent<GravityModeActivationPoint>();
+        if (gravityOrb != null)
+        {
+            gravityOrb.TryTap();
+            return;
+        }
+
+        // 🔴 Gravity Point
+        var gravityPoint = col.GetComponent<GravityPoint>();
+        if (gravityPoint != null)
+        {
+            gravityPoint.TryTap();
+            return;
+        }
+
+        // 🔵 Normal
+        var tapPoint = col.GetComponent<TapPoint>();
+        if (tapPoint != null)
+        {
+            tapPoint.TryTap();
+        }
+    }
 
     public void ResetTouch()
     {
-        if (trailStarted && slashTrail != null)
-            slashTrail.End();
+        if (trailStarted)
+            slashTrail?.End();
 
         isTouching = false;
         trailStarted = false;
@@ -149,16 +229,13 @@ if (hit.collider != null)
 
     private void OnEnable()
     {
-        if (controls == null)
-            controls = new GameControls();
-
+        controls ??= new GameControls();
         controls.Enable();
     }
 
     private void OnDisable()
     {
-        if (controls != null)
-            controls.Disable();
+        controls?.Disable();
     }
 
     private Vector3 ScreenToWorld2D(Vector2 screenPos)
