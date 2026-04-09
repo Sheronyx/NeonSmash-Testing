@@ -46,8 +46,25 @@ public class GameUIManager : MonoBehaviour
         {
             resultHeadlineTMP.text = text;
             resultScoreTMP.text = score.ToString();
-            yield return Fade(resultPanel, 0, 1, 0.25f);
+
+            // Buttons sofort klickbar — nicht erst nach der Fade-Animation
+            resultPanel.interactable = true;
+            resultPanel.blocksRaycasts = true;
+            yield return FadeAlpha(resultPanel, 0, 1, 0.25f);
         }
+    }
+
+    private IEnumerator FadeAlpha(CanvasGroup cg, float from, float to, float duration)
+    {
+        float t = 0f;
+        cg.alpha = from;
+        while (t < duration)
+        {
+            t += Time.unscaledDeltaTime;
+            cg.alpha = Mathf.Lerp(from, to, t / duration);
+            yield return null;
+        }
+        cg.alpha = to;
     }
 
     private IEnumerator Fade(CanvasGroup cg, float from, float to, float duration)

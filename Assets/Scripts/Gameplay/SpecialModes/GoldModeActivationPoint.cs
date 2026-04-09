@@ -94,7 +94,8 @@ public void OnTapped()
         // 👉 VFX am Portal
         if (SlashVFXPrefab != null)
         {
-            Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
+            var slash = Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
+            Destroy(slash, 2f);
         }
 
         // 👉 Portal sofort visuell gold + flash

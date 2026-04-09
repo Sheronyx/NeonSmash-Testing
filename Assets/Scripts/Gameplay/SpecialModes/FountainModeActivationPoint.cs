@@ -61,7 +61,8 @@ public class FountainModeActivationPoint : MonoBehaviour
     // 👉 SLASH VFX
     if (slashVFXPrefab != null)
     {
-        Instantiate(slashVFXPrefab, end, Quaternion.identity);
+        var slash = Instantiate(slashVFXPrefab, end, Quaternion.identity);
+        Destroy(slash, 2f);
     }
 
     // 👉 Portal wird blau + Flash

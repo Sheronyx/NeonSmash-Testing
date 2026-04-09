@@ -26,6 +26,7 @@ public class MixedPointSpawner : MonoBehaviour
     [Header("Activation Orb Cooldown (geteilt)")]
     [SerializeField] private float activationOrbCooldown = 60f;
     private bool activationOrbOnCooldown = false;
+    private SpecialMode lastSpawnedOrbMode = SpecialMode.None;
     private bool isConvertingPoints = false;
 
 
@@ -486,6 +487,15 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (isInfinityMode)
         {
+            MusicManager.Instance?.ResetGameOnGameOver();
+            SfxManager.Instance?.PlayInfinityGameOver();
+        }
+
+        onGameOver?.Invoke();
+        uiManager?.ShowGameOver(score, isInfinityMode);
+
+        if (isInfinityMode)
+        {
             try
             {
                 bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.InfinityId);
@@ -496,13 +506,7 @@ public class MixedPointSpawner : MonoBehaviour
             {
                 Debug.LogWarning($"[LB] Upload fehlgeschlagen: {e.Message}");
             }
-
-            MusicManager.Instance?.ResetGameOnGameOver();
-            SfxManager.Instance?.PlayInfinityGameOver();
         }
-
-        onGameOver?.Invoke();
-        uiManager?.ShowGameOver(score, isInfinityMode);
     }
 
     private void GameOver()
@@ -638,6 +642,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
         if (currentGoldModePoint != null || activationOrbOnCooldown) return;
+        if (lastSpawnedOrbMode == SpecialMode.Gold) return;
         if (ScoreManager.Instance == null) return;
 
         int score = CurrentScore;
@@ -664,6 +669,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         currentGoldModePoint = goldModePoint;
         currentActivationPoint = goldModePoint;
+        lastSpawnedOrbMode = SpecialMode.Gold;
 
         StartSharedCooldown();
     }
@@ -676,6 +682,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
         if (activationOrbOnCooldown) return;
+        if (lastSpawnedOrbMode == SpecialMode.Gravity) return;
 
         if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
             return;
@@ -701,6 +708,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (script != null) script.spawner = this;
 
         currentActivationPoint = orb;
+        lastSpawnedOrbMode = SpecialMode.Gravity;
         StartSharedCooldown();
     }
 
@@ -775,6 +783,7 @@ public class MixedPointSpawner : MonoBehaviour
     {
         if (currentActivationPoint != null) return;
         if (activationOrbOnCooldown) return;
+        if (lastSpawnedOrbMode == SpecialMode.Fountain) return;
 
         if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
             return;
@@ -791,6 +800,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (script != null) script.spawner = this;
 
         currentActivationPoint = orb;
+        lastSpawnedOrbMode = SpecialMode.Fountain;
         StartSharedCooldown();
     }
 }
