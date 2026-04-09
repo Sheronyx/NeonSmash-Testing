@@ -407,9 +407,8 @@ public class MixedPointSpawner : MonoBehaviour
             int score = CurrentScore;
             if (levelUp.TryTriggerLevelUp(score))
             {
-                float newRT = levelUp.GetReactionTimeForScore(score, reactionTime);
                 MusicManager.Instance?.IncreaseGameMusicSpeed();
-                StartCoroutine(LevelRoutine(newRT));
+                StartCoroutine(LevelRoutine());
                 return;
             }
         }
@@ -427,12 +426,10 @@ public class MixedPointSpawner : MonoBehaviour
         return false;
     }
 
-    private IEnumerator LevelRoutine(float newRT)
+    private IEnumerator LevelRoutine()
     {
-        spawnPausedForBanner = true;
-        yield return levelUp.ShowLevelPanel(levelUp.CurrentLevel, newRT);
-        spawnPausedForBanner = false;
         SpawnNextPoint();
+        yield break;
     }
 
 
