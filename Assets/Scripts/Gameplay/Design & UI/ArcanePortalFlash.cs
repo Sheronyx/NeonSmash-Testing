@@ -15,6 +15,20 @@ public class ArcanePortalFlash : MonoBehaviour
 
     private Coroutine flashRoutine;
 
+    private Vector4 baseNormal;
+    private Vector4 baseGold;
+    private Vector4 baseBlue;
+
+    private void Start()
+    {
+        if (vfx != null)
+        {
+            baseNormal = vfx.GetVector4("Color Particles Normal");
+            baseGold   = vfx.GetVector4("Color Particles Gold");
+            baseBlue   = vfx.GetVector4("Color Particles Blue");
+        }
+    }
+
     // 🔥 NEU: hört auf ALLE Modes
     private void OnEnable()
     {
@@ -68,7 +82,7 @@ public class ArcanePortalFlash : MonoBehaviour
         else
             particlesName = "Color Particles Normal";
 
-        Vector4 normalParticles = vfx.GetVector4(particlesName);
+        Vector4 normalParticles = isFountain ? baseBlue : isGold ? baseGold : baseNormal;
         Vector4 clearedParticles = normalParticles * flashMultiplier;
 
         // --- Fade IN ---

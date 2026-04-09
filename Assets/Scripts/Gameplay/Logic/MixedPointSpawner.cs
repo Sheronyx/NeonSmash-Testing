@@ -21,9 +21,11 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject goldModeActivationPointPrefab;
     [SerializeField] private int goldModeSpawnScoreThreshold = 5;
     [SerializeField] private float goldModeSpawnChance = 1f;
-    [SerializeField] private float goldModeCooldown = 60f;
-    private bool goldModeOnCooldown = false;
     private GameObject currentGoldModePoint;
+
+    [Header("Activation Orb Cooldown (geteilt)")]
+    [SerializeField] private float activationOrbCooldown = 60f;
+    private bool activationOrbOnCooldown = false;
     private bool isConvertingPoints = false;
 
 
@@ -619,17 +621,23 @@ public class MixedPointSpawner : MonoBehaviour
         currentGoldModePoint = null;
     }
 
-    private IEnumerator GoldModeCooldownRoutine()
+    private IEnumerator SharedOrbCooldownRoutine()
     {
-        yield return new WaitForSeconds(goldModeCooldown);
-        goldModeOnCooldown = false;
+        yield return new WaitForSeconds(activationOrbCooldown);
+        activationOrbOnCooldown = false;
+    }
+
+    private void StartSharedCooldown()
+    {
+        activationOrbOnCooldown = true;
+        StartCoroutine(SharedOrbCooldownRoutine());
     }
 
     private void TrySpawnGoldModePoint()
     {
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
-        if (currentGoldModePoint != null || goldModeOnCooldown) return;
+        if (currentGoldModePoint != null || activationOrbOnCooldown) return;
         if (ScoreManager.Instance == null) return;
 
         int score = CurrentScore;
@@ -657,8 +665,7 @@ public class MixedPointSpawner : MonoBehaviour
         currentGoldModePoint = goldModePoint;
         currentActivationPoint = goldModePoint;
 
-        goldModeOnCooldown = true;
-        StartCoroutine(GoldModeCooldownRoutine());
+        StartSharedCooldown();
     }
 
 
@@ -668,6 +675,7 @@ public class MixedPointSpawner : MonoBehaviour
     {
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
+        if (activationOrbOnCooldown) return;
 
         if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
             return;
@@ -693,6 +701,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (script != null) script.spawner = this;
 
         currentActivationPoint = orb;
+        StartSharedCooldown();
     }
 
 
@@ -763,25 +772,25 @@ public class MixedPointSpawner : MonoBehaviour
     }
 
     private void TrySpawnFountainModePoint()
-{
-    if (currentActivationPoint != null) return;
+    {
+        if (currentActivationPoint != null) return;
+        if (activationOrbOnCooldown) return;
 
-    if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
-        return;
+        if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
+            return;
 
-    if (Random.value > 0.3f) return;
+        if (Random.value > 0.3f) return;
 
-    Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
-    float size = GetHalfSizePixels(fountainModeActivationPointPrefab);
+        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        Vector2 vp = GetRandomViewportPosition(allowedViewport);
+        Vector3 worldPos = ViewportToWorldOnZ0(vp);
 
-    Vector2 vp = GetRandomViewportPosition(allowedViewport);
-    Vector3 worldPos = ViewportToWorldOnZ0(vp);
+        var orb = Instantiate(fountainModeActivationPointPrefab, worldPos, Quaternion.identity);
+        var script = orb.GetComponent<FountainModeActivationPoint>();
 
-    var orb = Instantiate(fountainModeActivationPointPrefab, worldPos, Quaternion.identity);
-    var script = orb.GetComponent<FountainModeActivationPoint>();
+        if (script != null) script.spawner = this;
 
-    if (script != null) script.spawner = this;
-
-    currentActivationPoint = orb;
-}
+        currentActivationPoint = orb;
+        StartSharedCooldown();
+    }
 }
