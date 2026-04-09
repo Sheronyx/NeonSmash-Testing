@@ -126,22 +126,6 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: IsFrostMode
-    path: IsFrostMode
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Bool
-    realType: Boolean
-    defaultValue:
-      m_Type:
-        m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
-          PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: False
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
   - name: Color Portal Gold
     path: Color Portal Gold
     tooltip: 
@@ -190,22 +174,6 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: Color Portal Frost
-    path: Color Portal Frost
-    tooltip: 
-    space: -1
-    spaceable: 0
-    sheetType: m_Vector4f
-    realType: Color
-    defaultValue:
-      m_Type:
-        m_SerializableType: UnityEngine.Color, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
-      m_SerializableObject: '{"r":0.0,"g":14.237588882446289,"b":22.363521575927736,"a":1.0}'
-    min: -Infinity
-    max: Infinity
-    enumValues: []
-    descendantCount: 0
   - name: Color Particles Blue
     path: Color Particles Blue
     tooltip: 
@@ -218,6 +186,38 @@ MonoBehaviour:
         m_SerializableType: UnityEngine.Color, UnityEngine.CoreModule, Version=0.0.0.0,
           Culture=neutral, PublicKeyToken=null
       m_SerializableObject: '{"r":3.1372554302215578,"g":6.236802577972412,"b":23.9686279296875,"a":0.0}'
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: IsFountainMode
+    path: IsFountainMode
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Bool
+    realType: Boolean
+    defaultValue:
+      m_Type:
+        m_SerializableType: System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral,
+          PublicKeyToken=b77a5c561934e089
+      m_SerializableObject: False
+    min: -Infinity
+    max: Infinity
+    enumValues: []
+    descendantCount: 0
+  - name: Color Portal Frost
+    path: Color Portal Frost
+    tooltip: 
+    space: -1
+    spaceable: 0
+    sheetType: m_Vector4f
+    realType: Color
+    defaultValue:
+      m_Type:
+        m_SerializableType: UnityEngine.Color, UnityEngine.CoreModule, Version=0.0.0.0,
+          Culture=neutral, PublicKeyToken=null
+      m_SerializableObject: '{"r":0.0,"g":14.237588882446289,"b":22.363521575927736,"a":1.0}'
     min: -Infinity
     max: Infinity
     enumValues: []
@@ -238,8 +238,8 @@ MonoBehaviour:
     max: Infinity
     enumValues: []
     descendantCount: 0
-  - name: IsFountainMode
-    path: IsFountainMode
+  - name: IsFrostMode
+    path: IsFrostMode
     tooltip: 
     space: -1
     spaceable: 0
@@ -8644,7 +8644,7 @@ MonoBehaviour:
   - {fileID: 114350483966676909}
   m_ExposedName: Color Portal Gold
   m_Exposed: 1
-  m_Order: 4
+  m_Order: 3
   m_Category: 
   m_Min:
     m_Type:
@@ -8861,7 +8861,7 @@ MonoBehaviour:
   - {fileID: 114350483966676915}
   m_ExposedName: Color Particles Gold
   m_Exposed: 1
-  m_Order: 5
+  m_Order: 4
   m_Category: 
   m_Min:
     m_Type:
@@ -9087,7 +9087,7 @@ MonoBehaviour:
   - {fileID: 114350483966677024}
   m_ExposedName: Color Portal Fountain
   m_Exposed: 1
-  m_Order: 6
+  m_Order: 5
   m_Category: 
   m_Min:
     m_Type:
@@ -9304,7 +9304,7 @@ MonoBehaviour:
   - {fileID: 114350483966677032}
   m_ExposedName: Color Particles Blue
   m_Exposed: 1
-  m_Order: 8
+  m_Order: 6
   m_Category: 
   m_Min:
     m_Type:
@@ -9530,7 +9530,7 @@ MonoBehaviour:
   - {fileID: 114350483966677038}
   m_ExposedName: IsFountainMode
   m_Exposed: 1
-  m_Order: 10
+  m_Order: 7
   m_Category: 
   m_Min:
     m_Type:
@@ -10779,7 +10779,7 @@ MonoBehaviour:
   - {fileID: 114350483966677161}
   m_ExposedName: Color Portal Frost
   m_Exposed: 1
-  m_Order: 7
+  m_Order: 8
   m_Category: 
   m_Min:
     m_Type:
@@ -11797,7 +11797,7 @@ MonoBehaviour:
   - {fileID: 114350483966677193}
   m_ExposedName: IsFrostMode
   m_Exposed: 1
-  m_Order: 3
+  m_Order: 10
   m_Category: 
   m_Min:
     m_Type:
