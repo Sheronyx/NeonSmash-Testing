@@ -100,7 +100,7 @@ public void OnTapped()
         // 👉 Portal sofort visuell gold + flash
         if (portal != null)
         {
-            portal.SetGoldMode(true);
+            portal.SetMode(SpecialMode.Gold);
 
             portal.FlashParticles();
         }
@@ -116,7 +116,7 @@ public void OnTapped()
         // 👉 VISUAL RESET
         if (portal != null)
         {
-            portal.SetGoldMode(false);
+            portal.SetMode(SpecialMode.None);
         }
 
         FinishCombo();

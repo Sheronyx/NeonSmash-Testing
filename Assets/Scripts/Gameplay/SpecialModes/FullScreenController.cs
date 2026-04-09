@@ -8,6 +8,7 @@ public class FullScreenController : MonoBehaviour
     [SerializeField] private ScriptableRendererFeature gravityFeature;
     [SerializeField] private ScriptableRendererFeature goldFeature;
     [SerializeField] private ScriptableRendererFeature chaosFeature;
+    [SerializeField] private ScriptableRendererFeature fountainFeature;
 
     private ScriptableRendererFeature currentFeature;
     private Material currentMaterial;
@@ -16,6 +17,7 @@ public class FullScreenController : MonoBehaviour
     [SerializeField] private Material gravityMaterial;
     [SerializeField] private Material goldMaterial;
     [SerializeField] private Material chaosMaterial;
+    [SerializeField] private Material fountainMaterial;
 
     [Header("Timing")]
     [SerializeField] private float fadeInTime = 0.3f;
@@ -32,6 +34,7 @@ public class FullScreenController : MonoBehaviour
         SetFade(gravityMaterial, 0f);
         SetFade(goldMaterial, 0f);
         SetFade(chaosMaterial, 0f);
+        SetFade(fountainMaterial, 0f);
     }
 
     private void OnEnable()
@@ -66,35 +69,40 @@ private void Cleanup()
 }
 
     private void HandleModeStarted(SpecialMode mode)
+{
+    DisableAllFeatures();
+
+    switch (mode)
     {
-        DisableAllFeatures();
+        case SpecialMode.Gravity:
+            currentFeature = gravityFeature;
+            currentMaterial = gravityMaterial;
+            break;
 
-        switch (mode)
-        {
-            case SpecialMode.Gravity:
-                currentFeature = gravityFeature;
-                currentMaterial = gravityMaterial;
-                break;
+        case SpecialMode.Gold:
+            currentFeature = goldFeature;
+            currentMaterial = goldMaterial;
+            break;
 
-            case SpecialMode.Gold:
-                currentFeature = goldFeature;
-                currentMaterial = goldMaterial;
-                break;
+        case SpecialMode.Chaos:
+            currentFeature = chaosFeature;
+            currentMaterial = chaosMaterial;
+            break;
 
-            case SpecialMode.Chaos:
-                currentFeature = chaosFeature;
-                currentMaterial = chaosMaterial;
-                break;
-        }
-
-        if (currentFeature != null)
-            currentFeature.SetActive(true);
-
-        if (activeRoutine != null)
-            StopCoroutine(activeRoutine);
-
-        activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
+        case SpecialMode.Fountain: // 👈 DAS IST DEIN FIX
+            currentFeature = fountainFeature;
+            currentMaterial = fountainMaterial;
+            break;
     }
+
+    if (currentFeature != null)
+        currentFeature.SetActive(true);
+
+    if (activeRoutine != null)
+        StopCoroutine(activeRoutine);
+
+    activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
+}
 
     private void HandleModeEnded(SpecialMode mode)
     {
@@ -149,5 +157,6 @@ private void Cleanup()
         gravityFeature?.SetActive(false);
         goldFeature?.SetActive(false);
         chaosFeature?.SetActive(false);
+        fountainFeature?.SetActive(false);
     }
 }

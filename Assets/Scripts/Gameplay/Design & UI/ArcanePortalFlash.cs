@@ -15,28 +15,32 @@ public class ArcanePortalFlash : MonoBehaviour
 
     private Coroutine flashRoutine;
 
-
+    // 🔥 NEU: hört auf ALLE Modes
     private void OnEnable()
     {
-        GoldModeSystem.OnGoldModeStarted += HandleGoldStart;
-        GoldModeSystem.OnGoldModeEnded += HandleGoldEnd;
+        SpecialModeManager.OnModeStarted += HandleModeStart;
+        SpecialModeManager.OnModeEnded += HandleModeEnd;
     }
 
     private void OnDisable()
     {
-        GoldModeSystem.OnGoldModeStarted -= HandleGoldStart;
-        GoldModeSystem.OnGoldModeEnded -= HandleGoldEnd;
+        SpecialModeManager.OnModeStarted -= HandleModeStart;
+        SpecialModeManager.OnModeEnded -= HandleModeEnd;
     }
 
-    private void HandleGoldStart()
+    private void HandleModeStart(SpecialMode mode)
     {
-        SetGoldMode(true);
+        SetMode(mode);
     }
 
-    private void HandleGoldEnd()
+    private void HandleModeEnd(SpecialMode mode)
     {
-        SetGoldMode(false);
+        SetMode(SpecialMode.None);
     }
+
+    // =========================
+    // 💥 FLASH
+    // =========================
 
     public void FlashParticles()
     {
@@ -51,21 +55,21 @@ public class ArcanePortalFlash : MonoBehaviour
         if (vfx == null)
             yield break;
 
+        // 🔥 MODE CHECK (NEU)
+        bool isFountain = vfx.GetBool("IsFountainMode");
         bool isGold = vfx.GetBool("IsGoldMode");
 
-        // 👉 richtige Property je nach Mode
-        string particlesName = isGold ? "Color Particles Gold" : "Color Particles Normal";
+        string particlesName;
 
-        // aktuelle Farbe holen
+        if (isFountain)
+            particlesName = "Color Particles Blue";
+        else if (isGold)
+            particlesName = "Color Particles Gold";
+        else
+            particlesName = "Color Particles Normal";
+
         Vector4 normalParticles = vfx.GetVector4(particlesName);
-
-        // Ziel = heller machen (wie früher "cleared")
         Vector4 clearedParticles = normalParticles * flashMultiplier;
-
-        // DEBUG
-        Debug.Log($"[FLASH] Mode: {(isGold ? "GOLD" : "NORMAL")}");
-        Debug.Log($"[FLASH] Normal: {normalParticles}");
-        Debug.Log($"[FLASH] Target: {clearedParticles}");
 
         // --- Fade IN ---
         float t = 0f;
@@ -79,7 +83,6 @@ public class ArcanePortalFlash : MonoBehaviour
             yield return null;
         }
 
-        // exakt setzen
         vfx.SetVector4(particlesName, clearedParticles);
 
         yield return new WaitForSeconds(holdTime);
@@ -96,18 +99,32 @@ public class ArcanePortalFlash : MonoBehaviour
             yield return null;
         }
 
-        // exakt zurücksetzen
         vfx.SetVector4(particlesName, normalParticles);
-
-        Debug.Log("[FLASH] Done");
 
         flashRoutine = null;
     }
 
-    public void SetGoldMode(bool active)
+    // =========================
+    // 🎨 MODE SWITCH
+    // =========================
+
+    public void SetMode(SpecialMode mode)
     {
         if (vfx == null) return;
 
-        vfx.SetBool("IsGoldMode", active);
+        // Reset
+        vfx.SetBool("IsGoldMode", false);
+        vfx.SetBool("IsFountainMode", false);
+
+        switch (mode)
+        {
+            case SpecialMode.Gold:
+                vfx.SetBool("IsGoldMode", true);
+                break;
+
+            case SpecialMode.Fountain:
+                vfx.SetBool("IsFountainMode", true);
+                break;
+        }
     }
 }

@@ -227,6 +227,22 @@ public class PlayerInputHandler : MonoBehaviour
             return;
         }
 
+        // 🔵 Fountain Orb
+        var fountainOrb = col.GetComponent<FountainModeActivationPoint>();
+        if (fountainOrb != null)
+        {
+            fountainOrb.TryTap();
+            return;
+        }
+
+        // 🔵 Fountain Points
+        var fountainPoint = col.GetComponent<FountainPoint>();
+        if (fountainPoint != null)
+        {
+            fountainPoint.TryTap();
+            return;
+        }
+
         // 🔵 Normale Tap Points
         var tapPoint = col.GetComponent<TapPoint>();
         if (tapPoint != null)

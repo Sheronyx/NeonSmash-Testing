@@ -4,7 +4,7 @@ using System.Collections;
 
 public class MixedPointSpawner : MonoBehaviour
 {
-
+    [SerializeField] private GameObject fountainModeActivationPointPrefab;
     [SerializeField] private GameObject normalPointGoldPrefab;
     [SerializeField] private GameObject swipePointGoldPrefab;
 
@@ -143,6 +143,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void SpawnNextPoint()
     {
+        
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
 
@@ -155,6 +156,8 @@ public class MixedPointSpawner : MonoBehaviour
         if (forceSwipe) spawnSwipe = true;
         else if (forceNormal) spawnSwipe = false;
         else spawnSwipe = Random.value < swipeChance;
+
+        
 
         if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
         {
@@ -260,7 +263,7 @@ public class MixedPointSpawner : MonoBehaviour
     private bool IsFarEnough(Vector2 candidateVP, Vector2 targetVP)
     {
         Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
-        Vector2 targetPx    = targetVP    * new Vector2(Screen.width, Screen.height);
+        Vector2 targetPx = targetVP * new Vector2(Screen.width, Screen.height);
         return Vector2.Distance(candidatePx, targetPx) >= GetBaseMinDistancePixels();
     }
 
@@ -275,10 +278,10 @@ public class MixedPointSpawner : MonoBehaviour
         float orbHalfSizePx)
     {
         Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
-        Vector2 orbPx       = orbVP       * new Vector2(Screen.width, Screen.height);
+        Vector2 orbPx = orbVP * new Vector2(Screen.width, Screen.height);
 
         float sizeBasedDist = pointHalfSizePx + orbHalfSizePx + Mathf.Max(0f, activationOrbVisualGapPixels);
-        float totalMinDist  = Mathf.Max(GetBaseMinDistancePixels(), sizeBasedDist);
+        float totalMinDist = Mathf.Max(GetBaseMinDistancePixels(), sizeBasedDist);
 
         return Vector2.Distance(candidatePx, orbPx) >= totalMinDist;
     }
@@ -374,6 +377,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         TrySpawnGoldModePoint();
         TrySpawnGravityModePoint();
+        TrySpawnFountainModePoint();
 
         if (portalFlash != null)
         {
@@ -517,21 +521,21 @@ public class MixedPointSpawner : MonoBehaviour
     {
         Rect sa = useSafeAreaForSpawns ? Screen.safeArea : new Rect(0f, 0f, Screen.width, Screen.height);
 
-        float left   = Mathf.Lerp(sa.xMin, sa.xMax, leftPercent);
-        float right  = Mathf.Lerp(sa.xMin, sa.xMax, 1f - rightPercent);
+        float left = Mathf.Lerp(sa.xMin, sa.xMax, leftPercent);
+        float right = Mathf.Lerp(sa.xMin, sa.xMax, 1f - rightPercent);
         float bottom = Mathf.Lerp(sa.yMin, sa.yMax, bottomPercent) + extraBottomGesturePixels;
-        float top    = Mathf.Lerp(sa.yMin, sa.yMax, 1f - topPercent);
+        float top = Mathf.Lerp(sa.yMin, sa.yMax, 1f - topPercent);
 
-        left   += spawnPaddingPixels;
-        right  -= spawnPaddingPixels;
+        left += spawnPaddingPixels;
+        right -= spawnPaddingPixels;
         bottom += spawnPaddingPixels;
-        top    -= spawnPaddingPixels;
+        top -= spawnPaddingPixels;
 
         float minW = 100f, minH = 100f;
-        left   = Mathf.Clamp(left,   0,          Screen.width  - minW);
-        right  = Mathf.Clamp(right,  left + minW, Screen.width);
-        bottom = Mathf.Clamp(bottom, 0,          Screen.height - minH);
-        top    = Mathf.Clamp(top,    bottom + minH, Screen.height);
+        left = Mathf.Clamp(left, 0, Screen.width - minW);
+        right = Mathf.Clamp(right, left + minW, Screen.width);
+        bottom = Mathf.Clamp(bottom, 0, Screen.height - minH);
+        top = Mathf.Clamp(top, bottom + minH, Screen.height);
 
         return Rect.MinMaxRect(left, bottom, right, top);
     }
@@ -560,7 +564,7 @@ public class MixedPointSpawner : MonoBehaviour
 
             Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
             Vector2 candidatePx = candidateVP * new Vector2(Screen.width, Screen.height);
-            Vector2 lastPx      = lastVP      * new Vector2(Screen.width, Screen.height);
+            Vector2 lastPx = lastVP * new Vector2(Screen.width, Screen.height);
 
             if (Vector2.Distance(candidatePx, lastPx) >= minDistPixels) break;
 
@@ -573,7 +577,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private Vector3 ViewportToWorldOnZ0(Vector2 viewportPos)
     {
-        var ray   = mainCamera.ViewportPointToRay(new Vector3(viewportPos.x, viewportPos.y, 0f));
+        var ray = mainCamera.ViewportPointToRay(new Vector3(viewportPos.x, viewportPos.y, 0f));
         var plane = new Plane(Vector3.forward, Vector3.zero);
         if (plane.Raycast(ray, out float enter))
         {
@@ -588,13 +592,13 @@ public class MixedPointSpawner : MonoBehaviour
 
     private float ComputeHalfSizePixels(GameObject prefab)
     {
-        var go   = Instantiate(prefab, new Vector3(10000, 10000, 0), Quaternion.identity);
+        var go = Instantiate(prefab, new Vector3(10000, 10000, 0), Quaternion.identity);
         float half = 20f;
 
         var sr = go.GetComponentInChildren<SpriteRenderer>();
         if (sr != null)
         {
-            Bounds b  = sr.bounds;
+            Bounds b = sr.bounds;
             Vector3 spC = mainCamera.WorldToScreenPoint(b.center);
             Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
             half = Mathf.Max(half, Vector2.Distance(spC, spE));
@@ -647,11 +651,11 @@ public class MixedPointSpawner : MonoBehaviour
 
         Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
 
-        var goldModePoint  = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
+        var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
         var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
         if (goldModeScript != null) goldModeScript.spawner = this;
 
-        currentGoldModePoint  = goldModePoint;
+        currentGoldModePoint = goldModePoint;
         currentActivationPoint = goldModePoint;
 
         goldModeOnCooldown = true;
@@ -685,7 +689,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         Vector3 worldPos = ViewportToWorldOnZ0(vp);
 
-        var orb    = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
+        var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
         var script = orb.GetComponent<GravityModeActivationPoint>();
         if (script != null) script.spawner = this;
 
@@ -736,8 +740,8 @@ public class MixedPointSpawner : MonoBehaviour
         foreach (var g in FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None))
             Destroy(g.gameObject);
 
-        currentPoint       = null;
-        CurrentSwipePoint  = null;
+        currentPoint = null;
+        CurrentSwipePoint = null;
     }
 
     public void ClearAllActivationOrbs()
@@ -758,4 +762,27 @@ public class MixedPointSpawner : MonoBehaviour
     {
         return levelUp != null && levelUp.IsShowingPanel;
     }
+
+    private void TrySpawnFountainModePoint()
+{
+    if (currentActivationPoint != null) return;
+
+    if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
+        return;
+
+    if (Random.value > 0.3f) return;
+
+    Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+    float size = GetHalfSizePixels(fountainModeActivationPointPrefab);
+
+    Vector2 vp = GetRandomViewportPosition(allowedViewport);
+    Vector3 worldPos = ViewportToWorldOnZ0(vp);
+
+    var orb = Instantiate(fountainModeActivationPointPrefab, worldPos, Quaternion.identity);
+    var script = orb.GetComponent<FountainModeActivationPoint>();
+
+    if (script != null) script.spawner = this;
+
+    currentActivationPoint = orb;
+}
 }
