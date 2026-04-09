@@ -417,12 +417,14 @@ public class MixedPointSpawner : MonoBehaviour
         SpawnNextPoint();
     }
 
-    public void ForceClearCurrentPoint()
+    public bool ForceClearCurrentPoint()
     {
         if (currentPoint != null)
         {
             HandlePointHit(currentPoint);
+            return true;
         }
+        return false;
     }
 
     private IEnumerator LevelRoutine(float newRT)

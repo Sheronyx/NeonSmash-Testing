@@ -141,7 +141,8 @@ public void OnTapped()
             }
 
             spawner.PauseSpawning(false);
-            spawner.ForceClearCurrentPoint();
+            if (!spawner.ForceClearCurrentPoint())
+                spawner.SpawnNextPoint(); // Safety: currentPoint war bereits null (Spieler hat zwischendrin getippt)
         }
 
         DestroySelf();
