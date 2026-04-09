@@ -49,7 +49,8 @@ MonoBehaviour:
   - {fileID: -3947423171857660942}
   - {fileID: 1760235388702043137}
   - {fileID: 6427664988018909874}
-  m_RendererFeatureMap: 33ca1f83ddd54074f243471f8aef37c9012ca888c29c6d18b222155a40a73359
+  - {fileID: 2366300108806590072}
+  m_RendererFeatureMap: 33ca1f83ddd54074f243471f8aef37c9012ca888c29c6d18b222155a40a73359788e626969c9d620
   m_UseNativeRenderPass: 0
   m_LayerMask:
     serializedVersion: 2
@@ -93,6 +94,26 @@ MonoBehaviour:
   m_Name: FullScreenFrost
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
   m_Active: 0
+  injectionPoint: 600
+  fetchColorBuffer: 1
+  requirements: 0
+  passMaterial: {fileID: 0}
+  passIndex: 0
+  bindDepthStencilAttachment: 0
+  m_Version: 1
+--- !u!114 &2366300108806590072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b00045f12942b46c698459096c89274e, type: 3}
+  m_Name: FullScreenPassRendererFeature
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.FullScreenPassRendererFeature
+  m_Active: 1
   injectionPoint: 600
   fetchColorBuffer: 1
   requirements: 0
