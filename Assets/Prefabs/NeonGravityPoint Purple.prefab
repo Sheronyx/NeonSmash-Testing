@@ -547,12 +547,15 @@ MonoBehaviour:
   fallSpeed: 3
   rotationSpeed: 50
   portalYOffset: -0.4
-  suckStartDistance: 3.5
+  suckStartDistance: 2.5
   suckSpeed: 20
   shrinkSpeed: 10
   fadeSpeed: 2
   minScaleBeforeDestroy: 0.1
   maxSuckForce: 20
+  baseColliderOffset: 0.3
+  maxColliderOffset: 1.2
+  maxOffsetSpeed: 15
 --- !u!1 &5044408114939094830
 GameObject:
   m_ObjectHideFlags: 0
