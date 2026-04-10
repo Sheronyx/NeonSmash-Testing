@@ -725,6 +725,9 @@ public class MixedPointSpawner : MonoBehaviour
     {
         ScoreManager.Instance?.AddPointsFromHit();
 
+        if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
+            GoldModeSystem.Instance.OnGoldPointHit();
+
         var basePoint = point.GetComponent<BasePoint>();
         if (basePoint != null) basePoint.SendMessage("SpawnExplosion");
         PointCleared(point);

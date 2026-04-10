@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 
 public class GoldModeSystem : MonoBehaviour
 {
@@ -8,13 +7,16 @@ public class GoldModeSystem : MonoBehaviour
 
     public static GoldModeSystem Instance;
 
-    [SerializeField] private float duration = 10f;
+    [SerializeField] private MixedPointSpawner spawner;
+
+    [Header("Settings")]
+    [SerializeField] private int elementCount = 15;
     [SerializeField] private int goldMultiplier = 3;
 
     private bool isActive = false;
+    private int remaining;
 
     public bool IsActive => isActive;
-    public float Duration => duration;
 
     private void Awake()
     {
@@ -34,23 +36,33 @@ public class GoldModeSystem : MonoBehaviour
     private void HandleModeStart(SpecialMode mode)
     {
         if (mode == SpecialMode.Gold)
-        {
-            StartCoroutine(Co_GoldMode());
-        }
+            Activate();
     }
 
-    private IEnumerator Co_GoldMode()
+    private void Activate()
     {
-        if (isActive) yield break; // 🛡️ Safety
+        if (isActive) return;
 
         isActive = true;
+        remaining = elementCount;
+
         OnGoldModeStarted?.Invoke();
+    }
 
-        yield return new WaitForSeconds(duration);
+    public void OnGoldPointHit()
+    {
+        if (!isActive) return;
 
+        remaining--;
+
+        if (remaining <= 0)
+            EndMode();
+    }
+
+    private void EndMode()
+    {
         isActive = false;
         OnGoldModeEnded?.Invoke();
-
         SpecialModeManager.Instance.EndCurrentMode();
     }
 
