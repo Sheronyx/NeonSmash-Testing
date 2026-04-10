@@ -10,6 +10,12 @@ public class GoldModeActivationPoint : MonoBehaviour
     [SerializeField] private float flySpeed = 10f;
     [SerializeField] private float delayBeforeGoldMode = 0.5f;
 
+    [Header("Point Destroy Timing")]
+    [Tooltip("Delay bei Point ganz unten (viewport Y=0)")]
+    [SerializeField] private float destroyDelayAtBottom = 0.1f;
+    [Tooltip("Delay bei Point ganz oben (viewport Y=1)")]
+    [SerializeField] private float destroyDelayAtTop = 0.6f;
+
     [Header("VFX")]
     [SerializeField] private GameObject SlashVFXPrefab;
 
@@ -18,6 +24,7 @@ public class GoldModeActivationPoint : MonoBehaviour
 
     private bool isDestroyed = false;
     private bool isFinishing = false;
+    private float cachedPointViewportY = 0.5f;
 
     void Start()
     {
@@ -55,6 +62,10 @@ public void OnTapped()
     isDestroyed = true;
     isFinishing = true;
 
+    // Viewport-Y des normalen Points cachen bevor er weg ist
+    if (spawner != null && spawner.CurrentPointPosition.HasValue && Camera.main != null)
+        cachedPointViewportY = Camera.main.WorldToViewportPoint(spawner.CurrentPointPosition.Value).y;
+
     Debug.Log("COMBO GETRIGGERT!");
 
     StartCoroutine(CoFlyToPortal());
@@ -91,38 +102,44 @@ public void OnTapped()
 
         transform.position = endPos;
 
+        // 👉 Portal sofort auf Gold färben beim Einfliegen
+        if (portal != null)
+            portal.SetMode(SpecialMode.Gold);
+
         // 👉 VFX am Portal
+        float slashDuration = delayBeforeGoldMode > 0f ? delayBeforeGoldMode : 1.5f;
         if (SlashVFXPrefab != null)
         {
             var slash = Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
-            var ps = slash.GetComponent<ParticleSystem>();
-            float lifetime = ps != null ? ps.main.duration + ps.main.startLifetime.constantMax : 3f;
-            Destroy(slash, lifetime);
+            var ps = slash.GetComponentInChildren<ParticleSystem>();
+            if (ps != null)
+                slashDuration = ps.main.duration + ps.main.startLifetime.constantMax;
+            Destroy(slash, slashDuration);
         }
 
-        // 👉 Portal sofort visuell gold + flash
+        // 👉 Portal flash
         if (portal != null)
         {
-            portal.SetMode(SpecialMode.Gold);
-
             portal.FlashParticles();
         }
+
+        // 👉 Point zur richtigen Zeit zerstören basierend auf Y-Position
+        float pointDestroyDelay = Mathf.Lerp(destroyDelayAtBottom, destroyDelayAtTop, cachedPointViewportY);
+        StartCoroutine(DestroyPointAfterDelay(pointDestroyDelay));
 
         // 👉 Orb "unsichtbar" machen (KEIN SetActive false!)
         DisableVisuals();
 
-        // 👉 Delay bevor echter GoldMode startet
-        yield return new WaitForSeconds(delayBeforeGoldMode);
-
-
-
-        // 👉 VISUAL RESET
-        if (portal != null)
-        {
-            portal.SetMode(SpecialMode.None);
-        }
+        // 👉 2 Sekunden nach Beginn der Slash Animation
+        yield return new WaitForSeconds(1.6f);
 
         FinishCombo();
+    }
+
+    private IEnumerator DestroyPointAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        spawner.ForceClearCurrentPoint();
     }
 
     private void DisableVisuals()
@@ -144,8 +161,7 @@ public void OnTapped()
             }
 
             spawner.PauseSpawning(false);
-            if (!spawner.ForceClearCurrentPoint())
-                spawner.SpawnNextPoint(); // Safety: currentPoint war bereits null (Spieler hat zwischendrin getippt)
+            spawner.SpawnNextPoint();
         }
 
         DestroySelf();

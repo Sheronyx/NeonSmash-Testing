@@ -93,6 +93,7 @@ public class MixedPointSpawner : MonoBehaviour
     public float spawnAreaBorderThickness = 2f;
 
     public SwipePoint CurrentSwipePoint { get; private set; }
+    public Vector3? CurrentPointPosition => currentPoint != null ? currentPoint.transform.position : null;
     private GameObject currentPoint;
     private GameObject lastPoint;
 

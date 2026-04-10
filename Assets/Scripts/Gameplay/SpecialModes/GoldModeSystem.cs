@@ -43,6 +43,11 @@ public class GoldModeSystem : MonoBehaviour
     {
         if (isActive) return;
 
+        // Erst Point clearen (Spawner ist noch pausiert, nichts spawnt)
+        spawner.ClearAllGameplayPoints();
+
+        // Dann isActive setzen und visuelle Events feuern —
+        // kein normaler Point mehr sichtbar
         isActive = true;
         remaining = elementCount;
 
