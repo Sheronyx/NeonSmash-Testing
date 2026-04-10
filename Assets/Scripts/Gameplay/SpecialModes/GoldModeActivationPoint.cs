@@ -95,7 +95,9 @@ public void OnTapped()
         if (SlashVFXPrefab != null)
         {
             var slash = Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
-            Destroy(slash, 2f);
+            var ps = slash.GetComponent<ParticleSystem>();
+            float lifetime = ps != null ? ps.main.duration + ps.main.startLifetime.constantMax : 3f;
+            Destroy(slash, lifetime);
         }
 
         // 👉 Portal sofort visuell gold + flash
