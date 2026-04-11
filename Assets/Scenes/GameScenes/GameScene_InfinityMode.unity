@@ -409,7 +409,9 @@ MonoBehaviour:
   goldModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c878f24f6e5944512829675b4a9dce8d, type: 3}
   goldModeSpawnScoreThreshold: 5
   goldModeSpawnChance: 1
-  activationOrbCooldown: 30
+  activationOrbCooldown: 45
+  initialOrbDelayMin: 30
+  initialOrbDelayMax: 45
   portalFlash: {fileID: 911621390}
   portalBeam: {fileID: 911621388}
   useSafeAreaForSpawns: 1

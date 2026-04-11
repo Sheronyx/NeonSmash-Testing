@@ -25,6 +25,8 @@ public class MixedPointSpawner : MonoBehaviour
 
     [Header("Activation Orb Cooldown (geteilt)")]
     [SerializeField] private float activationOrbCooldown = 60f;
+    [SerializeField] private float initialOrbDelayMin = 30f;
+    [SerializeField] private float initialOrbDelayMax = 40f;
     private bool activationOrbOnCooldown = false;
     private SpecialMode lastSpawnedOrbMode = SpecialMode.None;
     private bool isConvertingPoints = false;
@@ -130,6 +132,10 @@ public class MixedPointSpawner : MonoBehaviour
         running = true;
         gameOver = false;
         spawnPausedForBanner = false;
+
+        // Ersten Orb erst nach initialOrbDelay erlauben
+        activationOrbOnCooldown = true;
+        StartCoroutine(InitialOrbDelayRoutine());
 
         if (IsInfinityMode)
         {
@@ -634,6 +640,13 @@ public class MixedPointSpawner : MonoBehaviour
 
         Destroy(go);
         return half;
+    }
+
+    private IEnumerator InitialOrbDelayRoutine()
+    {
+        float delay = Random.Range(initialOrbDelayMin, initialOrbDelayMax);
+        yield return new WaitForSeconds(delay);
+        activationOrbOnCooldown = false;
     }
 
 
