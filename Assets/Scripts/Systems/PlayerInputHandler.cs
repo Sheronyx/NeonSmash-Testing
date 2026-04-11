@@ -114,9 +114,7 @@ public class PlayerInputHandler : MonoBehaviour
         };
     }
 
-    // =========================================
-    // 🔥 SLASH SYSTEM (Fruit Ninja Style)
-    // =========================================
+
     private void ProcessSlash(Vector3 from, Vector3 to)
     {
         Vector2 dir = (to - from);
