@@ -78,7 +78,7 @@ public class PlayerInputHandler : MonoBehaviour
             }
 
             // 🔥 CONTINUOUS HIT DETECTION
-            ProcessSlash(worldPrev, worldNow);
+            ProcessSlash(worldPrev, worldNow, fromSwipe: true);
         };
 
         // TOUCH END
@@ -115,7 +115,7 @@ public class PlayerInputHandler : MonoBehaviour
     }
 
 
-    private void ProcessSlash(Vector3 from, Vector3 to)
+    private void ProcessSlash(Vector3 from, Vector3 to, bool fromSwipe = false)
     {
         Vector2 dir = (to - from);
         float distance = dir.magnitude;
@@ -141,7 +141,7 @@ public class PlayerInputHandler : MonoBehaviour
             if (alreadyHit.Contains(obj)) continue;
             alreadyHit.Add(obj);
 
-            ProcessHit(hit.collider);
+            ProcessHit(hit.collider, fromSwipe);
         }
     }
 
@@ -199,7 +199,7 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     // 🔥 HIT LOGIK (Priorität)
     // =========================================
-    private void ProcessHit(Collider2D col)
+    private void ProcessHit(Collider2D col, bool fromSwipe = false)
     {
         // 🟡 Gold Orb
         var gold = col.GetComponent<GoldModeActivationPoint>();
@@ -217,12 +217,15 @@ public class PlayerInputHandler : MonoBehaviour
             return;
         }
 
-        // 🔴 Gravity Points
-        var gravityPoint = col.GetComponent<GravityPoint>();
-        if (gravityPoint != null)
+        // 🔴 Gravity Points — nie per Swipe treffbar
+        if (!fromSwipe)
         {
-            gravityPoint.TryTap();
-            return;
+            var gravityPoint = col.GetComponent<GravityPoint>();
+            if (gravityPoint != null)
+            {
+                gravityPoint.TryTap();
+                return;
+            }
         }
 
         // 🔵 Fountain Orb
@@ -233,19 +236,23 @@ public class PlayerInputHandler : MonoBehaviour
             return;
         }
 
-        // 🔵 Fountain Points
-        var fountainPoint = col.GetComponent<FountainPoint>();
-        if (fountainPoint != null)
+        // 🔵 Fountain Points — nie per Swipe treffbar
+        if (!fromSwipe)
         {
-            fountainPoint.TryTap();
-            return;
+            var fountainPoint = col.GetComponent<FountainPoint>();
+            if (fountainPoint != null)
+            {
+                fountainPoint.TryTap();
+                return;
+            }
         }
 
-        // 🔵 Normale Tap Points
-        var tapPoint = col.GetComponent<TapPoint>();
-        if (tapPoint != null)
+        // 🔵 Normale Tap Points — nie per Swipe treffbar
+        if (!fromSwipe)
         {
-            tapPoint.TryTap();
+            var tapPoint = col.GetComponent<TapPoint>();
+            if (tapPoint != null)
+                tapPoint.TryTap();
         }
     }
 
