@@ -5,21 +5,30 @@ public class FountainModeActivationPoint : MonoBehaviour
 {
     public MixedPointSpawner spawner;
 
-    [Header("VFX")]
-    [SerializeField] private GameObject slashVFXPrefab;
-    [SerializeField] private float delayBeforeFountainMode = 1f;
-
+    [Header("Settings")]
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float flySpeed = 10f;
+    [SerializeField] private float delayBeforeFountainMode = 1.6f;
+
+    [Header("VFX")]
+    [SerializeField] private GameObject slashVFXPrefab;
 
     private ArcanePortalFlash portal;
+    private Transform portalTransform;
+
     private bool isTriggered = false;
+
+    private bool orbArrived = false;
+    private bool pointArrived = false;
 
     void Start()
     {
         var p = FindFirstObjectByType<ArcanePortalFlash>();
         if (p != null)
+        {
             portal = p;
+            portalTransform = p.transform;
+        }
 
         StartCoroutine(AutoDestroy());
     }
@@ -38,49 +47,100 @@ public class FountainModeActivationPoint : MonoBehaviour
 
         spawner?.PauseSpawning(true);
 
-        StartCoroutine(FlyToPortal());
+        GameObject stolenPoint = spawner != null ? spawner.StealCurrentPoint() : null;
+
+        StartCoroutine(CoFlyBothToPortal(stolenPoint));
     }
 
-    private IEnumerator FlyToPortal()
-{
-    Vector3 start = transform.position;
-    Vector3 end = portal.transform.position;
-
-    float t = 0f;
-
-    while (t < 1f)
+    private IEnumerator CoFlyBothToPortal(GameObject stolenPoint)
     {
-        t += Time.deltaTime * flySpeed;
-        transform.position = Vector3.Lerp(start, end, t);
-        transform.localScale = Vector3.Lerp(Vector3.one, Vector3.zero, t);
-        yield return null;
+        if (portalTransform == null)
+        {
+            FinishCombo();
+            yield break;
+        }
+
+        orbArrived = false;
+        pointArrived = stolenPoint == null;
+
+        StartCoroutine(CoFlyOrb());
+        if (stolenPoint != null)
+            StartCoroutine(CoFlyNeonPoint(stolenPoint));
+
+        yield return new WaitUntil(() => orbArrived && pointArrived);
+
+        // Beide angekommen → Portal färben + Slash
+        if (portal != null)
+        {
+            portal.SetMode(SpecialMode.Fountain);
+            portal.FlashParticles();
+        }
+
+        float slashDuration = delayBeforeFountainMode > 0f ? delayBeforeFountainMode : 1.5f;
+        if (slashVFXPrefab != null)
+        {
+            var slash = Instantiate(slashVFXPrefab, portalTransform.position, Quaternion.identity);
+            var ps = slash.GetComponentInChildren<ParticleSystem>();
+            if (ps != null)
+                slashDuration = ps.main.duration + ps.main.startLifetime.constantMax;
+            Destroy(slash, slashDuration);
+        }
+
+        yield return new WaitForSeconds(slashDuration);
+
+        FinishCombo();
     }
 
-    transform.position = end;
-
-    // 👉 SLASH VFX
-    if (slashVFXPrefab != null)
+    private IEnumerator CoFlyOrb()
     {
-        var slash = Instantiate(slashVFXPrefab, end, Quaternion.identity);
-        var ps = slash.GetComponent<ParticleSystem>();
-        float lifetime = ps != null ? ps.main.duration + ps.main.startLifetime.constantMax : 3f;
-        Destroy(slash, lifetime);
+        Vector3 startPos = transform.position;
+        Vector3 endPos = portalTransform.position;
+        Vector3 startScale = transform.localScale;
+        float t = 0f;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime * flySpeed;
+            float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
+            transform.position = Vector3.Lerp(startPos, endPos, eased);
+            transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
+            yield return null;
+        }
+
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr != null) sr.enabled = false;
+        var col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        orbArrived = true;
     }
 
-    // 👉 Portal wird blau + Flash
-    if (portal != null)
+    private IEnumerator CoFlyNeonPoint(GameObject point)
     {
-        var portalFlash = portal.GetComponent<ArcanePortalFlash>();
-        portalFlash?.SetMode(SpecialMode.Fountain);
-        portalFlash?.FlashParticles();
+        if (point == null) { pointArrived = true; yield break; }
+
+        Vector3 startPos = point.transform.position;
+        Vector3 endPos = portalTransform.position;
+        Vector3 startScale = point.transform.localScale;
+        float t = 0f;
+
+        while (t < 1f)
+        {
+            if (point == null) break;
+            t += Time.deltaTime * flySpeed;
+            float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
+            point.transform.position = Vector3.Lerp(startPos, endPos, eased);
+            point.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
+            yield return null;
+        }
+
+        if (point != null) Destroy(point);
+        pointArrived = true;
     }
 
-    // ⏳ 👉 HIER DER WICHTIGE DELAY
-    yield return new WaitForSeconds(delayBeforeFountainMode);
-
-    // 👉 Jetzt erst Mode starten
-    SpecialModeManager.Instance?.StartMode(SpecialMode.Fountain);
-
-    Destroy(gameObject);
-}
+    private void FinishCombo()
+    {
+        SpecialModeManager.Instance?.StartMode(SpecialMode.Fountain);
+        Destroy(gameObject);
+    }
 }

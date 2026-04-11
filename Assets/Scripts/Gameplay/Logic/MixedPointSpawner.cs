@@ -430,6 +430,24 @@ public class MixedPointSpawner : MonoBehaviour
         return false;
     }
 
+    // Gibt den aktuellen Point zurück und entfernt ihn aus dem Spawner-Tracking.
+    // Collider wird deaktiviert damit er nicht mehr tappbar ist.
+    // Der Aufrufer ist verantwortlich für die Destroy.
+    public GameObject StealCurrentPoint()
+    {
+        if (currentPoint == null) return null;
+
+        StopPointTimer();
+
+        var col = currentPoint.GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        var stolen = currentPoint;
+        currentPoint = null;
+        CurrentSwipePoint = null;
+        return stolen;
+    }
+
     private IEnumerator LevelRoutine()
     {
         SpawnNextPoint();

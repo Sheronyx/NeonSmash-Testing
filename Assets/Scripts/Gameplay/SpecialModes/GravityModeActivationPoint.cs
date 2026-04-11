@@ -8,7 +8,7 @@ public class GravityModeActivationPoint : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float flySpeed = 10f;
-    [SerializeField] private float delayBeforeGravityMode = 0.5f;
+    [SerializeField] private float delayBeforeGravityMode = 1.6f;
 
     [Header("VFX")]
     [SerializeField] private GameObject SlashVFXPrefab;
@@ -19,10 +19,12 @@ public class GravityModeActivationPoint : MonoBehaviour
     private bool isDestroyed = false;
     private bool isFinishing = false;
 
+    private bool orbArrived = false;
+    private bool pointArrived = false;
+
     void Start()
     {
         portal = FindFirstObjectByType<ArcanePortalFlash>();
-
         if (portal != null)
             portalTransform = portal.transform;
 
@@ -32,97 +34,119 @@ public class GravityModeActivationPoint : MonoBehaviour
     private IEnumerator AutoDestroy()
     {
         yield return new WaitForSeconds(lifetime);
-
         if (!isDestroyed && !isFinishing)
-        {
             DestroySelf();
-        }
+    }
+
+    public void TryTap()
+    {
+        if (spawner != null && spawner.IsLevelUpActive()) return;
+        OnTapped();
     }
 
     public void OnTapped()
     {
-        if (spawner != null)
-        {
-            spawner.PauseSpawning(true);
-        }
-
         if (isDestroyed || isFinishing) return;
 
         isDestroyed = true;
         isFinishing = true;
 
-        Debug.Log("🌪️ GRAVITY ORB GETRIGGERT!");
+        spawner?.PauseSpawning(true);
 
-        StartCoroutine(CoFlyToPortal());
+        GameObject stolenPoint = spawner != null ? spawner.StealCurrentPoint() : null;
+
+        StartCoroutine(CoFlyBothToPortal(stolenPoint));
     }
 
-    private IEnumerator CoFlyToPortal()
+    private IEnumerator CoFlyBothToPortal(GameObject stolenPoint)
     {
         if (portalTransform == null)
         {
-            Debug.LogWarning("Portal nicht gefunden!");
             FinishCombo();
             yield break;
         }
 
-        Vector3 startPos = transform.position;
-        Vector3 endPos = portalTransform.position;
+        orbArrived = false;
+        pointArrived = stolenPoint == null;
 
-        float t = 0f;
-        Vector3 startScale = transform.localScale;
+        StartCoroutine(CoFlyOrb());
+        if (stolenPoint != null)
+            StartCoroutine(CoFlyNeonPoint(stolenPoint));
 
-        while (t < 1f)
-        {
-            t += Time.deltaTime * flySpeed;
+        yield return new WaitUntil(() => orbArrived && pointArrived);
 
-            float progress = Mathf.Clamp01(t);
-            float eased = progress * progress;
+        // Beide angekommen → Portal färben + Slash
+        if (portal != null)
+            portal.FlashParticles();
 
-            transform.position = Vector3.Lerp(startPos, endPos, eased);
-            transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
-
-            yield return null;
-        }
-
-        transform.position = endPos;
-
-        // 🔥 VFX
+        float slashDuration = delayBeforeGravityMode > 0f ? delayBeforeGravityMode : 1.5f;
         if (SlashVFXPrefab != null)
         {
-            Instantiate(SlashVFXPrefab, endPos, Quaternion.identity);
+            var slash = Instantiate(SlashVFXPrefab, portalTransform.position, Quaternion.identity);
+            var ps = slash.GetComponentInChildren<ParticleSystem>();
+            if (ps != null)
+                slashDuration = ps.main.duration + ps.main.startLifetime.constantMax;
+            Destroy(slash, slashDuration);
         }
 
-        // 🔴 Portal Effekt (optional später anders färben)
-        if (portal != null)
-        {
-            portal.FlashParticles();
-        }
-
-        DisableVisuals();
-
-        yield return new WaitForSeconds(delayBeforeGravityMode);
+        yield return new WaitForSeconds(slashDuration);
 
         FinishCombo();
     }
 
-    private void DisableVisuals()
+    private IEnumerator CoFlyOrb()
     {
+        Vector3 startPos = transform.position;
+        Vector3 endPos = portalTransform.position;
+        Vector3 startScale = transform.localScale;
+        float t = 0f;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime * flySpeed;
+            float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
+            transform.position = Vector3.Lerp(startPos, endPos, eased);
+            transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
+            yield return null;
+        }
+
         var sr = GetComponent<SpriteRenderer>();
         if (sr != null) sr.enabled = false;
-
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
+
+        orbArrived = true;
+    }
+
+    private IEnumerator CoFlyNeonPoint(GameObject point)
+    {
+        if (point == null) { pointArrived = true; yield break; }
+
+        Vector3 startPos = point.transform.position;
+        Vector3 endPos = portalTransform.position;
+        Vector3 startScale = point.transform.localScale;
+        float t = 0f;
+
+        while (t < 1f)
+        {
+            if (point == null) break;
+            t += Time.deltaTime * flySpeed;
+            float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
+            point.transform.position = Vector3.Lerp(startPos, endPos, eased);
+            point.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
+            yield return null;
+        }
+
+        if (point != null) Destroy(point);
+        pointArrived = true;
     }
 
     private void FinishCombo()
     {
         if (spawner != null)
         {
-            if (SpecialModeManager.Instance != null &&
-                !SpecialModeManager.Instance.IsModeActive)
-            {
+            if (SpecialModeManager.Instance != null && !SpecialModeManager.Instance.IsModeActive)
                 SpecialModeManager.Instance.StartMode(SpecialMode.Gravity);
-            }
 
             spawner.ForceClearCurrentPoint();
         }
@@ -133,17 +157,8 @@ public class GravityModeActivationPoint : MonoBehaviour
     private void DestroySelf()
     {
         if (spawner != null)
-        {
             spawner.ClearActivationPoint();
-        }
 
         Destroy(gameObject);
-    }
-
-    public void TryTap()
-    {
-        if (spawner != null && spawner.IsLevelUpActive())
-        return;
-        OnTapped();
     }
 }
