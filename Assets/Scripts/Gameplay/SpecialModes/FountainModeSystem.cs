@@ -3,6 +3,9 @@ using System.Collections;
 
 public class FountainModeSystem : MonoBehaviour
 {
+    public static event System.Action OnFountainModeStarted;
+    public static event System.Action OnFountainModeEnded;
+
     [SerializeField] private GameObject fountainPointPrefab;
     [SerializeField] private Transform portal;
 
@@ -35,6 +38,7 @@ public class FountainModeSystem : MonoBehaviour
             spawner.ClearAllGameplayPoints();
         }
 
+        OnFountainModeStarted?.Invoke();
         StartCoroutine(SpawnRoutine());
     }
 
@@ -105,6 +109,7 @@ public class FountainModeSystem : MonoBehaviour
             spawner.SpawnNextPoint();
         }
 
+        OnFountainModeEnded?.Invoke();
         SpecialModeManager.Instance?.EndCurrentMode();
     }
 }

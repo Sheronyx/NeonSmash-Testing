@@ -7,32 +7,31 @@ public class SlashTrail : MonoBehaviour
     [Header("Trail Prefab")]
     [SerializeField] private GameObject trailPrefab;
     [SerializeField] private GameObject goldTrailPrefab;
+    [SerializeField] private GameObject fountainTrailPrefab;
 
     private bool isGold = false;
+    private bool isFountain = false;
 
     private void OnEnable()
     {
         GoldModeSystem.OnGoldModeStarted += EnableGold;
         GoldModeSystem.OnGoldModeEnded += DisableGold;
+        FountainModeSystem.OnFountainModeStarted += EnableFountain;
+        FountainModeSystem.OnFountainModeEnded += DisableFountain;
     }
 
     private void OnDisable()
     {
         GoldModeSystem.OnGoldModeStarted -= EnableGold;
         GoldModeSystem.OnGoldModeEnded -= DisableGold;
+        FountainModeSystem.OnFountainModeStarted -= EnableFountain;
+        FountainModeSystem.OnFountainModeEnded -= DisableFountain;
     }
 
-    private void EnableGold()
-    {
-        isGold = true;
-        SetGoldVisual();
-    }
-
-    private void DisableGold()
-    {
-        isGold = false;
-        SetNormalVisual();
-    }
+    private void EnableGold()    { isGold = true;     ResetActiveTrail(); }
+    private void DisableGold()   { isGold = false;    ResetActiveTrail(); }
+    private void EnableFountain(){ isFountain = true;  ResetActiveTrail(); }
+    private void DisableFountain(){ isFountain = false; ResetActiveTrail(); }
 
     [Header("Sorting")]
     public string sortingLayerName = "Default";
@@ -55,7 +54,7 @@ public class SlashTrail : MonoBehaviour
 
         if (activeTrail == null)
         {
-            GameObject prefabToUse = isGold ? goldTrailPrefab : trailPrefab;
+            GameObject prefabToUse = isGold ? goldTrailPrefab : isFountain ? fountainTrailPrefab : trailPrefab;
 
             if (prefabToUse != null)
             {
@@ -108,19 +107,8 @@ public class SlashTrail : MonoBehaviour
         isGold = active;
     }
 
-    private void SetGoldVisual()
+    private void ResetActiveTrail()
     {
-        // Optional: laufenden Trail ersetzen
-        if (activeTrail != null)
-        {
-            Destroy(activeTrail.gameObject);
-            activeTrail = null;
-        }
-    }
-
-    private void SetNormalVisual()
-    {
-        // Gleiches Verhalten wie oben
         if (activeTrail != null)
         {
             Destroy(activeTrail.gameObject);
