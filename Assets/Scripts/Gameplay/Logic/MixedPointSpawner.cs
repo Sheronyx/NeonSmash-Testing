@@ -474,7 +474,29 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         if (running && !gameOver && point != null && point == currentPoint)
+        {
+            if (LivesManager.Instance != null)
+            {
+                Vector3 pointPos = point.transform.position;
+                // Point sofort zerstören (kein Score)
+                // StopPointTimer() NICHT aufrufen — würde diese Coroutine sofort abbrechen
+                timeoutRoutine = null;
+                Destroy(currentPoint);
+                currentPoint = null;
+                CurrentSwipePoint = null;
+
+                bool stillAlive = LivesManager.Instance.LoseLife(pointPos);
+                if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+                if (stillAlive)
+                {
+                    // Warten bis VFX + Herz-Animation fertig, dann nächsten Point spawnen
+                    yield return new WaitForSeconds(LivesManager.Instance.TotalLoseDuration);
+                    SpawnNextPoint();
+                    yield break;
+                }
+            }
             GameOver();
+        }
     }
 
     private void StopPointTimer()
