@@ -8,6 +8,7 @@ public class GameUIManager : MonoBehaviour
 {
     [Header("Top UI")]
     [SerializeField] private Canvas topBarCanvas;
+    [SerializeField] private GameObject pauseButton;
 
     [Header("Game Over")]
     [SerializeField] private CanvasGroup gameOverBanner;
@@ -38,8 +39,8 @@ public class GameUIManager : MonoBehaviour
 
     private IEnumerator Co_ShowGameOver(int score, bool isInfinityMode)
     {
-        if (topBarCanvas != null)
-            topBarCanvas.enabled = false;
+        if (pauseButton != null)
+            pauseButton.SetActive(false);
 
         string text = isInfinityMode ? "GAME OVER" : "FINISHED";
 

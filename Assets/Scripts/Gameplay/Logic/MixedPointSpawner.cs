@@ -503,10 +503,11 @@ public class MixedPointSpawner : MonoBehaviour
 
         Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
 
-        ScreenShakeManager.Instance?.Shake(
-            isInfinityMode ? 0.3f : 0.2f,
-            isInfinityMode ? 0.2f : 0.15f
-        );
+        if (ScreenShakeManager.Instance != null)
+            ScreenShakeManager.Instance.Shake(
+                isInfinityMode ? 0.3f : 0.2f,
+                isInfinityMode ? 0.2f : 0.15f
+            );
 
         InAppReviewManager.Instance?.OnGameFinished();
 
