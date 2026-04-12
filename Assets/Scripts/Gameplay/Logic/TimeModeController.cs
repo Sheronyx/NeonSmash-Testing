@@ -66,11 +66,15 @@ public class TimeModeController : MonoBehaviour
         var sm = scoreManager != null ? scoreManager : ScoreManager.Instance;
         int score = sm != null ? sm.CurrentScore : 0;
 
-        // Eingaben/Spawns stoppen (Komponenten nicht deaktivieren, damit Spawner-UI/Coroutines laufen)
+        // Eingaben/Spawns stoppen
         if (spawner) spawner.StopSpawning();
         if (playerInput) playerInput.enabled = false;
 
-        // Time-Mode Leaderboard Upload
+        // UI sofort zeigen
+        if (spawner) spawner.ShowFinishedFromTimeMode(score);
+        else Debug.LogWarning("[TimeMode] Kein Spawner zugewiesen – FINISHED-Sequence kann nicht angezeigt werden.");
+
+        // Upload danach im Hintergrund
         try
         {
             bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.TimeModeId);
@@ -80,9 +84,5 @@ public class TimeModeController : MonoBehaviour
         {
             Debug.LogWarning($"[LB] Upload fehlgeschlagen: {e.Message}");
         }
-
-        // Spawner zeigt FINISHED-Sequence (Banner + Result)
-        if (spawner) spawner.ShowFinishedFromTimeMode(score);
-        else Debug.LogWarning("[TimeMode] Kein Spawner zugewiesen – FINISHED-Sequence kann nicht angezeigt werden.");
     }
 }

@@ -671,6 +671,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void TrySpawnGoldModePoint()
     {
+        if (!IsInfinityMode) return;
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
         if (currentGoldModePoint != null || activationOrbOnCooldown) return;
@@ -711,6 +712,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void TrySpawnGravityModePoint()
     {
+        if (!IsInfinityMode) return;
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (currentActivationPoint != null) return;
         if (activationOrbOnCooldown) return;
@@ -816,6 +818,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void TrySpawnFountainModePoint()
     {
+        if (!IsInfinityMode) return;
         if (currentActivationPoint != null) return;
         if (activationOrbOnCooldown) return;
         if (lastSpawnedOrbMode == SpecialMode.Fountain) return;

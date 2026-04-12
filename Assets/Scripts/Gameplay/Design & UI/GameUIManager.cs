@@ -22,6 +22,15 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private Button restartButton;
     [SerializeField] private Button backToMenuButton;
 
+    private void Awake()
+    {
+        if (restartButton != null)
+            restartButton.onClick.AddListener(RestartGame);
+
+        if (backToMenuButton != null)
+            backToMenuButton.onClick.AddListener(BackToMenu);
+    }
+
     public void ShowGameOver(int score, bool isInfinityMode)
     {
         StartCoroutine(Co_ShowGameOver(score, isInfinityMode));
