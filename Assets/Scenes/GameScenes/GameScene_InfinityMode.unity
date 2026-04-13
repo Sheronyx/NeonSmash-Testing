@@ -408,10 +408,10 @@ MonoBehaviour:
   uiManager: {fileID: 1942897538}
   goldModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c878f24f6e5944512829675b4a9dce8d, type: 3}
   goldModeSpawnScoreThreshold: 5
-  goldModeSpawnChance: 0.33
-  activationOrbCooldown: 40
-  initialOrbDelayMin: 25
-  initialOrbDelayMax: 35
+  goldModeSpawnChance: 0
+  activationOrbCooldown: 5
+  initialOrbDelayMin: 5
+  initialOrbDelayMax: 10
   portalFlash: {fileID: 911621390}
   portalBeam: {fileID: 911621388}
   useSafeAreaForSpawns: 1
@@ -1529,8 +1529,11 @@ MonoBehaviour:
   portal: {fileID: 911621387}
   shootForceY: 15
   shootForceX: 1.4
-  spawnInterval: 0.5
+  spawnInterval: 1
   totalPoints: 30
+  levelUp: {fileID: 250744643}
+  minSpawnInterval: 0.15
+  spawnIntervalDecreasePerLevel: 0.05
 --- !u!114 &697214892
 MonoBehaviour:
   m_ObjectHideFlags: 0

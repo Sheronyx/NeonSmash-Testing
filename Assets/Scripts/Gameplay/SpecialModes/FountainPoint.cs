@@ -22,7 +22,6 @@ public class FountainPoint : BasePoint
     {
         if (isDestroyed) return;
 
-        // Bewegung (Parabel)
         velocity.y += gravity * Time.deltaTime;
         transform.position += velocity * Time.deltaTime;
 

@@ -19,8 +19,13 @@ public class FountainModeSystem : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private float shootForceY = 6f;
     [SerializeField] private float shootForceX = 6f;
-    [SerializeField] private float spawnInterval = 0.5f;
+    [SerializeField] private float spawnInterval = 1.2f;
     [SerializeField] private int totalPoints = 20;
+
+    [Header("Level Scaling")]
+    [SerializeField] private LevelUp levelUp;
+    [SerializeField] private float minSpawnInterval = 0.15f;
+    [SerializeField] private float spawnIntervalDecreasePerLevel = 0.05f;
 
     private int activePoints = 0;
     private int spawnedPoints = 0;
@@ -56,7 +61,7 @@ public class FountainModeSystem : MonoBehaviour
             SpawnPoint();
             spawnedPoints++;
 
-            yield return new WaitForSeconds(spawnInterval);
+            yield return new WaitForSeconds(GetCurrentSpawnInterval());
         }
     }
 
@@ -82,6 +87,12 @@ public class FountainModeSystem : MonoBehaviour
         point.Init(this, velocity);
 
         activePoints++;
+    }
+
+    private float GetCurrentSpawnInterval()
+    {
+        int level = levelUp != null ? levelUp.CurrentLevel : 1;
+        return Mathf.Max(minSpawnInterval, spawnInterval - (level - 1) * spawnIntervalDecreasePerLevel);
     }
 
     public void OnPointFinished(bool hit)
