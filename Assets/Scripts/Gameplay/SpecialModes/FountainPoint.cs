@@ -40,7 +40,18 @@ public class FountainPoint : BasePoint
 
         isDestroyed = true;
 
-        system?.OnPointFinished(false); // ❌ kein Punkt
+        if (LivesManager.Instance != null)
+        {
+            bool stillAlive = LivesManager.Instance.LoseLife(transform.position);
+            if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+            if (!stillAlive)
+            {
+                var spawner = FindFirstObjectByType<MixedPointSpawner>();
+                if (spawner != null) spawner.TriggerGameOverFromGravity();
+            }
+        }
+
+        if (system != null) system.OnPointFinished(false); // ❌ kein Punkt
         Destroy(gameObject);
     }
 
