@@ -485,7 +485,7 @@ public class MixedPointSpawner : MonoBehaviour
                 currentPoint = null;
                 CurrentSwipePoint = null;
 
-                bool stillAlive = LivesManager.Instance.LoseLife(pointPos);
+                bool stillAlive = LivesManager.Instance.LoseLife(pointPos, 1f);
                 if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
                 if (stillAlive)
                 {
@@ -560,6 +560,11 @@ public class MixedPointSpawner : MonoBehaviour
     private void GameOver()
     {
         EndGame(CurrentScore, true);
+    }
+
+    public void TriggerGameOverFromGravity()
+    {
+        GameOver();
     }
 
     public void ShowFinishedFromTimeMode(int finalScore)

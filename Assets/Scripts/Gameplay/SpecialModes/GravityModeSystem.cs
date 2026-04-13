@@ -112,11 +112,24 @@ public void Activate()
     }
 }
 
-    public void OnPointDestroyed(bool tapped)
+    public void OnPointDestroyed(bool tapped, Vector3 position = default)
     {
         if (tapped)
         {
             ScoreManager.Instance?.AddPoints(1);
+        }
+        else
+        {
+            if (LivesManager.Instance != null)
+            {
+                bool stillAlive = LivesManager.Instance.LoseLife(position);
+                if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+                if (!stillAlive)
+                {
+                    // Game Over auslösen über den Spawner
+                    spawner.TriggerGameOverFromGravity();
+                }
+            }
         }
 
         remaining--;

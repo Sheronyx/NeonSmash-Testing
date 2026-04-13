@@ -167,7 +167,7 @@ public class GravityPoint : BasePoint
         if (distance < 0.15f || (sr != null && sr.color.a < 0.05f))
         {
             isDestroyed = true;
-            gravitySystem?.OnPointDestroyed(false);
+            if (gravitySystem != null) gravitySystem.OnPointDestroyed(false, transform.position);
             Destroy(gameObject);
         }
     }

@@ -48,9 +48,12 @@ public class LivesManager : MonoBehaviour
     }
 
     // Gibt true zurück wenn noch Leben übrig, false bei GameOver
-    public bool LoseLife(Vector3 vfxPosition)
+    // damage = 0 → nutzt damagePerMiss aus Inspector; sonst direkt übergeben
+    public bool LoseLife(Vector3 vfxPosition, float damage = 0f)
     {
         if (health <= 0f) return false;
+
+        float actualDamage = damage > 0f ? damage : damagePerMiss;
 
         // Betroffenes Herz VOR dem Abziehen bestimmen
         Image affectedHeart;
@@ -58,7 +61,7 @@ public class LivesManager : MonoBehaviour
         else if (health > 1f) affectedHeart = lifePoint2;
         else                   affectedHeart = lifePoint1;
 
-        health = Mathf.Max(0f, health - damagePerMiss);
+        health = Mathf.Max(0f, health - actualDamage);
         UpdateHeartFills();
 
         bool stillAlive = health > 0f;
