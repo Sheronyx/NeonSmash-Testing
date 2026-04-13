@@ -12,6 +12,7 @@ public class GravityModeSystem : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int elementCount = 30;
     [SerializeField] private float spawnInterval = 2f;
+    [SerializeField] private float speedIncreasePerLevel = 0.15f;
 
     [SerializeField] private LevelUp levelUp;
 
@@ -156,6 +157,6 @@ private float GetSpeedMultiplier()
     int level = levelUp.CurrentLevel;
 
     // Beispiel Scaling
-    return 1f + (level - 1) * 0.8f;
+    return 1f + (level - 1) * speedIncreasePerLevel;
 }
 }
