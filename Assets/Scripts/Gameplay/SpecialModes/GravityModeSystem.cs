@@ -26,18 +26,10 @@ public class GravityModeSystem : MonoBehaviour
         Instance = this;
     }
 
-    private BackgroundLooperPerfect looper;
-
-private void Start()
-{
-    looper = FindFirstObjectByType<BackgroundLooperPerfect>();
-}
 
 public void Activate()
 {
     if (isActive) return;
-
-    looper?.SetGravityMode(true);
 
     StartCoroutine(Co_GravityMode());
 }
@@ -142,7 +134,6 @@ public void ForceStop()
     StopAllCoroutines();
     isActive = false;
     remaining = 0;
-    looper?.SetGravityMode(false);
     foreach (var gp in FindObjectsByType<GravityPoint>(FindObjectsSortMode.None))
         Destroy(gp.gameObject);
 }
@@ -150,8 +141,6 @@ public void ForceStop()
 private void EndMode()
 {
     Debug.Log("🌪️ Gravity Mode END");
-
-    looper?.SetGravityMode(false);
 
     isActive = false;
 
