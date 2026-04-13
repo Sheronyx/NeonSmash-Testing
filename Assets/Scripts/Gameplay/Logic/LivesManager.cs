@@ -6,7 +6,10 @@ public class LivesManager : MonoBehaviour
 {
     public static LivesManager Instance;
 
-    [Header("Heart Images (in order: 1=first lost, 3=last lost)")]
+    // lifePoint3 = erstes Herz das sich leert (health 3→2)
+    // lifePoint2 = zweites                    (health 2→1)
+    // lifePoint1 = letztes                    (health 1→0)
+    [Header("Heart Images (lifePoint3 = first to empty)")]
     [SerializeField] private Image lifePoint1;
     [SerializeField] private Image lifePoint2;
     [SerializeField] private Image lifePoint3;
@@ -19,9 +22,13 @@ public class LivesManager : MonoBehaviour
     [SerializeField] private float popScale = 1.4f;
     [SerializeField] private float popDuration = 0.15f;
 
-    private int remainingLives = 3;
+    [Header("Damage per Miss")]
+    [SerializeField] private float damagePerMiss = 0.25f;
 
-    public bool HasLivesLeft => remainingLives > 0;
+    private float health = 3f;
+    private const float maxHealth = 3f;
+
+    public bool HasLivesLeft => health > 0f;
     public float TotalLoseDuration => vfxDuration + popDuration * 2f;
 
     private void Awake()
@@ -36,30 +43,34 @@ public class LivesManager : MonoBehaviour
 
     public void ResetLives()
     {
-        remainingLives = 3;
-        SetHeartAlpha(lifePoint1, 1f);
-        SetHeartAlpha(lifePoint2, 1f);
-        SetHeartAlpha(lifePoint3, 1f);
+        health = maxHealth;
+        UpdateHeartFills();
     }
 
     // Gibt true zurück wenn noch Leben übrig, false bei GameOver
     public bool LoseLife(Vector3 vfxPosition)
     {
-        if (remainingLives <= 0) return false;
+        if (health <= 0f) return false;
 
-        remainingLives--;
-        bool stillAlive = remainingLives > 0;
+        // Betroffenes Herz VOR dem Abziehen bestimmen
+        Image affectedHeart;
+        if (health > 2f)      affectedHeart = lifePoint3;
+        else if (health > 1f) affectedHeart = lifePoint2;
+        else                   affectedHeart = lifePoint1;
 
-        Image lostHeart = remainingLives switch
-        {
-            2 => lifePoint3,
-            1 => lifePoint2,
-            _ => lifePoint1
-        };
+        health = Mathf.Max(0f, health - damagePerMiss);
+        UpdateHeartFills();
 
-        StartCoroutine(VFXThenPop(vfxPosition, lostHeart));
-
+        bool stillAlive = health > 0f;
+        StartCoroutine(VFXThenPop(vfxPosition, affectedHeart));
         return stillAlive;
+    }
+
+    private void UpdateHeartFills()
+    {
+        if (lifePoint3 != null) lifePoint3.fillAmount = Mathf.Clamp01(health - 2f);
+        if (lifePoint2 != null) lifePoint2.fillAmount = Mathf.Clamp01(health - 1f);
+        if (lifePoint1 != null) lifePoint1.fillAmount = Mathf.Clamp01(health);
     }
 
     private IEnumerator VFXThenPop(Vector3 vfxPosition, Image heart)
@@ -68,13 +79,13 @@ public class LivesManager : MonoBehaviour
         {
             var vfx = Instantiate(timeoutVFXPrefab, vfxPosition, Quaternion.identity);
             Destroy(vfx, vfxDuration);
-            yield return new WaitForSeconds(vfxDuration);
         }
 
-        StartCoroutine(PopAndFade(heart));
+        StartCoroutine(PopHeart(heart));
+        yield break;
     }
 
-    private IEnumerator PopAndFade(Image img)
+    private IEnumerator PopHeart(Image img)
     {
         if (img == null) yield break;
 
@@ -91,28 +102,15 @@ public class LivesManager : MonoBehaviour
             yield return null;
         }
 
-        // Pop down + fade out gleichzeitig
+        // Pop down
         t = 0f;
         while (t < popDuration)
         {
             t += Time.unscaledDeltaTime;
-            float p = t / popDuration;
-            rt.localScale = Vector3.Lerp(bigScale, originalScale, p);
-            var c = img.color;
-            c.a = Mathf.Lerp(1f, 0f, p);
-            img.color = c;
+            rt.localScale = Vector3.Lerp(bigScale, originalScale, t / popDuration);
             yield return null;
         }
 
         rt.localScale = originalScale;
-        SetHeartAlpha(img, 0f);
-    }
-
-    private void SetHeartAlpha(Image img, float alpha)
-    {
-        if (img == null) return;
-        var c = img.color;
-        c.a = alpha;
-        img.color = c;
     }
 }
