@@ -3,8 +3,15 @@ using System.Collections;
 
 public class FountainModeSystem : MonoBehaviour
 {
+    public static FountainModeSystem Instance;
+
     public static event System.Action OnFountainModeStarted;
     public static event System.Action OnFountainModeEnded;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     [SerializeField] private GameObject fountainPointPrefab;
     [SerializeField] private Transform portal;
@@ -97,6 +104,16 @@ public class FountainModeSystem : MonoBehaviour
         }
     }
 
+    public void ForceStop()
+    {
+        StopAllCoroutines();
+        spawnedPoints = totalPoints; // verhindert weiteres Spawnen
+        activePoints = 0;
+        foreach (var fp in FindObjectsByType<FountainPoint>(FindObjectsSortMode.None))
+            Destroy(fp.gameObject);
+        OnFountainModeEnded?.Invoke();
+    }
+
     private void EndMode()
     {
         Debug.Log("💧 Fountain Mode END");
@@ -104,8 +121,6 @@ public class FountainModeSystem : MonoBehaviour
         if (spawner != null)
         {
             spawner.PauseSpawning(false);
-
-            // 🔥 GANZ WICHTIG
             spawner.SpawnNextPoint();
         }
 

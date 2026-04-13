@@ -136,6 +136,17 @@ public void Activate()
         remaining--;
     }
 
+public void ForceStop()
+{
+    if (!isActive) return;
+    StopAllCoroutines();
+    isActive = false;
+    remaining = 0;
+    looper?.SetGravityMode(false);
+    foreach (var gp in FindObjectsByType<GravityPoint>(FindObjectsSortMode.None))
+        Destroy(gp.gameObject);
+}
+
 private void EndMode()
 {
     Debug.Log("🌪️ Gravity Mode END");

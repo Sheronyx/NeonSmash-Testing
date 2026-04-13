@@ -523,6 +523,9 @@ public class MixedPointSpawner : MonoBehaviour
         if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
         CurrentSwipePoint = null;
 
+        if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
+        if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
+
         Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
 
         if (ScreenShakeManager.Instance != null)
