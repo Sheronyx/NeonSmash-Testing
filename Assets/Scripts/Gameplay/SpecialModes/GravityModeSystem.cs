@@ -98,6 +98,9 @@ public void Activate()
     var gp = obj.GetComponent<GravityPoint>();
     if (gp != null)
     {
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnElementSpawnedShowOverlay(TutorialPointType.GravityPoint, worldPos);
+
         gp.Init(this);
 
         float multiplier = GetSpeedMultiplier();

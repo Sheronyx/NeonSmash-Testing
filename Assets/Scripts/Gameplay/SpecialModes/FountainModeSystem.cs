@@ -78,6 +78,9 @@ public class FountainModeSystem : MonoBehaviour
         var go = Instantiate(fountainPointPrefab, pos, Quaternion.identity);
         var point = go.GetComponent<FountainPoint>();
 
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnElementSpawnedShowOverlay(TutorialPointType.FountainPoint, pos);
+
         Vector3 velocity = new Vector3(
             Random.Range(-shootForceX, shootForceX),
             shootForceY,

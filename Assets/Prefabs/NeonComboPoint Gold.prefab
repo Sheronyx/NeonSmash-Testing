@@ -79,7 +79,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ede7420ec463340909c992e67cfa4d6e, type: 3}
   m_Color: {r: 1, g: 0.8235294, b: 0.38431373, a: 1}
@@ -271,7 +271,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: -5567432600334935754, guid: 380b17d6bc94e4bb8a6bfca19f589203, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -330,8 +330,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22b9c315e9ff88d4e862184938fc4c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawner: {fileID: 0}
   explodeVFXPrefab: {fileID: 7636390409669451756, guid: 01bd759c2b28f42f795b86988d06a9e0, type: 3}
+  spawner: {fileID: 0}
 --- !u!61 &-2735477753363479214
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -554,7 +554,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1088205902967396284, guid: b15d80d72d9e64e35baede90f26cd6ee, type: 3}
   m_Color: {r: 1, g: 0.8222409, b: 0.3820755, a: 1}

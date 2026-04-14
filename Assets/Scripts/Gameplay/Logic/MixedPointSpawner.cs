@@ -96,6 +96,14 @@ public class MixedPointSpawner : MonoBehaviour
 
     public SwipePoint CurrentSwipePoint { get; private set; }
     public Vector3? CurrentPointPosition => currentPoint != null ? currentPoint.transform.position : null;
+    public bool IsRunning => running;
+    public bool IsTutorialMode { get; private set; }
+
+    public void SetTutorialMode(bool active) => IsTutorialMode = active;
+
+    // Zwischengespeicherter SwipePoint während er gesperrt ist
+    private SwipePoint _lockedSwipePoint;
+
     private GameObject currentPoint;
     private GameObject lastPoint;
 
@@ -153,7 +161,8 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void SpawnNextPoint()
     {
-        
+        if (IsTutorialMode) return;
+
         if (levelUp != null && levelUp.IsShowingPanel) return;
         if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
 
@@ -372,7 +381,8 @@ public class MixedPointSpawner : MonoBehaviour
         lastPoint = newPoint;
         currentPoint = newPoint;
 
-        if (IsInfinityMode)
+
+        if (IsInfinityMode && !IsTutorialMode)
         {
             int score = CurrentScore;
             float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
@@ -380,14 +390,17 @@ public class MixedPointSpawner : MonoBehaviour
             timeoutRoutine = StartCoroutine(Co_PointTimeout(newPoint, dynamicTime, useUnscaledTime));
             if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s (Score={score}, Mode=Infinity)");
         }
-        else
+        else if (!IsTutorialMode)
         {
             if (debugLogs) Debug.Log("[Spawner] Kein Timer gestartet (Mode=Time).");
         }
 
-        TrySpawnGoldModePoint();
-        TrySpawnGravityModePoint();
-        TrySpawnFountainModePoint();
+        if (!IsTutorialMode)
+        {
+            TrySpawnGoldModePoint();
+            TrySpawnGravityModePoint();
+            TrySpawnFountainModePoint();
+        }
 
         if (portalFlash != null)
         {
@@ -412,7 +425,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         Destroy(point);
 
-        if (IsInfinityMode)
+        if (IsInfinityMode && !IsTutorialMode)
         {
             int score = CurrentScore;
             if (levelUp.TryTriggerLevelUp(score))
@@ -845,6 +858,71 @@ public class MixedPointSpawner : MonoBehaviour
     public bool IsLevelUpActive()
     {
         return levelUp != null && levelUp.IsShowingPanel;
+    }
+
+    // ── Tutorial-Kontrolle ────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Spawnt gezielt einen Tap- oder SwipePoint an gegebener Position (Tutorial).
+    /// Wählt automatisch Gold-Prefabs wenn GoldMode aktiv ist.
+    /// Optional: erzwingt eine SwipeDirection auf dem gespawnten SwipePoint.
+    /// </summary>
+    public void ForceTutorialSpawn(bool isTap, Vector3 worldPos,
+                                   SwipeDirection? forcedDir = null)
+    {
+        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; CurrentSwipePoint = null; }
+        StopPointTimer();
+
+        bool goldActive = GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive;
+        GameObject prefab = isTap
+            ? (goldActive ? normalPointGoldPrefab : normalPointPrefab)
+            : (goldActive ? swipePointGoldPrefab  : swipePointPrefab);
+
+        CreatePoint(prefab, worldPos);
+
+        // ── Sperrung: Element bis zum Overlay-Erscheinen nicht interaktierbar ──
+        // Collider deaktivieren (verhindert Tap-Erkennung via Physics2D)
+        if (currentPoint != null)
+        {
+            var col = currentPoint.GetComponent<Collider2D>();
+            if (col != null) col.enabled = false;
+        }
+        // SwipePoint-Referenz entfernen (verhindert Swipe-Erkennung via CurrentSwipePoint)
+        if (CurrentSwipePoint != null)
+        {
+            _lockedSwipePoint = CurrentSwipePoint;
+            CurrentSwipePoint = null;
+        }
+
+        if (!isTap && forcedDir.HasValue && _lockedSwipePoint != null)
+            _lockedSwipePoint.SetDirection(forcedDir.Value);
+    }
+
+    /// <summary>
+    /// Gibt den aktuellen Tutorial-Point für Interaktion frei
+    /// (Collider aktivieren + SwipePoint-Referenz wiederherstellen).
+    /// </summary>
+    public void UnlockCurrentPoint()
+    {
+        if (currentPoint != null)
+        {
+            var col = currentPoint.GetComponent<Collider2D>();
+            if (col != null) col.enabled = true;
+        }
+        if (_lockedSwipePoint != null)
+        {
+            CurrentSwipePoint = _lockedSwipePoint;
+            _lockedSwipePoint = null;
+        }
+    }
+
+    /// <summary>Registriert einen vom TutorialManager manuell gespawnten Orb im Tracking.</summary>
+    public void RegisterTutorialOrb(GameObject orb)
+    {
+        currentActivationPoint = orb;
+
+        var goldOrb = orb.GetComponent<GoldModeActivationPoint>();
+        if (goldOrb != null) currentGoldModePoint = orb;
     }
 
     private void TrySpawnFountainModePoint()

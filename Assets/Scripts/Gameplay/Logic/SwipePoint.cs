@@ -20,10 +20,19 @@ public class SwipePoint : BasePoint
 
     private SwipeDirection direction;
     private float effectiveRadius;
+    private bool _directionSet = false;
+
+    public void SetDirection(SwipeDirection dir)
+    {
+        direction = dir;
+        _directionSet = true;
+        RotateIcon(dir);
+    }
 
     private void Start()
     {
-        direction = GetRandomDirection();
+        if (!_directionSet)
+            direction = GetRandomDirection();
         RotateIcon(direction);
         CacheEffectiveRadius();
     }
@@ -80,6 +89,9 @@ public class SwipePoint : BasePoint
 
         // ✅ SUCCESS
         isHit = true;
+
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.SwipePoint);
 
         AudioManager.Instance?.PlaySwipePoint();
 

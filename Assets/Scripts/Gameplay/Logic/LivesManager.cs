@@ -51,6 +51,7 @@ public class LivesManager : MonoBehaviour
     // damage = 0 → nutzt damagePerMiss aus Inspector; sonst direkt übergeben
     public bool LoseLife(Vector3 vfxPosition, float damage = 0f)
     {
+        if (TutorialManager.IsTutorialActive) return true; // kein Schaden im Tutorial
         if (health <= 0f) return false;
 
         float actualDamage = damage > 0f ? damage : damagePerMiss;

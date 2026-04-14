@@ -43,6 +43,9 @@ public class FountainModeActivationPoint : MonoBehaviour
     {
         if (isTriggered) return;
 
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.FountainOrb);
+
         isTriggered = true;
 
         spawner?.PauseSpawning(true);

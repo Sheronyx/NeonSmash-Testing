@@ -178,10 +178,13 @@ public class GravityPoint : BasePoint
 
         isDestroyed = true;
 
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.GravityPoint);
+
         SpawnExplosion();
         AudioManager.Instance?.PlayNormalPoint();
 
-        gravitySystem?.OnPointDestroyed(true);
+        if (gravitySystem != null) gravitySystem.OnPointDestroyed(true);
 
         Destroy(gameObject);
     }

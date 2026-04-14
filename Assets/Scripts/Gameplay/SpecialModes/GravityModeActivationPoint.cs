@@ -48,6 +48,9 @@ public class GravityModeActivationPoint : MonoBehaviour
     {
         if (isDestroyed || isFinishing) return;
 
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.GravityOrb);
+
         isDestroyed = true;
         isFinishing = true;
 

@@ -43,6 +43,9 @@ public class GoldModeActivationPoint : MonoBehaviour
         if (spawner != null && spawner.IsLevelUpActive()) return;
         if (isDestroyed || isFinishing) return;
 
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.GoldOrb);
+
         isDestroyed = true;
         isFinishing = true;
 

@@ -60,10 +60,13 @@ public class FountainPoint : BasePoint
 
         isDestroyed = true;
 
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.FountainPoint);
+
         SpawnExplosion();
         AudioManager.Instance?.PlayNormalPoint();
 
-        system?.OnPointFinished(true); // ✅ Punkt
+        if (system != null) system.OnPointFinished(true); // ✅ Punkt
 
         Destroy(gameObject);
     }
