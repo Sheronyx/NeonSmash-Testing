@@ -28,12 +28,12 @@ public class PortalSpawnBeam : MonoBehaviour
     private void EnableGold() => isGoldMode = true;
     private void DisableGold() => isGoldMode = false;
 
-    public void SpawnWithBeam(GameObject prefab, Vector3 targetPosition)
+    public void SpawnWithBeam(GameObject prefab, Vector3 targetPosition, System.Action onPointCreated = null)
     {
-        StartCoroutine(Co_SpawnProjectile(prefab, targetPosition));
+        StartCoroutine(Co_SpawnProjectile(prefab, targetPosition, onPointCreated));
     }
 
-    private IEnumerator Co_SpawnProjectile(GameObject pointPrefab, Vector3 target)
+    private IEnumerator Co_SpawnProjectile(GameObject pointPrefab, Vector3 target, System.Action onPointCreated)
     {
         Vector3 start = portalOrigin.position;
         start.z = 0f;
@@ -59,5 +59,6 @@ public class PortalSpawnBeam : MonoBehaviour
 
         // 🔥 DAS ist der wichtigste Moment
         spawner.CreatePoint(pointPrefab, target);
+        onPointCreated?.Invoke();
     }
 }

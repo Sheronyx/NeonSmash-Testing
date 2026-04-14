@@ -40,7 +40,6 @@ public class TutorialOverlay : MonoBehaviour
     [Header("End Screen")]
     [SerializeField] private GameObject endPanel;
     [SerializeField] private TextMeshProUGUI endLabel;
-    [SerializeField] private Button startButton;
 
     // ── Offsets ───────────────────────────────────────────────────────────────
     [Header("Label-Offset vom Punkt (Canvas-Pixel)")]
@@ -150,6 +149,81 @@ public class TutorialOverlay : MonoBehaviour
         fadeCoroutine = StartCoroutine(FadeUnscaled(canvasGroup, canvasGroup.alpha, 1f, fadeDuration, null));
     }
 
+    /// <summary>
+    /// Zeigt nur den Text an einer festen Position – keine Finger-Animation, kein Spotlight.
+    /// Blendet nach <paramref name="duration"/> Sekunden automatisch aus und ruft onDone auf.
+    /// </summary>
+    public void ShowHint(string text, Vector3 worldPos, float duration, Action onDone = null)
+    {
+        if (animCoroutine != null) { StopCoroutine(animCoroutine); animCoroutine = null; }
+        if (fadeCoroutine  != null) { StopCoroutine(fadeCoroutine);  fadeCoroutine  = null; }
+
+        Vector2 canvasPos = WorldToCanvasPos(worldPos);
+
+        if (label != null)
+        {
+            // Kein labelOffset – Hinweis wird exakt an der angegebenen Position platziert
+            label.rectTransform.anchoredPosition = canvasPos;
+            label.text = text;
+        }
+
+        // Kein Finger, kein Spotlight
+        if (finger        != null) finger.gameObject.SetActive(false);
+        if (spotlightGlow != null) spotlightGlow.gameObject.SetActive(false);
+
+        // Dunkler Hintergrund einblenden
+        if (dimBackground != null)
+            StartCoroutine(FadeUnscaled(dimBackground, dimBackground.alpha, dimTargetAlpha, fadeDuration, null));
+
+        fadeCoroutine = StartCoroutine(HintRoutine(duration, onDone));
+    }
+
+    private IEnumerator HintRoutine(float duration, Action onDone)
+    {
+        // Einblenden
+        canvasGroup.interactable   = false;
+        canvasGroup.blocksRaycasts = false;
+        float t = 0f;
+        while (t < fadeDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.Lerp(0f, 1f, t / fadeDuration);
+            yield return null;
+        }
+        canvasGroup.alpha = 1f;
+
+        // Anzeigedauer + Puls-Animation auf dem Label
+        RectTransform labelRT = label?.rectTransform;
+        t = 0f;
+        while (t < duration)
+        {
+            t += Time.unscaledDeltaTime;
+            if (labelRT != null)
+            {
+                // Sanftes Atmen: 0.95 ↔ 1.05, Periode ~1.2 s
+                float pulse = 1f + 0.05f * Mathf.Sin(t * Mathf.PI * 1.67f);
+                labelRT.localScale = Vector3.one * pulse;
+            }
+            yield return null;
+        }
+        if (labelRT != null) labelRT.localScale = Vector3.one;
+
+        // Ausblenden (Text + Dim gleichzeitig)
+        if (dimBackground != null)
+            StartCoroutine(FadeUnscaled(dimBackground, dimBackground.alpha, 0f, fadeDuration, null));
+
+        t = 0f;
+        while (t < fadeDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            canvasGroup.alpha = Mathf.Lerp(1f, 0f, t / fadeDuration);
+            yield return null;
+        }
+        canvasGroup.alpha = 0f;
+
+        onDone?.Invoke();
+    }
+
     public void Hide(Action onComplete)
     {
         if (animCoroutine != null) { StopCoroutine(animCoroutine); animCoroutine = null; }
@@ -170,13 +244,26 @@ public class TutorialOverlay : MonoBehaviour
         }));
     }
 
-    /// <summary>Zeigt den End-Screen mit Start-Button.</summary>
-    public void ShowEndScreen(string message, Action onStartClicked)
+    // ── End Screen ────────────────────────────────────────────────────────────
+
+    [Header("End Screen Timing")]
+    [SerializeField] private float endDisplayDuration = 2f;
+    [SerializeField] private float endPopInDuration   = 0.35f;
+    [SerializeField] private float endPopOutDuration  = 0.25f;
+
+    [Header("End Screen Firework")]
+    [Tooltip("ParticleSystem mit NeonTap-Sprite – wird nach dem Pop-in gespielt")]
+    [SerializeField] private ParticleSystem endFirework;
+
+    private Coroutine endCoroutine;
+
+    /// <summary>Zeigt den End-Screen mit Popup-Animation, blendet nach 2 s automatisch aus.</summary>
+    public void ShowEndScreen(string message, Action onComplete)
     {
         if (animCoroutine != null) { StopCoroutine(animCoroutine); animCoroutine = null; }
         if (fadeCoroutine  != null) { StopCoroutine(fadeCoroutine);  fadeCoroutine  = null; }
+        if (endCoroutine   != null) { StopCoroutine(endCoroutine);   endCoroutine   = null; }
 
-        canvasGroup.alpha = 0f;
         if (finger        != null) finger.gameObject.SetActive(false);
         if (tapRipple     != null) tapRipple.gameObject.SetActive(false);
         if (swipeTrail    != null) swipeTrail.gameObject.SetActive(false);
@@ -185,22 +272,81 @@ public class TutorialOverlay : MonoBehaviour
         if (dimBackground != null)
             StartCoroutine(FadeUnscaled(dimBackground, dimBackground.alpha, dimTargetAlpha, fadeDuration, null));
 
-        if (endPanel == null) { onStartClicked?.Invoke(); return; }
+        if (endPanel == null) { onComplete?.Invoke(); return; }
 
         if (endLabel != null) endLabel.text = message;
 
-        if (startButton != null)
+        endPanel.SetActive(true);
+        endCoroutine = StartCoroutine(EndScreenRoutine(onComplete));
+    }
+
+    private IEnumerator EndScreenRoutine(Action onComplete)
+    {
+        // Popup-Panel hat eine eigene RectTransform – animieren wir die Scale
+        RectTransform rt = endPanel.GetComponent<RectTransform>();
+
+        // ── Pop-in: 0 → 1.12 → 1.0 ──────────────────────────────────────────
+        if (rt != null)
         {
-            startButton.onClick.RemoveAllListeners();
-            startButton.onClick.AddListener(() => onStartClicked?.Invoke());
+            rt.localScale = Vector3.zero;
+            float t = 0f;
+            while (t < endPopInDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float p = Mathf.Clamp01(t / endPopInDuration);
+                // Overshoot-Kurve: sinusoid mit leichtem Überschwingen
+                float scale = Mathf.Sin(p * Mathf.PI * 0.5f);
+                scale = 1f + (scale - 1f) * 0.12f + scale * 0.12f; // leichter Overshoot
+                // Einfacher: SmoothStep mit Overshoot via Punch
+                float punch = Mathf.Sin(p * Mathf.PI) * 0.12f;
+                rt.localScale = Vector3.one * (Mathf.SmoothStep(0f, 1f, p) + punch);
+                yield return null;
+            }
+            rt.localScale = Vector3.one;
         }
 
-        endPanel.SetActive(true);
+        // ── Feuerwerk starten (nach Pop-in) ──────────────────────────────────
+        if (endFirework != null)
+        {
+            endFirework.gameObject.SetActive(true);
+            endFirework.Play();
+        }
+
+        // ── 2 Sekunden anzeigen ───────────────────────────────────────────────
+        yield return WaitUnscaled(endDisplayDuration);
+
+        // ── Feuerwerk stoppen ─────────────────────────────────────────────────
+        if (endFirework != null)
+        {
+            endFirework.Stop();
+            endFirework.gameObject.SetActive(false);
+        }
+
+        // ── Pop-out: 1.0 → 0 + Dim ausblenden ────────────────────────────────
+        if (dimBackground != null)
+            StartCoroutine(FadeUnscaled(dimBackground, dimBackground.alpha, 0f, endPopOutDuration, null));
+
+        if (rt != null)
+        {
+            float t = 0f;
+            while (t < endPopOutDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float p = Mathf.Clamp01(t / endPopOutDuration);
+                rt.localScale = Vector3.one * Mathf.SmoothStep(1f, 0f, p);
+                yield return null;
+            }
+            rt.localScale = Vector3.zero;
+        }
+
+        endPanel.SetActive(false);
+        onComplete?.Invoke();
     }
 
     public void HideEndScreen()
     {
-        if (endPanel      != null) endPanel.SetActive(false);
+        if (endCoroutine != null) { StopCoroutine(endCoroutine); endCoroutine = null; }
+        if (endPanel     != null) endPanel.SetActive(false);
         if (dimBackground != null)
             StartCoroutine(FadeUnscaled(dimBackground, dimBackground.alpha, 0f, fadeDuration, null));
     }

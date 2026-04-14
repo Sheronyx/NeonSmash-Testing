@@ -382,7 +382,7 @@ public class MixedPointSpawner : MonoBehaviour
         currentPoint = newPoint;
 
 
-        if (IsInfinityMode && !IsTutorialMode)
+        if (IsInfinityMode && !IsTutorialMode && levelUp != null)
         {
             int score = CurrentScore;
             float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
@@ -425,7 +425,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         Destroy(point);
 
-        if (IsInfinityMode && !IsTutorialMode)
+        if (IsInfinityMode && !IsTutorialMode && levelUp != null)
         {
             int score = CurrentScore;
             if (levelUp.TryTriggerLevelUp(score))
@@ -863,12 +863,28 @@ public class MixedPointSpawner : MonoBehaviour
     // ── Tutorial-Kontrolle ────────────────────────────────────────────────────
 
     /// <summary>
+    /// Gibt eine zufällige, gültige Spawn-Position zurück (wie im echten Spiel).
+    /// Wird vom Tutorial für stille Schritte genutzt.
+    /// </summary>
+    public Vector3 GetRandomSpawnWorldPos()
+    {
+        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        Vector2 vp = new Vector2(
+            Random.Range(allowedViewport.xMin, allowedViewport.xMax),
+            Random.Range(allowedViewport.yMin, allowedViewport.yMax)
+        );
+        return ViewportToWorldOnZ0(vp);
+    }
+
+    /// <summary>
     /// Spawnt gezielt einen Tap- oder SwipePoint an gegebener Position (Tutorial).
-    /// Wählt automatisch Gold-Prefabs wenn GoldMode aktiv ist.
-    /// Optional: erzwingt eine SwipeDirection auf dem gespawnten SwipePoint.
+    /// lockUntilOverlay=true: Collider wird gesperrt bis UnlockCurrentPoint() aufgerufen wird
+    ///                        (für Schritte mit Erklärungstext).
+    /// lockUntilOverlay=false: Point ist sofort interaktiv (für stille Schritte).
     /// </summary>
     public void ForceTutorialSpawn(bool isTap, Vector3 worldPos,
-                                   SwipeDirection? forcedDir = null)
+                                   SwipeDirection? forcedDir = null,
+                                   bool lockUntilOverlay = true)
     {
         if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; CurrentSwipePoint = null; }
         StopPointTimer();
@@ -878,22 +894,40 @@ public class MixedPointSpawner : MonoBehaviour
             ? (goldActive ? normalPointGoldPrefab : normalPointPrefab)
             : (goldActive ? swipePointGoldPrefab  : swipePointPrefab);
 
-        CreatePoint(prefab, worldPos);
+        if (portalBeam != null)
+        {
+            if (lockUntilOverlay)
+            {
+                // Beam feuern → nach Ankunft sperren (Callback)
+                SwipeDirection? dir = forcedDir;
+                portalBeam.SpawnWithBeam(prefab, worldPos, () => LockTutorialPoint(isTap, dir));
+            }
+            else
+            {
+                // Stiller Schritt: Beam feuern, kein Sperren – Point sofort interaktiv
+                portalBeam.SpawnWithBeam(prefab, worldPos);
+            }
+        }
+        else
+        {
+            CreatePoint(prefab, worldPos);
+            if (lockUntilOverlay)
+                LockTutorialPoint(isTap, forcedDir);
+        }
+    }
 
-        // ── Sperrung: Element bis zum Overlay-Erscheinen nicht interaktierbar ──
-        // Collider deaktivieren (verhindert Tap-Erkennung via Physics2D)
+    private void LockTutorialPoint(bool isTap, SwipeDirection? forcedDir)
+    {
         if (currentPoint != null)
         {
             var col = currentPoint.GetComponent<Collider2D>();
             if (col != null) col.enabled = false;
         }
-        // SwipePoint-Referenz entfernen (verhindert Swipe-Erkennung via CurrentSwipePoint)
         if (CurrentSwipePoint != null)
         {
             _lockedSwipePoint = CurrentSwipePoint;
             CurrentSwipePoint = null;
         }
-
         if (!isTap && forcedDir.HasValue && _lockedSwipePoint != null)
             _lockedSwipePoint.SetDirection(forcedDir.Value);
     }

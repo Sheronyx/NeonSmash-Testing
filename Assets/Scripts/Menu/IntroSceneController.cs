@@ -27,7 +27,19 @@ public class IntroSceneController : MonoBehaviour
     {
         yield return SceneFader.Instance.FadeFromBlack();
         yield return StartCoroutine(LogoHeartbeat());
-        SceneManager.LoadScene(nextScene);
+
+        bool tutorialNeeded = PlayerPrefs.GetInt("TutorialCompleted_v1", 0) == 0;
+        if (tutorialNeeded)
+        {
+            // Spielmodus explizit auf Time setzen (GlobalGameManager default = Infinity)
+            if (GlobalGameManager.Instance != null)
+                GlobalGameManager.Instance.OverrideSelectedMode(GameMode.Time);
+            SceneManager.LoadScene("GameScene_TimeMode");
+        }
+        else
+        {
+            SceneManager.LoadScene(nextScene);
+        }
     }
 
     private IEnumerator LogoHeartbeat()
