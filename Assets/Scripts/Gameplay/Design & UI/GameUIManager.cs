@@ -42,6 +42,14 @@ public class GameUIManager : MonoBehaviour
         if (pauseButton != null)
             pauseButton.SetActive(false);
 
+        // Time Mode nach dem ersten Infinity-Spiel freischalten
+        if (isInfinityMode && PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 0)
+        {
+            PlayerPrefs.SetInt("TimeModeUnlocked", 1);
+            PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 1);
+            PlayerPrefs.Save();
+        }
+
         string text = isInfinityMode ? "GAME OVER" : "FINISHED";
 
         if (gameOverBanner != null && gameOverTextTMP != null)

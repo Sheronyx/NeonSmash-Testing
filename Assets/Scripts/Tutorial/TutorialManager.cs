@@ -138,7 +138,7 @@ public class TutorialManager : MonoBehaviour
         yield return ShowTimedHint(textScoreHint, scoreHintVP, scoreHintDuration);
 
         // ── 2–5. Stille Taps – zufällige Positionen, sofort interaktiv ──────────
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 2; i++)
         {
             spawner.ForceTutorialSpawn(isTap: true, worldPos: spawner.GetRandomSpawnWorldPos(), lockUntilOverlay: false);
             yield return WaitForSilentAction(TutorialPointType.NormalPoint);
@@ -159,6 +159,14 @@ public class TutorialManager : MonoBehaviour
         }
 
         // ── Sieg-Screen ───────────────────────────────────────────────────────
+        // Time Mode freischalten (falls noch nicht geschehen)
+        if (PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 0)
+        {
+            PlayerPrefs.SetInt("TimeModeUnlocked", 1);
+            PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 1);
+            PlayerPrefs.Save();
+        }
+
         tutorialActive = false;
         Time.timeScale = 1f;
         overlay.ShowEndScreen(textEnd, () =>
