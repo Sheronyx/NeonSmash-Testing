@@ -158,6 +158,7 @@ MonoBehaviour:
   fountainMaterial: {fileID: 2100000, guid: 71d4dcee25c0846d9b306cb95b3a3073, type: 2}
   fadeInTime: 0.6
   fadeOutTime: 0.8
+  maxIntensity: 1
 --- !u!4 &52405495
 Transform:
   m_ObjectHideFlags: 0
@@ -545,7 +546,7 @@ MonoBehaviour:
   uiManager: {fileID: 1942897538}
   goldModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c878f24f6e5944512829675b4a9dce8d, type: 3}
   goldModeSpawnScoreThreshold: 5
-  goldModeSpawnChance: 0.5
+  goldModeSpawnChance: 0.3
   activationOrbCooldown: 35
   initialOrbDelayMin: 25
   initialOrbDelayMax: 35

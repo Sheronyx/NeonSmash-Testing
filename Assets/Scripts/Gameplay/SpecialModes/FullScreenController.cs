@@ -23,6 +23,9 @@ public class FullScreenController : MonoBehaviour
     [SerializeField] private float fadeInTime = 0.3f;
     [SerializeField] private float fadeOutTime = 0.5f;
 
+    [Header("Intensity Cap (1 = volle Shader-Stärke)")]
+    [SerializeField] [Range(0f, 1f)] private float maxIntensity = 1f;
+
     private int FadeID = Shader.PropertyToID("_Fade");
 
     private Coroutine activeRoutine;
@@ -31,9 +34,9 @@ public class FullScreenController : MonoBehaviour
     {
         DisableAllFeatures();
 
-        SetFade(gravityMaterial, 0f);
-        SetFade(goldMaterial, 0f);
-        SetFade(chaosMaterial, 0f);
+        SetFade(gravityMaterial,  0f);
+        SetFade(goldMaterial,     0f);
+        SetFade(chaosMaterial,    0f);
         SetFade(fountainMaterial, 0f);
     }
 
@@ -43,66 +46,70 @@ public class FullScreenController : MonoBehaviour
         SpecialModeManager.OnModeEnded += HandleModeEnded;
     }
 
-private void OnDestroy()
-{
-    Cleanup();
-}
-
-private void OnDisable()
-{
-    SpecialModeManager.OnModeStarted -= HandleModeStarted;
-    SpecialModeManager.OnModeEnded -= HandleModeEnded;
-
-    Cleanup();
-}
-
-private void Cleanup()
-{
-    DisableAllFeatures();
-
-    SetFade(gravityMaterial, 0f);
-    SetFade(goldMaterial, 0f);
-    SetFade(chaosMaterial, 0f);
-
-    currentFeature = null;
-    currentMaterial = null;
-}
-
-    private void HandleModeStarted(SpecialMode mode)
-{
-    DisableAllFeatures();
-
-    switch (mode)
+    private void OnDestroy()
     {
-        case SpecialMode.Gravity:
-            currentFeature = gravityFeature;
-            currentMaterial = gravityMaterial;
-            break;
-
-        case SpecialMode.Gold:
-            currentFeature = goldFeature;
-            currentMaterial = goldMaterial;
-            break;
-
-        case SpecialMode.Chaos:
-            currentFeature = chaosFeature;
-            currentMaterial = chaosMaterial;
-            break;
-
-        case SpecialMode.Fountain: // 👈 DAS IST DEIN FIX
-            currentFeature = fountainFeature;
-            currentMaterial = fountainMaterial;
-            break;
+        Cleanup();
     }
 
-    if (currentFeature != null)
-        currentFeature.SetActive(true);
+    private void OnDisable()
+    {
+        SpecialModeManager.OnModeStarted -= HandleModeStarted;
+        SpecialModeManager.OnModeEnded -= HandleModeEnded;
 
-    if (activeRoutine != null)
-        StopCoroutine(activeRoutine);
+        Cleanup();
+    }
 
-    activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
-}
+    private void Cleanup()
+    {
+        DisableAllFeatures();
+
+        SetFade(gravityMaterial,  0f);
+        SetFade(goldMaterial,     0f);
+        SetFade(chaosMaterial,    0f);
+        SetFade(fountainMaterial, 0f);
+
+        currentFeature  = null;
+        currentMaterial = null;
+    }
+
+    private void HandleModeStarted(SpecialMode mode)
+    {
+        DisableAllFeatures();
+
+        switch (mode)
+        {
+            case SpecialMode.Gravity:
+                currentFeature  = gravityFeature;
+                currentMaterial = gravityMaterial;
+                break;
+
+            case SpecialMode.Gold:
+                currentFeature  = goldFeature;
+                currentMaterial = goldMaterial;
+                break;
+
+            case SpecialMode.Chaos:
+                currentFeature  = chaosFeature;
+                currentMaterial = chaosMaterial;
+                break;
+
+            case SpecialMode.Fountain:
+                currentFeature  = fountainFeature;
+                currentMaterial = fountainMaterial;
+                break;
+        }
+
+        // Sicherstellen dass Material bei 0 startet
+        SetFade(currentMaterial, 0f);
+
+        if (currentFeature != null)
+            currentFeature.SetActive(true);
+
+        if (activeRoutine != null)
+            StopCoroutine(activeRoutine);
+
+        activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
+    }
 
     private void HandleModeEnded(SpecialMode mode)
     {
@@ -126,8 +133,8 @@ private void Cleanup()
 
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
-            float t = elapsed / duration;
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
 
             float eased = Mathf.SmoothStep(from, to, t);
 
@@ -142,8 +149,7 @@ private void Cleanup()
     private void ApplyFade(float value)
     {
         if (currentMaterial == null) return;
-
-        currentMaterial.SetFloat(FadeID, value);
+        currentMaterial.SetFloat(FadeID, value * maxIntensity);
     }
 
     private void SetFade(Material mat, float value)
