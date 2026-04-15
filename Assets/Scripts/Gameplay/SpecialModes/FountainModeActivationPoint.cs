@@ -30,6 +30,9 @@ public class FountainModeActivationPoint : MonoBehaviour
             portalTransform = p.transform;
         }
 
+        TutorialManager.Instance?.OnElementSpawnedShowOverlay(
+            TutorialPointType.FountainOrb, transform.position, gameObject);
+
         StartCoroutine(AutoDestroy());
     }
 

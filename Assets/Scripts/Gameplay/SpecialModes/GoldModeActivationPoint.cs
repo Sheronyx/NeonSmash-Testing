@@ -28,6 +28,9 @@ public class GoldModeActivationPoint : MonoBehaviour
         if (portal != null)
             portalTransform = portal.transform;
 
+        TutorialManager.Instance?.OnElementSpawnedShowOverlay(
+            TutorialPointType.GoldOrb, transform.position, gameObject);
+
         StartCoroutine(AutoDestroy());
     }
 

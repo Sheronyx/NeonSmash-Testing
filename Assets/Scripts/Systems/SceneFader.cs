@@ -12,6 +12,11 @@ public class SceneFader : MonoBehaviour
     public Image  fadeImage;
     public float  fadeDuration = 1f;
 
+    /// <summary>True solange der Fade gerade läuft (Bild noch nicht vollständig transparent).</summary>
+    public bool IsFading => fadeImage != null && fadeImage.color.a > 0.01f;
+
+    private bool _isLoading = false;
+
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
@@ -33,6 +38,8 @@ public class SceneFader : MonoBehaviour
     // Variante A: Klick hier drin abspielen lassen (kein UIButtonSound nötig)
     public void LoadSceneWithClick(string sceneName, AudioClip click, float minDelay = 0.08f)
     {
+        if (_isLoading) return;
+        _isLoading = true;
         if (click != null && UIAudio.Instance != null)
             UIAudio.Instance.PlayOneShot(click);   // UIAudio ist DontDestroyOnLoad + ignoreListenerPause
 
@@ -42,12 +49,16 @@ public class SceneFader : MonoBehaviour
     // Variante B: Du spielst den Klick bereits extern (z. B. per UIButtonSound)
     public void LoadSceneDelayed(string sceneName, float minDelay = 0.08f)
     {
+        if (_isLoading) return;
+        _isLoading = true;
         StartCoroutine(FadeAndSwitchAsync(sceneName, minDelay));
     }
 
     // Alte API, falls irgendwo noch verwendet
     public void LoadScene(string sceneName)
     {
+        if (_isLoading) return;
+        _isLoading = true;
         StartCoroutine(FadeAndSwitchAsync(sceneName, 0.0f));
     }
 
@@ -56,6 +67,7 @@ public class SceneFader : MonoBehaviour
 {
     // 1️⃣ Bildschirm schwarz machen
     yield return FadeToBlack();
+
 
     // 2️⃣ Async Szene laden
     AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
@@ -90,6 +102,7 @@ public class SceneFader : MonoBehaviour
 
     // 7️⃣ Jetzt erst Fade öffnen
     yield return FadeFromBlack();
+    _isLoading = false;
 }
 
     // ===== FADES =====

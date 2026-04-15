@@ -46,12 +46,21 @@ public class MainMenuController : MonoBehaviour
         }
 
         // Unlock-Notification anzeigen (einmalig nach erstem Infinity-Spiel)
-        if (PlayerPrefs.GetInt("ShowTimeModeUnlockNotification", 0) == 1)
+        int showNotif = PlayerPrefs.GetInt("ShowTimeModeUnlockNotification", 0);
+        Debug.Log($"[MainMenu] ShowNotif={showNotif}  Unlocked={PlayerPrefs.GetInt("TimeModeUnlocked", 0)}  Panel={unlockNotificationPanel}");
+        if (showNotif == 1)
         {
             PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 0);
             PlayerPrefs.Save();
             if (unlockNotificationPanel != null)
+            {
+                Debug.Log("[MainMenu] Starting Co_ShowUnlockNotification");
                 StartCoroutine(Co_ShowUnlockNotification());
+            }
+            else
+            {
+                Debug.LogWarning("[MainMenu] unlockNotificationPanel is NULL – Coroutine nicht gestartet!");
+            }
         }
     }
 
@@ -95,6 +104,20 @@ public class MainMenuController : MonoBehaviour
 
     private IEnumerator Co_ShowUnlockNotification()
     {
+        Debug.Log("[MainMenu] Coroutine gestartet");
+        // Warten bis SceneFader-Einblendung wirklich abgeschlossen ist
+        if (SceneFader.Instance != null)
+        {
+            Debug.Log($"[MainMenu] Warte auf Fade… IsFading={SceneFader.Instance.IsFading}");
+            yield return new WaitUntil(() => SceneFader.Instance == null || !SceneFader.Instance.IsFading);
+            Debug.Log("[MainMenu] Fade fertig – starte Notification");
+        }
+        else
+        {
+            Debug.Log("[MainMenu] SceneFader null – warte 1s");
+            yield return new WaitForSecondsRealtime(1f);
+        }
+
         // Time-Mode-Button sofort freischalten (Lock-Icon weg, Button aktiv, Material setzen)
         if (timeLockIcon   != null) timeLockIcon.SetActive(false);
         if (timeModeButton != null) timeModeButton.interactable = true;

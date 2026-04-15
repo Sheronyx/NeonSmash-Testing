@@ -28,6 +28,9 @@ public class GravityModeActivationPoint : MonoBehaviour
         if (portal != null)
             portalTransform = portal.transform;
 
+        TutorialManager.Instance?.OnElementSpawnedShowOverlay(
+            TutorialPointType.GravityOrb, transform.position, gameObject);
+
         StartCoroutine(AutoDestroy());
     }
 

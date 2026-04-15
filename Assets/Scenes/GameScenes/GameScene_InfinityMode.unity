@@ -3693,14 +3693,22 @@ MonoBehaviour:
   timeObjectsToHide: []
   tutorialLabelObject: {fileID: 0}
   textNormalPoint: Tap to destroy!
-  textSwipePoint: Swipe to destroy!
-  textScoreHint: Each destroyed Point increases your score
-  textEnd: TUTORIAL COMPLETED!
-  preSpawnDelay: 0.8
-  delayBetweenSteps: 0.5
+  textSwipePoint: Swipe along the line!
+  textScoreHint: Score increased!
+  textSpawnHint: With each level the spawn time gets shorter
+  textLivesHint: Be fast or you lose lifepoints
+  textSpecialOrb: 'Look! A Special Orb!
+
+    Tap it!'
+  preSpawnDelay: 0.6
+  delayBetweenSteps: 0
   scoreHintDuration: 2.5
+  spawnHintDuration: 2.5
+  livesHintDuration: 2.5
   pointVP: {x: 0.5, y: 0.5}
-  scoreHintVP: {x: 0.5, y: 0.88}
+  scoreHintVP: {x: 0.26, y: 0.8}
+  spawnHintVP: {x: 0.5, y: 0.78}
+  livesHintVP: {x: 0.72, y: 0.786}
   forceTutorialInEditor: 0
 --- !u!4 &1172956030
 Transform:
