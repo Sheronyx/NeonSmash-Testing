@@ -109,7 +109,7 @@ public class GravityModeActivationPoint : MonoBehaviour
 
         while (t < 1f)
         {
-            t += Time.deltaTime * flySpeed;
+            t += Time.unscaledDeltaTime * flySpeed;
             float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
             transform.position = Vector3.Lerp(startPos, endPos, eased);
             transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
@@ -136,7 +136,7 @@ public class GravityModeActivationPoint : MonoBehaviour
         while (t < 1f)
         {
             if (point == null) break;
-            t += Time.deltaTime * flySpeed;
+            t += Time.unscaledDeltaTime * flySpeed;
             float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
             point.transform.position = Vector3.Lerp(startPos, endPos, eased);
             point.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);

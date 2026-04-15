@@ -25,6 +25,11 @@ public class IntroSceneController : MonoBehaviour
 
     private IEnumerator PlayIntro()
     {
+        // Warten bis VFX-Warmup abgeschlossen ist (läuft während Bildschirm schwarz ist)
+        var warmup = FindFirstObjectByType<VFXWarmup>();
+        if (warmup != null)
+            yield return new WaitUntil(() => warmup.IsComplete);
+
         yield return SceneFader.Instance.FadeFromBlack();
         yield return StartCoroutine(LogoHeartbeat());
 

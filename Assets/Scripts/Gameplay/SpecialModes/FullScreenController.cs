@@ -32,7 +32,9 @@ public class FullScreenController : MonoBehaviour
 
     private void Start()
     {
-        DisableAllFeatures();
+        // Features IMMER aktiv lassen – SetActive(false/true) löst URP-Pipeline-Rebuild aus = Flackern.
+        // "Unsichtbar" = _Fade auf 0, nicht Feature deaktivieren.
+        EnableAllFeatures();
 
         SetFade(gravityMaterial,  0f);
         SetFade(goldMaterial,     0f);
@@ -43,7 +45,14 @@ public class FullScreenController : MonoBehaviour
     private void OnEnable()
     {
         SpecialModeManager.OnModeStarted += HandleModeStarted;
-        SpecialModeManager.OnModeEnded += HandleModeEnded;
+        SpecialModeManager.OnModeEnded   += HandleModeEnded;
+    }
+
+    private void OnDisable()
+    {
+        SpecialModeManager.OnModeStarted -= HandleModeStarted;
+        SpecialModeManager.OnModeEnded   -= HandleModeEnded;
+        Cleanup();
     }
 
     private void OnDestroy()
@@ -51,18 +60,9 @@ public class FullScreenController : MonoBehaviour
         Cleanup();
     }
 
-    private void OnDisable()
-    {
-        SpecialModeManager.OnModeStarted -= HandleModeStarted;
-        SpecialModeManager.OnModeEnded -= HandleModeEnded;
-
-        Cleanup();
-    }
-
     private void Cleanup()
     {
-        DisableAllFeatures();
-
+        // Kein SetActive(false) – nur Fade auf 0 zurücksetzen
         SetFade(gravityMaterial,  0f);
         SetFade(goldMaterial,     0f);
         SetFade(chaosMaterial,    0f);
@@ -74,7 +74,11 @@ public class FullScreenController : MonoBehaviour
 
     private void HandleModeStarted(SpecialMode mode)
     {
-        DisableAllFeatures();
+        // Alle anderen Materials auf 0 (kein SetActive-Toggle)
+        SetFade(gravityMaterial,  0f);
+        SetFade(goldMaterial,     0f);
+        SetFade(chaosMaterial,    0f);
+        SetFade(fountainMaterial, 0f);
 
         switch (mode)
         {
@@ -82,28 +86,19 @@ public class FullScreenController : MonoBehaviour
                 currentFeature  = gravityFeature;
                 currentMaterial = gravityMaterial;
                 break;
-
             case SpecialMode.Gold:
                 currentFeature  = goldFeature;
                 currentMaterial = goldMaterial;
                 break;
-
             case SpecialMode.Chaos:
                 currentFeature  = chaosFeature;
                 currentMaterial = chaosMaterial;
                 break;
-
             case SpecialMode.Fountain:
                 currentFeature  = fountainFeature;
                 currentMaterial = fountainMaterial;
                 break;
         }
-
-        // Sicherstellen dass Material bei 0 startet
-        SetFade(currentMaterial, 0f);
-
-        if (currentFeature != null)
-            currentFeature.SetActive(true);
 
         if (activeRoutine != null)
             StopCoroutine(activeRoutine);
@@ -122,9 +117,9 @@ public class FullScreenController : MonoBehaviour
     private IEnumerator Co_End()
     {
         yield return Fade(1f, 0f, fadeOutTime);
-
-        if (currentFeature != null)
-            currentFeature.SetActive(false);
+        // Kein SetActive(false) – Material bleibt bei _Fade=0 (unsichtbar)
+        currentFeature  = null;
+        currentMaterial = null;
     }
 
     private IEnumerator Fade(float from, float to, float duration)
@@ -134,12 +129,9 @@ public class FullScreenController : MonoBehaviour
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-
+            float t     = Mathf.Clamp01(elapsed / duration);
             float eased = Mathf.SmoothStep(from, to, t);
-
             ApplyFade(eased);
-
             yield return null;
         }
 
@@ -158,11 +150,11 @@ public class FullScreenController : MonoBehaviour
         mat.SetFloat(FadeID, value);
     }
 
-    private void DisableAllFeatures()
+    private void EnableAllFeatures()
     {
-        gravityFeature?.SetActive(false);
-        goldFeature?.SetActive(false);
-        chaosFeature?.SetActive(false);
-        fountainFeature?.SetActive(false);
+        gravityFeature?.SetActive(true);
+        goldFeature?.SetActive(true);
+        chaosFeature?.SetActive(true);
+        fountainFeature?.SetActive(true);
     }
 }
