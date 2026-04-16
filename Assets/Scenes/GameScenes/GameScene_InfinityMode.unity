@@ -1607,7 +1607,7 @@ MonoBehaviour:
   shootForceY: 15
   shootForceX: 1.4
   spawnInterval: 1
-  totalPoints: 30
+  totalPoints: 25
   levelUp: {fileID: 250744643}
   minSpawnInterval: 0.15
   spawnIntervalDecreasePerLevel: 0.05
@@ -3582,6 +3582,7 @@ MonoBehaviour:
   - {x: 0.35, y: 0.55}
   - {x: 0.65, y: 0.45}
   orbVP: {x: 0.5, y: 0.5}
+  orbPhaseNormalPointVP: {x: 0.75, y: 0.2}
   forceTutorialInEditor: 0
 --- !u!4 &1172956030
 Transform:
@@ -5661,7 +5662,7 @@ MonoBehaviour:
   popScale: 1.4
   popDuration: 0.15
   loseLifeClip: {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
-  loseLifeVolume: 3
+  loseLifeVolume: 6
   damagePerMiss: 0.25
 --- !u!1 &1967027719
 GameObject:
