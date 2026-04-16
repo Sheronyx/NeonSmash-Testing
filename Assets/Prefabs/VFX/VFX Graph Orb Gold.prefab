@@ -170,8 +170,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoldModeActivationPoint
   spawner: {fileID: 0}
   lifetime: 3
-  flySpeed: 2
+  flySpeed: 0.6
   delayBeforeGoldMode: 0.5
-  destroyDelayAtBottom: 0.5
-  destroyDelayAtTop: 1.2
   SlashVFXPrefab: {fileID: 8254434928154273988, guid: 30ca4eeb23e5f4fd0849a7a910e858d9, type: 3}
+  orbFlyClip: {fileID: 8300000, guid: b4a3bf6d4163b4c93b826712ea73fa70, type: 3}
+  slashClip: {fileID: 8300000, guid: fd5740cd2b74e0e4aa71ebb48774f557, type: 3}
+  slashClipVolume: 8

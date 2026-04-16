@@ -13,6 +13,13 @@ public class FountainModeActivationPoint : MonoBehaviour
     [Header("VFX")]
     [SerializeField] private GameObject slashVFXPrefab;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip orbFlyClip;
+    [SerializeField] private AudioClip slashClip;
+    [SerializeField] private float slashClipVolume = 2.6f;
+
+    private AudioSource orbAudioSource;
+
     private ArcanePortalFlash portal;
     private Transform portalTransform;
 
@@ -51,6 +58,15 @@ public class FountainModeActivationPoint : MonoBehaviour
 
         isTriggered = true;
 
+        if (orbFlyClip != null)
+        {
+            orbAudioSource = gameObject.AddComponent<AudioSource>();
+            orbAudioSource.clip = orbFlyClip;
+            orbAudioSource.loop = false;
+            orbAudioSource.spatialBlend = 0f;
+            orbAudioSource.Play();
+        }
+
         spawner?.PauseSpawning(true);
 
         GameObject stolenPoint = spawner != null ? spawner.StealCurrentPoint() : null;
@@ -81,6 +97,8 @@ public class FountainModeActivationPoint : MonoBehaviour
             portal.SetMode(SpecialMode.Fountain);
             portal.FlashParticles();
         }
+
+        AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeFountainMode > 0f ? delayBeforeFountainMode : 1.5f;
         if (slashVFXPrefab != null)
@@ -146,6 +164,7 @@ public class FountainModeActivationPoint : MonoBehaviour
 
     private void FinishCombo()
     {
+        if (orbAudioSource != null) orbAudioSource.Stop();
         SpecialModeManager.Instance?.StartMode(SpecialMode.Fountain);
         Destroy(gameObject);
     }

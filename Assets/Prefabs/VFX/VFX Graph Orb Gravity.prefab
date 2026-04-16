@@ -170,6 +170,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GravityModeActivationPoint
   spawner: {fileID: 0}
   lifetime: 3
-  flySpeed: 2
+  flySpeed: 0.6
   delayBeforeGravityMode: 0.5
+  slashClipVolume: 8
   SlashVFXPrefab: {fileID: 8254434928154273988, guid: fa7e0fd1ca4594b5e97cfce228c5e84e, type: 3}
+  orbFlyClip: {fileID: 8300000, guid: b4a3bf6d4163b4c93b826712ea73fa70, type: 3}
+  slashClip: {fileID: 8300000, guid: fd5740cd2b74e0e4aa71ebb48774f557, type: 3}

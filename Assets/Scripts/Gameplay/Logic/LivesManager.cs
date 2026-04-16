@@ -22,6 +22,10 @@ public class LivesManager : MonoBehaviour
     [SerializeField] private float popScale = 1.4f;
     [SerializeField] private float popDuration = 0.15f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip loseLifeClip;
+    [SerializeField] private float loseLifeVolume = 3f;
+
     [Header("Damage per Miss")]
     [SerializeField] private float damagePerMiss = 0.25f;
 
@@ -64,6 +68,8 @@ public class LivesManager : MonoBehaviour
 
         health = Mathf.Max(0f, health - actualDamage);
         UpdateHeartFills();
+
+        AudioManager.Instance?.PlaySfx(loseLifeClip, loseLifeVolume);
 
         bool stillAlive = health > 0f;
         StartCoroutine(VFXThenPop(vfxPosition, affectedHeart));

@@ -9,9 +9,15 @@ public class GravityModeActivationPoint : MonoBehaviour
     [SerializeField] private float lifetime = 3f;
     [SerializeField] private float flySpeed = 10f;
     [SerializeField] private float delayBeforeGravityMode = 1.6f;
+        [SerializeField] private float slashClipVolume = 2.6f;
 
     [Header("VFX")]
     [SerializeField] private GameObject SlashVFXPrefab;
+
+    [Header("Audio")]
+    [SerializeField] private AudioClip orbFlyClip;
+    [SerializeField] private AudioClip slashClip;
+    private AudioSource orbAudioSource;
 
     private ArcanePortalFlash portal;
     private Transform portalTransform;
@@ -57,6 +63,16 @@ public class GravityModeActivationPoint : MonoBehaviour
         isDestroyed = true;
         isFinishing = true;
 
+        // Orb-Fly-Sound: Pitch so anpassen dass Clip genau so lang dauert wie der Flug
+        if (orbFlyClip != null)
+        {
+            orbAudioSource = gameObject.AddComponent<AudioSource>();
+            orbAudioSource.clip = orbFlyClip;
+            orbAudioSource.loop = false;
+            orbAudioSource.spatialBlend = 0f;
+            orbAudioSource.Play();
+        }
+
         spawner?.PauseSpawning(true);
 
         GameObject stolenPoint = spawner != null ? spawner.StealCurrentPoint() : null;
@@ -84,6 +100,8 @@ public class GravityModeActivationPoint : MonoBehaviour
         // Beide angekommen → Portal färben + Slash
         if (portal != null)
             portal.FlashParticles();
+
+        AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeGravityMode > 0f ? delayBeforeGravityMode : 1.5f;
         if (SlashVFXPrefab != null)
@@ -149,6 +167,8 @@ public class GravityModeActivationPoint : MonoBehaviour
 
     private void FinishCombo()
     {
+        if (orbAudioSource != null) orbAudioSource.Stop();
+
         if (spawner != null)
         {
             if (SpecialModeManager.Instance != null && !SpecialModeManager.Instance.IsModeActive)

@@ -13,6 +13,12 @@ public class GoldModeActivationPoint : MonoBehaviour
     [Header("VFX")]
     [SerializeField] private GameObject SlashVFXPrefab;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip orbFlyClip;
+    [SerializeField] private AudioClip slashClip;
+        [SerializeField] private float slashClipVolume = 2.6f;
+    private AudioSource orbAudioSource;
+
     private ArcanePortalFlash portal;
     private Transform portalTransform;
 
@@ -52,6 +58,15 @@ public class GoldModeActivationPoint : MonoBehaviour
         isDestroyed = true;
         isFinishing = true;
 
+        if (orbFlyClip != null)
+        {
+            orbAudioSource = gameObject.AddComponent<AudioSource>();
+            orbAudioSource.clip = orbFlyClip;
+            orbAudioSource.loop = false;
+            orbAudioSource.spatialBlend = 0f;
+            orbAudioSource.Play();
+        }
+
         spawner?.PauseSpawning(true);
 
         GameObject stolenPoint = spawner != null ? spawner.StealCurrentPoint() : null;
@@ -82,6 +97,8 @@ public class GoldModeActivationPoint : MonoBehaviour
             portal.SetMode(SpecialMode.Gold);
             portal.FlashParticles();
         }
+
+        AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeGoldMode > 0f ? delayBeforeGoldMode : 1.5f;
         if (SlashVFXPrefab != null)
@@ -147,6 +164,8 @@ public class GoldModeActivationPoint : MonoBehaviour
 
     private void FinishCombo()
     {
+        if (orbAudioSource != null) orbAudioSource.Stop();
+
         if (spawner != null)
         {
             if (!SpecialModeManager.Instance.IsModeActive)

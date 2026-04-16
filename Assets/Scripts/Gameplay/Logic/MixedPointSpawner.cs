@@ -61,6 +61,10 @@ public class MixedPointSpawner : MonoBehaviour
     [Tooltip("Zusätzliche sichtbare Lücke zwischen NeonPoint- und Orb-Kante.")]
     [SerializeField] private float activationOrbVisualGapPixels = 40f;
 
+    [Header("Activation Orb Spawn-Zone")]
+    [Tooltip("Orbs spawnen nur im oberen Bereich (0 = gesamte Spawn-Area, 0.5 = nur obere Hälfte)")]
+    [Range(0f, 0.9f)] [SerializeField] private float orbSpawnMinViewportY = 0.5f;
+
     [Header("Auto-Padding (empfohlen)")]
     [SerializeField] private bool autoComputePaddingFromPrefab = true;
     [SerializeField] private GameObject paddingSamplePrefab;
@@ -620,6 +624,14 @@ public class MixedPointSpawner : MonoBehaviour
                         r.width / Screen.width, r.height / Screen.height);
     }
 
+    /// <summary>Spawn-Viewport für Activation Orbs – nur oberer Bereich.</summary>
+    private Rect GetOrbSpawnViewport()
+    {
+        Rect vp = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        float newYMin = Mathf.Lerp(vp.yMin, vp.yMax, orbSpawnMinViewportY);
+        return Rect.MinMaxRect(vp.xMin, newYMin, vp.xMax, vp.yMax);
+    }
+
     private Vector2 GetRandomViewportPosition(Rect allowedViewport)
     {
         float minDistPixels = GetBaseMinDistancePixels();
@@ -726,7 +738,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (score < goldModeSpawnScoreThreshold) return;
         if (Random.value > goldModeSpawnChance) return;
 
-        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        Rect allowedViewport = GetOrbSpawnViewport();
         float goldOrbHalfSizePx = GetHalfSizePixels(goldModeActivationPointPrefab);
 
         Vector2 viewportPos = Vector2.zero;
@@ -767,7 +779,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (Random.value > 0.3f) return;
 
-        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        Rect allowedViewport = GetOrbSpawnViewport();
         float gravityOrbHalfSizePx = GetHalfSizePixels(gravityModeActivationPointPrefab);
 
         Vector2 vp = Vector2.zero;
@@ -971,7 +983,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (Random.value > 0.3f) return;
 
-        Rect allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        Rect allowedViewport = GetOrbSpawnViewport();
         Vector2 vp = GetRandomViewportPosition(allowedViewport);
         Vector3 worldPos = ViewportToWorldOnZ0(vp);
 
