@@ -6,6 +6,9 @@ public class PauseMenuController : MonoBehaviour
 
     public GameObject pauseMenuUI;
 
+    [Header("Tutorial Canvases (werden beim Pausieren versteckt)")]
+    [SerializeField] private Canvas[] tutorialCanvases;
+
     public void ShowPauseMenu()
     {
         pauseMenuUI.SetActive(true);
@@ -17,6 +20,8 @@ public class PauseMenuController : MonoBehaviour
 
         if (PlayerInputHandler.Instance != null)
             PlayerInputHandler.Instance.ResetTouch();
+
+        SetTutorialCanvasesVisible(false);
     }
 
     public void ResumeGame()
@@ -27,6 +32,15 @@ public class PauseMenuController : MonoBehaviour
         AudioListener.pause = false;
 
         IsPaused = false;
+
+        SetTutorialCanvasesVisible(true);
+    }
+
+    private void SetTutorialCanvasesVisible(bool visible)
+    {
+        if (tutorialCanvases == null) return;
+        foreach (var c in tutorialCanvases)
+            if (c != null) c.enabled = visible;
     }
 
     public void OpenSettings()
