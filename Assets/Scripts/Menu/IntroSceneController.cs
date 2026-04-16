@@ -30,24 +30,35 @@ public class IntroSceneController : MonoBehaviour
         if (warmup != null)
             yield return new WaitUntil(() => warmup.IsComplete);
 
-        yield return SceneFader.Instance.FadeFromBlack();
-        yield return StartCoroutine(LogoHeartbeat());
+        // Nächste Szene im Hintergrund vorladen während die Animation läuft
+        AsyncOperation preload = SceneManager.LoadSceneAsync(nextScene);
+        preload.allowSceneActivation = false;
 
-        SceneManager.LoadScene(nextScene);
-    }
+        if (SceneFader.Instance != null)
+            yield return SceneFader.Instance.FadeFromBlack();
 
-    private IEnumerator LogoHeartbeat()
-    {
-        // Alle Phasen beziehen sich jetzt auf baseScale
+        // Heartbeat-Animation (Puls + kurzes Absinken)
         yield return ScaleOverTime(logo.transform, Vector3.one * baseScale * shrinkAmount, durationPulse * 0.25f);
-        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale * growAmount, durationPulse * 0.35f);
-        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale, durationPulse * 0.4f);
-
+        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale * growAmount,   durationPulse * 0.35f);
+        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale,                durationPulse * 0.4f);
         yield return MoveOverTime(logo.transform, Vector3.down * 400f, 0.3f, relative: true);
+
+        // Sicherstellen dass Vorladen bei 90% ist (sollte längst fertig sein)
+        while (preload.progress < 0.9f) yield return null;
+
+        // FadeToBlack startet gleichzeitig mit dem Logo-Abschuss (beide 0.4s)
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.StartFadeToBlack(0.4f);
         yield return MoveUpAndOut(logo.transform, 2800f, 0.4f);
+
+        // Screen ist jetzt schwarz, Szene sofort aktivieren → kurzes FadeFromBlack im Menü
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.ActivatePreloaded(preload, 0.3f);
+        else
+            preload.allowSceneActivation = true;
     }
 
-    private IEnumerator ScaleOverTime(Transform target, Vector3 targetScale, float duration)
+private IEnumerator ScaleOverTime(Transform target, Vector3 targetScale, float duration)
     {
         Vector3 startScale = target.localScale;
         float t = 0;

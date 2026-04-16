@@ -46,9 +46,9 @@ public class BootstrapLoader : MonoBehaviour
             return;
         }
 
-        // Normaler Boot-Flow (Intro/Main Menu)
+        // Normaler Boot-Flow: Bildschirm schwarz lassen – IntroScene steuert selbst den Fade
         if (SceneFader.Instance != null)
-            SceneFader.Instance.LoadSceneDelayed(firstScene, 0.05f);
+            SceneFader.Instance.LoadSceneKeepBlack(firstScene);
         else
             SceneManager.LoadScene(firstScene, LoadSceneMode.Single);
     }
