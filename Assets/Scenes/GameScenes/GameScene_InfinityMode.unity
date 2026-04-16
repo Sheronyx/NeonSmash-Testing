@@ -548,8 +548,8 @@ MonoBehaviour:
   goldModeSpawnScoreThreshold: 5
   goldModeSpawnChance: 0.3
   activationOrbCooldown: 35
-  initialOrbDelayMin: 25
-  initialOrbDelayMax: 35
+  initialOrbDelayMin: 20
+  initialOrbDelayMax: 25
   portalFlash: {fileID: 911621390}
   portalBeam: {fileID: 911621388}
   useSafeAreaForSpawns: 1
@@ -3562,18 +3562,26 @@ MonoBehaviour:
   textScoreHint: Score increased!
   textSpawnHint: With each level the spawn time gets shorter
   textLivesHint: Be fast or you lose lifepoints
-  textSpecialOrb: 'Look! A Special Orb!
+  textSpecialOrb: 'Look, a Special Orb!
 
     Tap it!'
   preSpawnDelay: 0.6
   delayBetweenSteps: 0
+  orbRevealDelay: 1
   scoreHintDuration: 2.5
   spawnHintDuration: 2.5
   livesHintDuration: 2.5
   pointVP: {x: 0.5, y: 0.5}
   scoreHintVP: {x: 0.26, y: 0.8}
   spawnHintVP: {x: 0.5, y: 0.78}
-  livesHintVP: {x: 0.72, y: 0.786}
+  livesHintVP: {x: 0.68, y: 0.786}
+  silentTapVPs:
+  - {x: 0.3, y: 0.4}
+  - {x: 0.7, y: 0.6}
+  silentSwipeVPs:
+  - {x: 0.35, y: 0.55}
+  - {x: 0.65, y: 0.45}
+  orbVP: {x: 0.5, y: 0.5}
   forceTutorialInEditor: 0
 --- !u!4 &1172956030
 Transform:

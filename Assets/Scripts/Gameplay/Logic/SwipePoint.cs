@@ -87,6 +87,8 @@ public class SwipePoint : BasePoint
         if (tClosest < minT || tClosest > maxT)
             return false;
 
+        if (TutorialManager.IsOrbPhaseActive) return false;
+
         // ✅ SUCCESS
         isHit = true;
 

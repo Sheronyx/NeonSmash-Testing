@@ -60,6 +60,8 @@ public class TutorialManager : MonoBehaviour
     [SerializeField] private float preSpawnDelay      = 1.1f;
     [Tooltip("Kurze Pause zwischen Schritten")]
     [SerializeField] private float delayBetweenSteps  = 0.4f;
+    [Tooltip("Wartezeit nach Orb-Spawn bevor Overlay erscheint (Orb soll sichtbar sein)")]
+    [SerializeField] private float orbRevealDelay     = 1.8f;
     [Tooltip("Anzeigedauer des Score-Hinweises (Sekunden)")]
     [SerializeField] private float scoreHintDuration  = 2.5f;
     [SerializeField] private float spawnHintDuration  = 2.5f;
@@ -73,6 +75,23 @@ public class TutorialManager : MonoBehaviour
     [SerializeField] private Vector2 spawnHintVP  = new(0.5f,  0.88f);
     [Tooltip("Leben-Hinweis – oben rechts, nah an den Herzen")]
     [SerializeField] private Vector2 livesHintVP  = new(0.75f, 0.88f);
+
+    [Tooltip("Positionen für stille Tap-Punkte nach dem ersten erklärten Tap")]
+    [SerializeField] private Vector2[] silentTapVPs = new Vector2[]
+    {
+        new(0.3f, 0.4f),
+        new(0.7f, 0.6f),
+    };
+    [Tooltip("Positionen für stille Swipe-Punkte nach dem ersten erklärten Swipe")]
+    [SerializeField] private Vector2[] silentSwipeVPs = new Vector2[]
+    {
+        new(0.35f, 0.55f),
+        new(0.65f, 0.45f),
+    };
+    [Tooltip("Viewport-Position an der der Tutorial-Orb erscheint")]
+    [SerializeField] private Vector2 orbVP                 = new(0.5f,  0.5f);
+    [Tooltip("Viewport-Position des normalen Punktes während der Orb-Phase (unten rechts)")]
+    [SerializeField] private Vector2 orbPhaseNormalPointVP = new(0.75f, 0.2f);
 
     [Header("Debug")]
     [Tooltip("Tutorial erzwingen, auch wenn es bereits abgeschlossen wurde (nur im Editor)")]
@@ -90,6 +109,21 @@ public class TutorialManager : MonoBehaviour
     private TutorialPointType _receivedOrbType;
     private Vector3           _receivedOrbWorldPos;
     private Collider2D        _pendingOrbCollider;
+
+    // Pause-Koordination
+    private bool _gamePaused;
+    private bool _tutorialFreezesTime;
+
+    public bool TutorialFreezesTime => _tutorialFreezesTime;
+    public void SetGamePaused(bool paused) => _gamePaused = paused;
+
+    // Orb-Phase: nur Orb darf getappt werden
+    public static bool IsOrbPhaseActive { get; private set; }
+
+    // Spawner liest diese Properties um Positionen zu erzwingen
+    public static bool IsWaitingForTutorialOrb      => Instance != null && Instance._waitingForOrb;
+    public static Vector2 TutorialOrbViewport        => Instance != null ? Instance.orbVP : new Vector2(0.5f, 0.5f);
+    public static Vector2 TutorialNormalPointViewport => Instance != null ? Instance.orbPhaseNormalPointVP : new Vector2(0.75f, 0.2f);
 
     private void Awake() => Instance = this;
 
@@ -153,7 +187,8 @@ public class TutorialManager : MonoBehaviour
         // ── 2–3. Stille Taps – sofort interaktiv ────────────────────────────
         for (int i = 0; i < 2; i++)
         {
-            spawner.ForceTutorialSpawn(isTap: true, worldPos: spawner.GetRandomSpawnWorldPos(), lockUntilOverlay: false);
+            Vector3 tapPos = GetWorldPos(silentTapVPs[i % silentTapVPs.Length]);
+            spawner.ForceTutorialSpawn(isTap: true, worldPos: tapPos, lockUntilOverlay: false);
             yield return WaitForSilentAction(TutorialPointType.NormalPoint);
         }
 
@@ -167,7 +202,8 @@ public class TutorialManager : MonoBehaviour
         // ── 5–6. Stille Swipes – sofort interaktiv ───────────────────────────
         for (int i = 0; i < 2; i++)
         {
-            spawner.ForceTutorialSpawn(isTap: false, worldPos: spawner.GetRandomSpawnWorldPos(), lockUntilOverlay: false);
+            Vector3 swipePos = GetWorldPos(silentSwipeVPs[i % silentSwipeVPs.Length]);
+            spawner.ForceTutorialSpawn(isTap: false, worldPos: swipePos, lockUntilOverlay: false);
             yield return WaitForSilentAction(TutorialPointType.SwipePoint);
         }
 
@@ -178,20 +214,32 @@ public class TutorialManager : MonoBehaviour
         yield return ShowTimedHint(textLivesHint, livesHintVP, livesHintDuration);
 
         // ── Ab hier: normaler Infinity-Spielbetrieb ───────────────────────────
-        spawner.SetTutorialMode(false);     // Normale Punkte + Orbs spawnen wieder
-        spawner.SpawnNextPoint();           // Ersten Punkt sofort spawnen (kein auto-Trigger nach Tutorial)
-        tutorialActive = false;             // Schaden wieder möglich (IsTutorialActive = false)
+        spawner.SetTutorialMode(false);
+        spawner.SpawnNextPoint();
+        tutorialActive = false;
         if (pauseButton != null) pauseButton.SetActive(true);
 
-        // ── Warten bis eine Activation-Orb spawnt ─────────────────────────────
+        // ── Warten bis ein Activation-Orb spawnt (echtes Spiel-System) ──────────
+        // Der Spawner erzwingt dabei die Mitte als Spawn-Position (TutorialOrbVP).
         _waitingForOrb    = true;
         _orbSpawnReceived = false;
-        yield return new WaitUntil(() => _orbSpawnReceived);
+        yield return new WaitUntil(() => _orbSpawnReceived && !_gamePaused);
         _waitingForOrb = false;
+
+        // Orb-Phase starten: normalen Punkt wegräumen, Spawner pausieren
+        IsOrbPhaseActive = true;
+        spawner.ForceClearCurrentPoint();
+        spawner.PauseSpawning(true);
+
+        // Kurz warten damit der Orb in Ruhe sichtbar ist, bevor Overlay erscheint
+        yield return WaitUnscaled(orbRevealDelay);
 
         // ── Special-Orb Erklärung ─────────────────────────────────────────────
         yield return ShowAndWaitForOrb(_receivedOrbType, _receivedOrbWorldPos,
             new TutorialStepData(textSpecialOrb, TutorialAnimType.Tap));
+
+        IsOrbPhaseActive = false;
+        spawner.PauseSpawning(false);
 
         // ── Tutorial abgeschlossen – Spiel läuft weiter ───────────────────────
         PlayerPrefs.SetInt(PrefKey, 1);

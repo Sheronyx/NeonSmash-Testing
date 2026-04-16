@@ -7,6 +7,8 @@ public class TapPoint : BasePoint
 
     public void TryTap()
     {
+        if (TutorialManager.IsOrbPhaseActive) return;
+
         if (TutorialManager.Instance != null)
         {
             bool isGold = GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive;

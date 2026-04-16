@@ -272,6 +272,20 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
+    /// <summary>Spawnt einen normalen TapPoint direkt an der angegebenen Viewport-Position,
+    /// ohne Abstands- oder Zustands-Checks. Für Tutorial-Zwecke.</summary>
+    private void SpawnTutorialCompanionPoint(Vector2 viewport)
+    {
+        if (currentPoint != null)
+        {
+            Destroy(currentPoint);
+            currentPoint = null;
+        }
+        Vector3 pos = ViewportToWorldOnZ0(viewport);
+        if (portalBeam != null) portalBeam.SpawnWithBeam(normalPointPrefab, pos);
+        else                    CreatePoint(normalPointPrefab, pos);
+    }
+
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
 
@@ -738,19 +752,27 @@ public class MixedPointSpawner : MonoBehaviour
         if (score < goldModeSpawnScoreThreshold) return;
         if (Random.value > goldModeSpawnChance) return;
 
-        Rect allowedViewport = GetOrbSpawnViewport();
-        float goldOrbHalfSizePx = GetHalfSizePixels(goldModeActivationPointPrefab);
-
-        Vector2 viewportPos = Vector2.zero;
-        int attempts = 0;
-        do
+        Vector3 worldPos;
+        if (TutorialManager.IsWaitingForTutorialOrb)
         {
-            viewportPos = GetRandomViewportPosition(allowedViewport);
-            attempts++;
-            if (IsFarEnoughFromCurrentPoint(viewportPos, goldOrbHalfSizePx)) break;
-        } while (attempts < 20);
-
-        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+            worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
+            if (currentPoint != null)
+                SpawnTutorialCompanionPoint(TutorialManager.TutorialNormalPointViewport);
+        }
+        else
+        {
+            Rect allowedViewport = GetOrbSpawnViewport();
+            float goldOrbHalfSizePx = GetHalfSizePixels(goldModeActivationPointPrefab);
+            Vector2 viewportPos = Vector2.zero;
+            int attempts = 0;
+            do
+            {
+                viewportPos = GetRandomViewportPosition(allowedViewport);
+                attempts++;
+                if (IsFarEnoughFromCurrentPoint(viewportPos, goldOrbHalfSizePx)) break;
+            } while (attempts < 20);
+            worldPos = ViewportToWorldOnZ0(viewportPos);
+        }
 
         var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
         var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
@@ -779,19 +801,27 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (Random.value > 0.3f) return;
 
-        Rect allowedViewport = GetOrbSpawnViewport();
-        float gravityOrbHalfSizePx = GetHalfSizePixels(gravityModeActivationPointPrefab);
-
-        Vector2 vp = Vector2.zero;
-        int attempts = 0;
-        do
+        Vector3 worldPos;
+        if (TutorialManager.IsWaitingForTutorialOrb)
         {
-            vp = GetRandomViewportPosition(allowedViewport);
-            attempts++;
-            if (IsFarEnoughFromCurrentPoint(vp, gravityOrbHalfSizePx)) break;
-        } while (attempts < 20);
-
-        Vector3 worldPos = ViewportToWorldOnZ0(vp);
+            worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
+            if (currentPoint != null)
+                SpawnTutorialCompanionPoint(TutorialManager.TutorialNormalPointViewport);
+        }
+        else
+        {
+            Rect allowedViewport = GetOrbSpawnViewport();
+            float gravityOrbHalfSizePx = GetHalfSizePixels(gravityModeActivationPointPrefab);
+            Vector2 vp = Vector2.zero;
+            int attempts = 0;
+            do
+            {
+                vp = GetRandomViewportPosition(allowedViewport);
+                attempts++;
+                if (IsFarEnoughFromCurrentPoint(vp, gravityOrbHalfSizePx)) break;
+            } while (attempts < 20);
+            worldPos = ViewportToWorldOnZ0(vp);
+        }
 
         var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
         var script = orb.GetComponent<GravityModeActivationPoint>();
@@ -983,9 +1013,18 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (Random.value > 0.3f) return;
 
-        Rect allowedViewport = GetOrbSpawnViewport();
-        Vector2 vp = GetRandomViewportPosition(allowedViewport);
-        Vector3 worldPos = ViewportToWorldOnZ0(vp);
+        Vector3 worldPos;
+        if (TutorialManager.IsWaitingForTutorialOrb)
+        {
+            worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
+            if (currentPoint != null)
+                SpawnTutorialCompanionPoint(TutorialManager.TutorialNormalPointViewport);
+        }
+        else
+        {
+            Rect allowedViewport = GetOrbSpawnViewport();
+            worldPos = ViewportToWorldOnZ0(GetRandomViewportPosition(allowedViewport));
+        }
 
         var orb = Instantiate(fountainModeActivationPointPrefab, worldPos, Quaternion.identity);
         var script = orb.GetComponent<FountainModeActivationPoint>();
