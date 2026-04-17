@@ -748,6 +748,8 @@ public class MixedPointSpawner : MonoBehaviour
         if (lastSpawnedOrbMode == SpecialMode.Gold) return;
         if (ScoreManager.Instance == null) return;
 
+        if (TutorialManager.IsWaitingForTutorialOrb) return; // Tutorial zeigt immer Gravity Orb
+
         int score = CurrentScore;
         if (score < goldModeSpawnScoreThreshold) return;
         if (Random.value > goldModeSpawnChance) return;
@@ -799,7 +801,8 @@ public class MixedPointSpawner : MonoBehaviour
         if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
             return;
 
-        if (Random.value > 0.3f) return;
+        // Im Tutorial immer spawnen (kein Zufallscheck), sonst 30% Chance
+        if (!TutorialManager.IsWaitingForTutorialOrb && Random.value > 0.3f) return;
 
         Vector3 worldPos;
         if (TutorialManager.IsWaitingForTutorialOrb)
@@ -1010,6 +1013,8 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
             return;
+
+        if (TutorialManager.IsWaitingForTutorialOrb) return; // Tutorial zeigt immer Gravity Orb
 
         if (Random.value > 0.3f) return;
 
