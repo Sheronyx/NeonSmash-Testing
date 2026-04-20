@@ -26,20 +26,28 @@ public class FullScreenController : MonoBehaviour
     [Header("Intensity Cap (1 = volle Shader-Stärke)")]
     [SerializeField] [Range(0f, 1f)] private float maxIntensity = 1f;
 
+
     private int FadeID = Shader.PropertyToID("_Fade");
 
     private Coroutine activeRoutine;
 
     private void Start()
     {
-        // Features IMMER aktiv lassen – SetActive(false/true) löst URP-Pipeline-Rebuild aus = Flackern.
-        // "Unsichtbar" = _Fade auf 0, nicht Feature deaktivieren.
-        EnableAllFeatures();
-
         SetFade(gravityMaterial,  0f);
         SetFade(goldMaterial,     0f);
         SetFade(chaosMaterial,    0f);
         SetFade(fountainMaterial, 0f);
+        StartCoroutine(WarmUpPipeline());
+    }
+
+    // Aktiviert alle Features kurz beim Start damit URP die Pipeline einmal baut.
+    // Danach sind spätere SetActive-Aufrufe flicker-frei weil die Shader bereits kompiliert sind.
+    private IEnumerator WarmUpPipeline()
+    {
+        EnableAllFeatures();
+        for (int i = 0; i < 5; i++)
+            yield return null;
+        DisableAllFeatures();
     }
 
     private void OnEnable()
@@ -62,11 +70,11 @@ public class FullScreenController : MonoBehaviour
 
     private void Cleanup()
     {
-        // Kein SetActive(false) – nur Fade auf 0 zurücksetzen
         SetFade(gravityMaterial,  0f);
         SetFade(goldMaterial,     0f);
         SetFade(chaosMaterial,    0f);
         SetFade(fountainMaterial, 0f);
+        DisableAllFeatures();
 
         currentFeature  = null;
         currentMaterial = null;
@@ -103,7 +111,7 @@ public class FullScreenController : MonoBehaviour
         if (activeRoutine != null)
             StopCoroutine(activeRoutine);
 
-        activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
+        activeRoutine = StartCoroutine(Co_Start());
     }
 
     private void HandleModeEnded(SpecialMode mode)
@@ -114,12 +122,25 @@ public class FullScreenController : MonoBehaviour
         activeRoutine = StartCoroutine(Co_End());
     }
 
+    private IEnumerator Co_Start()
+    {
+        if (DevicePerformance.IsLowEnd)
+            Application.targetFrameRate = 30;
+        currentFeature?.SetActive(true);
+        yield return null;
+        yield return null;
+        yield return Fade(0f, 1f, fadeInTime);
+    }
+
     private IEnumerator Co_End()
     {
         yield return Fade(1f, 0f, fadeOutTime);
-        // Kein SetActive(false) – Material bleibt bei _Fade=0 (unsichtbar)
+        yield return null;
+        currentFeature?.SetActive(false);
         currentFeature  = null;
         currentMaterial = null;
+        if (DevicePerformance.IsLowEnd)
+            Application.targetFrameRate = 60;
     }
 
     private IEnumerator Fade(float from, float to, float duration)
@@ -156,5 +177,13 @@ public class FullScreenController : MonoBehaviour
         goldFeature?.SetActive(true);
         chaosFeature?.SetActive(true);
         fountainFeature?.SetActive(true);
+    }
+
+    private void DisableAllFeatures()
+    {
+        gravityFeature?.SetActive(false);
+        goldFeature?.SetActive(false);
+        chaosFeature?.SetActive(false);
+        fountainFeature?.SetActive(false);
     }
 }
