@@ -39,10 +39,10 @@ public class BootstrapLoader : MonoBehaviour
             RestartTarget.NextSceneName = null;
             RestartTarget.NextMode = null;
 
-            if (SceneFader.Instance != null)
-                SceneFader.Instance.LoadSceneDelayed(target, 0.08f);
-            else
-                SceneManager.LoadScene(target, LoadSceneMode.Single);
+            // Der Bildschirm ist bereits schwarz (FadeAndSwitchAsync läuft noch auf SceneFader).
+            // LoadSceneDelayed würde wegen _isLoading sofort returnen → direkt laden.
+            // FadeAndSwitchAsync erledigt anschließend selbst den FadeFromBlack.
+            SceneManager.LoadScene(target, LoadSceneMode.Single);
             return;
         }
 

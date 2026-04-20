@@ -69,6 +69,9 @@ public class UgsBootstrap : MonoBehaviour
         {
             Debug.LogWarning("[UGS] Init failed: " + e.Message);
             _tcs.TrySetResult(true);
+            // Plattform-Auth (Game Center / Google Play) auch bei UGS-Fehler starten.
+            // Die Authentifizierung selbst hat eigene Fehlerbehandlung.
+            StartCoroutine(PlatformNameCoroutine());
         }
     }
 
