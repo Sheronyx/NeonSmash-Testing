@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Services.Analytics;
 
 public class ConsentManager : MonoBehaviour
 {
@@ -69,6 +70,7 @@ public class ConsentManager : MonoBehaviour
 
             await Task.Delay(150);
 
+            AnalyticsService.Instance.StartDataCollection();
             Debug.Log("[Analytics] Consent gesetzt → Analytics aktiv.");
         }
         catch (System.Exception ex)
