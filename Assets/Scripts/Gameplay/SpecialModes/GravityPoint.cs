@@ -55,7 +55,11 @@ public class GravityPoint : BasePoint
 
     void Update()
     {
-        if (portalTransform == null) return;
+        if (portalTransform == null)
+        {
+            CheckDestroy();
+            return;
+        }
 
         // 🔄 Rotation
         float currentRotation = isBeingSucked ? rotationSpeed * 2.5f : rotationSpeed;
@@ -159,7 +163,19 @@ public class GravityPoint : BasePoint
 
     private void CheckDestroy()
     {
-        if (isDestroyed || portalTransform == null) return;
+        if (isDestroyed) return;
+
+        // Punkt ist vom Bildschirm gefallen ohne vom Portal gesaugt zu werden
+        Camera cam = Camera.main;
+        if (cam != null && cam.WorldToViewportPoint(transform.position).y < -0.1f)
+        {
+            isDestroyed = true;
+            if (gravitySystem != null) gravitySystem.OnPointDestroyed(false, transform.position);
+            Destroy(gameObject);
+            return;
+        }
+
+        if (portalTransform == null) return;
 
         Vector3 portalTarget = GetPortalTarget();
         float distance = Vector3.Distance(transform.position, portalTarget);
