@@ -7,6 +7,7 @@ public class MainMenuController : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject tutorialUI;
+    [SerializeField] private GameObject matchmakingScreen;
 
     [Header("Time Mode – Lock")]
     [SerializeField] private Button timeModeButton;
@@ -80,6 +81,12 @@ public class MainMenuController : MonoBehaviour
             GlobalGameManager.Instance.SetMode(GameMode.Time);
 
         SceneFader.Instance.LoadScene("GameScene_TimeMode");
+    }
+
+    public void OnMultiplayer()
+    {
+        if (matchmakingScreen != null)
+            matchmakingScreen.SetActive(true);
     }
 
     // ── Sonstige Buttons ────────────────────────────────────────────────────

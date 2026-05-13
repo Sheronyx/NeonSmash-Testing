@@ -21,12 +21,15 @@ public class LeaderboardPanelController : MonoBehaviour
     [Header("Mode Buttons")]
     [SerializeField] private Button timeModeButton;
     [SerializeField] private Button infinityModeButton;
+    [SerializeField] private Button multiplayerModeButton;
 
     [Header("Button Sprites")]
     [SerializeField] private Sprite timeNormalSprite;
     [SerializeField] private Sprite timeActiveSprite;
     [SerializeField] private Sprite infinityNormalSprite;
     [SerializeField] private Sprite infinityActiveSprite;
+    [SerializeField] private Sprite multiplayerNormalSprite;
+    [SerializeField] private Sprite multiplayerActiveSprite;
 
     [Header("List")]
     [SerializeField] private RectTransform contentRoot;
@@ -48,6 +51,9 @@ public class LeaderboardPanelController : MonoBehaviour
 
         if (infinityModeButton)
             infinityModeButton.onClick.AddListener(OnClickInfinityMode);
+
+        if (multiplayerModeButton)
+            multiplayerModeButton.onClick.AddListener(OnClickMultiplayerMode);
 
         panelRoot.SetActive(false);
         loadingOverlay.SetActive(false);
@@ -76,6 +82,11 @@ public class LeaderboardPanelController : MonoBehaviour
         SetLeaderboard(LeaderboardApi.InfinityId);
     }
 
+    public void OnClickMultiplayerMode()
+    {
+        SetLeaderboard(LeaderboardApi.MultiplayerId);
+    }
+
     public void SetLeaderboard(string id)
     {
         shouldScrollToPlayer = true;
@@ -94,16 +105,21 @@ public class LeaderboardPanelController : MonoBehaviour
     {
         if (!timeModeButton || !infinityModeButton) return;
 
-        bool isTime = leaderboardId == LeaderboardApi.TimeModeId;
+        bool isTime       = leaderboardId == LeaderboardApi.TimeModeId;
+        bool isMultiplayer = leaderboardId == LeaderboardApi.MultiplayerId;
 
-        var timeImage = timeModeButton.GetComponent<Image>();
-        var infinityImage = infinityModeButton.GetComponent<Image>();
+        var timeImage       = timeModeButton?.GetComponent<Image>();
+        var infinityImage   = infinityModeButton?.GetComponent<Image>();
+        var multiplayerImage = multiplayerModeButton?.GetComponent<Image>();
 
         if (timeImage)
             timeImage.sprite = isTime ? timeActiveSprite : timeNormalSprite;
 
         if (infinityImage)
-            infinityImage.sprite = isTime ? infinityNormalSprite : infinityActiveSprite;
+            infinityImage.sprite = (!isTime && !isMultiplayer) ? infinityActiveSprite : infinityNormalSprite;
+
+        if (multiplayerImage && multiplayerNormalSprite && multiplayerActiveSprite)
+            multiplayerImage.sprite = isMultiplayer ? multiplayerActiveSprite : multiplayerNormalSprite;
     }
 
     // ------------------------------------------------------------

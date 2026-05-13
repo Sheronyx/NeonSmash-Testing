@@ -3,7 +3,8 @@ using UnityEngine;
 public enum GameMode
 {
     Infinity,
-    Time
+    Time,
+    Multiplayer
 }
 
 public class GlobalGameManager : MonoBehaviour

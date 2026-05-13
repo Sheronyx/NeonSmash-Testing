@@ -4,6 +4,8 @@ using System.Collections;
 
 public class MixedPointSpawner : MonoBehaviour
 {
+    public static MixedPointSpawner Instance { get; private set; }
+
     [SerializeField] private GameObject fountainModeActivationPointPrefab;
     [SerializeField] private GameObject normalPointGoldPrefab;
     [SerializeField] private GameObject swipePointGoldPrefab;
@@ -39,7 +41,7 @@ public class MixedPointSpawner : MonoBehaviour
     private GameMode CurrentMode =>
         GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Time;
 
-    private bool IsInfinityMode => CurrentMode == GameMode.Infinity;
+    private bool IsInfinityMode => CurrentMode == GameMode.Infinity || CurrentMode == GameMode.Multiplayer;
 
     [Header("Safe Area / Gesten")]
     [SerializeField] private bool useSafeAreaForSpawns = true;
@@ -122,6 +124,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
         if (!mainCamera) mainCamera = Camera.main;
 
         if (autoComputePaddingFromPrefab && paddingSamplePrefab != null && mainCamera != null)
@@ -557,6 +560,12 @@ public class MixedPointSpawner : MonoBehaviour
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
 
+        if (MultiplayerManager.IsMultiplayerGame)
+        {
+            MultiplayerGameSession.Instance?.DeclareLocalPlayerLost();
+            return;
+        }
+
         Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
 
         if (ScreenShakeManager.Instance != null)
@@ -599,6 +608,18 @@ public class MixedPointSpawner : MonoBehaviour
     public void TriggerGameOverFromGravity()
     {
         GameOver();
+    }
+
+    public void StopImmediate()
+    {
+        if (gameOver) return;
+        gameOver = true;
+        running = false;
+        StopPointTimer();
+        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
+        CurrentSwipePoint = null;
+        if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
+        if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
     }
 
     public void ShowFinishedFromTimeMode(int finalScore)

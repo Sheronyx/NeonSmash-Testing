@@ -18,6 +18,7 @@ public class LeaderboardController : MonoBehaviour
     [Header("Mode Buttons")]
     [SerializeField] private Button timeModeButton;
     [SerializeField] private Button infinityModeButton;
+    [SerializeField] private Button multiplayerModeButton;
 
     [Header("List")]
     [SerializeField] private LeaderboardEntryView entryPrefab;
@@ -27,6 +28,9 @@ public class LeaderboardController : MonoBehaviour
 
     [SerializeField] private Image infinityButtonBackground;
     [SerializeField] private Image infinityButtonIcon;
+
+    [SerializeField] private Image multiplayerButtonBackground;
+    [SerializeField] private Image multiplayerButtonIcon;
 
     [SerializeField] private Material outlineMaterial;
     [SerializeField] private Material outlineDarkMaterial;
@@ -51,6 +55,9 @@ public class LeaderboardController : MonoBehaviour
 
         if (infinityModeButton)
             infinityModeButton.onClick.AddListener(() => SetLeaderboard(LeaderboardApi.InfinityId));
+
+        if (multiplayerModeButton)
+            multiplayerModeButton.onClick.AddListener(() => SetLeaderboard(LeaderboardApi.MultiplayerId));
     }
 
     private void Start()
@@ -307,24 +314,23 @@ public class LeaderboardController : MonoBehaviour
 
     private void UpdateModeUI()
     {
-        bool isTime = leaderboardId == LeaderboardApi.TimeModeId;
+        bool isTime       = leaderboardId == LeaderboardApi.TimeModeId;
+        bool isMultiplayer = leaderboardId == LeaderboardApi.MultiplayerId;
+        bool isInfinity   = !isTime && !isMultiplayer;
 
-        // -------------------------
-        // CLASSIC BUTTON
-        // -------------------------
         if (timeButtonBackground != null)
             timeButtonBackground.material = isTime ? outlineMaterial : outlineDarkMaterial;
-
         if (timeButtonIcon != null)
             timeButtonIcon.color = isTime ? activeColor : inactiveColor;
 
-        // -------------------------
-        // ENDLESS BUTTON
-        // -------------------------
         if (infinityButtonBackground != null)
-            infinityButtonBackground.material = isTime ? outlineDarkMaterial : outlineMaterial;
-
+            infinityButtonBackground.material = isInfinity ? outlineMaterial : outlineDarkMaterial;
         if (infinityButtonIcon != null)
-            infinityButtonIcon.color = isTime ? inactiveColor : activeColor;
+            infinityButtonIcon.color = isInfinity ? activeColor : inactiveColor;
+
+        if (multiplayerButtonBackground != null)
+            multiplayerButtonBackground.material = isMultiplayer ? outlineMaterial : outlineDarkMaterial;
+        if (multiplayerButtonIcon != null)
+            multiplayerButtonIcon.color = isMultiplayer ? activeColor : inactiveColor;
     }
 }

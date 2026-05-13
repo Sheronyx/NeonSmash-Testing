@@ -48,6 +48,10 @@ public class UgsBootstrap : MonoBehaviour
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
                 var opts = new InitializationOptions().SetEnvironmentName(environmentName);
+#if UNITY_EDITOR
+                if (ParrelSync.ClonesManager.IsClone())
+                    opts.SetProfile("clone");
+#endif
                 await UnityServices.InitializeAsync(opts);
                 Debug.Log("[UGS] Initialized (" + environmentName + ")");
             }
