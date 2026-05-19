@@ -15,6 +15,13 @@ public class SceneFader : MonoBehaviour
     /// <summary>True solange der Fade gerade läuft (Bild noch nicht vollständig transparent).</summary>
     public bool IsFading => fadeImage != null && fadeImage.color.a > 0.01f;
 
+    /// <summary>Setzt den Fader sofort auf transparent — für Scenes die keinen Fade-In brauchen.</summary>
+    public void Clear()
+    {
+        SetAlpha(0f);
+        if (fadeCanvas != null) fadeCanvas.enabled = false;
+    }
+
     private bool _isLoading = false;
 
     void Awake()

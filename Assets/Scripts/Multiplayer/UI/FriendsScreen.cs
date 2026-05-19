@@ -12,11 +12,13 @@ public class FriendsScreen : MonoBehaviour
     [SerializeField] GameObject challengingPanel;
 
     [Header("Main Panel")]
-    [SerializeField] Transform  friendsListContent;
-    [SerializeField] Transform  requestsListContent;
-    [SerializeField] GameObject requestsSection;
-    [SerializeField] Button     addFriendButton;
-    [SerializeField] Button     backButton;
+    [SerializeField] Transform       friendsListContent;
+    [SerializeField] Transform       requestsListContent;
+    [SerializeField] GameObject      requestsSection;
+    [SerializeField] Button          addFriendButton;
+    [SerializeField] Button          backButton;
+    [SerializeField] TextMeshProUGUI myNameText;
+    [SerializeField] Button          copyMyNameButton;
 
     [Header("Add Friend Panel")]
     [SerializeField] TMP_InputField nameInputField;
@@ -54,14 +56,31 @@ public class FriendsScreen : MonoBehaviour
         sendRequestButton.onClick.AddListener(OnSendRequest);
         cancelChallengeButton.onClick.AddListener(OnCancelChallenge);
 
+        if (copyMyNameButton) copyMyNameButton.onClick.AddListener(OnCopyMyName);
+
         ShowPanel(mainPanel);
+
+        Debug.Log($"[DIAG] FriendsScreen.Start — IsInitialized={FriendsHandler.IsInitialized}");
 
         if (!FriendsHandler.IsInitialized)
         {
-            await UgsBootstrap.Initialization;
-            await FriendsHandler.InitializeAsync();
+            UgsBootstrap.Begin();
+            // Wait until platform auth + Friends SDK init are both done (end of PlatformNameCoroutine)
+            bool ready = await UgsBootstrap.FriendsReady;
+            Debug.Log($"[DIAG] FriendsReady aufgelöst — ready={ready}");
+            if (!ready) { Debug.LogWarning("[DIAG] FriendsScreen: ready=false → kein Friends-Screen"); return; }
+        }
+        else
+        {
+            // Pull fresh presence data from the server each time the screen opens.
+            Debug.Log("[DIAG] FriendsScreen: bereits initialisiert → ForceRefreshAsync");
+            _ = FriendsHandler.ForceRefreshAsync();
         }
 
+        var fullName = Unity.Services.Authentication.AuthenticationService.Instance?.PlayerName;
+        if (myNameText) myNameText.text = string.IsNullOrEmpty(fullName) ? "—" : fullName;
+
+        Debug.Log($"[DIAG] FriendsScreen.Start: RefreshList (erster Aufruf, mögl. cached)");
         RefreshList();
     }
 
@@ -69,10 +88,19 @@ public class FriendsScreen : MonoBehaviour
 
     void RefreshList()
     {
+        var friends = FriendsHandler.Friends;
+        Debug.Log($"[DIAG] RefreshList — {friends.Count} Freund(e):");
+        foreach (var r in friends)
+        {
+            string presence = r.Member.Presence?.Availability.ToString() ?? "null";
+            string name     = r.Member.Profile?.Name ?? "?";
+            Debug.Log($"[DIAG]   Id={r.Member.Id}, Name={name}, Presence={presence}");
+        }
+
         ClearChildren(friendsListContent);
         ClearChildren(requestsListContent);
 
-        foreach (var r in FriendsHandler.Friends)
+        foreach (var r in friends)
         {
             var row = Instantiate(friendRowPrefab, friendsListContent);
             string name     = CleanName(r.Member.Profile?.Name, r.Member.Id);
@@ -102,6 +130,13 @@ public class FriendsScreen : MonoBehaviour
     void OnBack()
     {
         gameObject.SetActive(false);
+    }
+
+    void OnCopyMyName()
+    {
+        var fullName = Unity.Services.Authentication.AuthenticationService.Instance?.PlayerName;
+        if (!string.IsNullOrEmpty(fullName))
+            GUIUtility.systemCopyBuffer = fullName;
     }
 
     async void OnSendRequest()
@@ -143,9 +178,29 @@ public class FriendsScreen : MonoBehaviour
     async void OnChallengeFriend(string memberId)
     {
         var friendName = GetFriendName(memberId);
+
+        bool isOnline = false;
+        foreach (var r in FriendsHandler.Friends)
+            if (r.Member.Id == memberId)
+            {
+                isOnline = r.Member.Presence?.Availability == Unity.Services.Friends.Models.Availability.Online;
+                break;
+            }
+
+        Debug.Log($"[DIAG] OnChallengeFriend — memberId={memberId}, isOnline={isOnline}");
+        if (!isOnline)
+        {
+            challengingText.text = $"Push an {friendName} gesendet...";
+            ShowPanel(challengingPanel);
+            try { await FriendsHandler.SendNudgePushAsync(memberId); }
+            catch (System.Exception e) { Debug.LogWarning($"[Friends] Nudge fehlgeschlagen: {e.Message}"); }
+            await System.Threading.Tasks.Task.Delay(2000);
+            ShowPanel(mainPanel);
+            return;
+        }
+
         challengingText.text = $"Warte auf {friendName}...";
         ShowPanel(challengingPanel);
-
         try
         {
             await MultiplayerManager.Instance.HostPrivateAsync();
@@ -174,6 +229,8 @@ public class FriendsScreen : MonoBehaviour
 
     void OnOpponentConnected()
     {
+        // Nur der Host (Herausforderer) startet hier – der Acceptor nutzt ChallengeNotification
+        if (!Unity.Netcode.NetworkManager.Singleton.IsHost) return;
         if (mainPanel.transform.parent.gameObject.activeSelf)
             StartCoroutine(CountdownAndStart());
     }

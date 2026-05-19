@@ -64,10 +64,11 @@ public static class HighscoreUploader
 
         try
         {
-            // 1) UGS bereit + Internet?
+            // 1) UGS bereit + Internet? Dann auf GPGS/Game Center warten bevor Score submitted wird
             bool online = await UgsBootstrap.Initialization;
             if (!online || Application.internetReachability == NetworkReachability.NotReachable)
                 throw new System.Exception("offline");
+            await UgsBootstrap.PlatformAuthReady;
 
             // Optionales Logging
             string playerId = null;

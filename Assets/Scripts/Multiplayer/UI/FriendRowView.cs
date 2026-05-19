@@ -22,7 +22,7 @@ public class FriendRowView : MonoBehaviour
 
         if (challengeButton)
         {
-            challengeButton.gameObject.SetActive(isOnline);
+            challengeButton.gameObject.SetActive(true);
             challengeButton.onClick.RemoveAllListeners();
             challengeButton.onClick.AddListener(() => onChallenge(memberId));
         }

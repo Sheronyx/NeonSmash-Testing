@@ -99,23 +99,19 @@ public class MultiplayerManager : MonoBehaviour
     {
         await WaitForUgsAsync();
 
-        // 1) Versuch: offene Lobby joinen
-        try
-        {
-            SetState(State.Joining);
-            _isHost = false;
-            _lobby  = new LobbyHandler();
-            var relayCode = await _lobby.QuickJoinAsync();
-            await RelayHandler.JoinAsync(relayCode);
-            StartClient();
-            return;
-        }
-        catch
-        {
-            // Keine offene Lobby → selbst hosten
-        }
+        // 1) Versuch: sofort joinen
+        if (await TryJoinPublicLobbyAsync()) return;
 
-        // 2) Fallback: Host werden und auf Gegner warten
+        // 2) Kurze Pause – gibt einer gerade erstellten Lobby Zeit sich zu propagieren
+        //    (Race Condition: beide scheitern beim ersten Join und würden sonst beide hosten)
+        await Task.Delay(UnityEngine.Random.Range(1500, 2500));
+
+        if (CurrentState != State.Joining && CurrentState != State.Idle) return;
+
+        // 3) Zweiter Versuch: joinen
+        if (await TryJoinPublicLobbyAsync()) return;
+
+        // 4) Fallback: Host werden und auf Gegner warten
         _isHost = true;
         _lobby  = new LobbyHandler();
         try
@@ -129,6 +125,24 @@ public class MultiplayerManager : MonoBehaviour
         {
             Debug.LogWarning($"[MP] SmartQuickMatch Host fehlgeschlagen: {e.Message}");
             SetState(State.Disconnected);
+        }
+    }
+
+    private async Task<bool> TryJoinPublicLobbyAsync()
+    {
+        try
+        {
+            SetState(State.Joining);
+            _isHost = false;
+            _lobby  = new LobbyHandler();
+            var relayCode = await _lobby.QuickJoinAsync();
+            await RelayHandler.JoinAsync(relayCode);
+            StartClient();
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 

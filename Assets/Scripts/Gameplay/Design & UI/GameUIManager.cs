@@ -30,6 +30,9 @@ public class GameUIManager : MonoBehaviour
 
         if (backToMenuButton != null)
             backToMenuButton.onClick.AddListener(BackToMenu);
+
+        if (MultiplayerManager.IsMultiplayerGame && pauseButton != null)
+            pauseButton.SetActive(false);
     }
 
     public void ShowGameOver(int score, bool isInfinityMode)
@@ -43,9 +46,9 @@ public class GameUIManager : MonoBehaviour
             pauseButton.SetActive(false);
 
         // Time Mode nach dem ersten Infinity-Spiel freischalten
-        if (isInfinityMode && PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 0)
+        if (isInfinityMode && !TimeModeProgress.IsUnlocked)
         {
-            PlayerPrefs.SetInt("TimeModeUnlocked", 1);
+            _ = TimeModeProgress.UnlockAsync();
             PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 1);
             PlayerPrefs.Save();
         }

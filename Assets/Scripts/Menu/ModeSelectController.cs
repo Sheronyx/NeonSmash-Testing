@@ -15,7 +15,18 @@ public class ModeSelectController : MonoBehaviour
 
     private void Start()
     {
-        bool unlocked = PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 1;
+        TimeModeProgress.OnProgressLoaded += RefreshTimeModeUI;
+        RefreshTimeModeUI();
+    }
+
+    private void OnDestroy()
+    {
+        TimeModeProgress.OnProgressLoaded -= RefreshTimeModeUI;
+    }
+
+    private void RefreshTimeModeUI()
+    {
+        bool unlocked = TimeModeProgress.IsUnlocked;
         if (timeLockIcon != null)  timeLockIcon.SetActive(!unlocked);
         if (timeModeButton != null) timeModeButton.interactable = unlocked;
     }

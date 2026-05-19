@@ -55,7 +55,7 @@ public static class GcGamertagToUgs
                 GcIdentityPayload payload = null;
                 try
                 {
-                    payload = await AppleGameCenterAuth.Instance.RequestIdentityAsync(5000);
+                    payload = await AppleGameCenterAuth.Instance.RequestIdentityAsync(20000);
                 }
                 catch (Exception reqEx)
                 {
@@ -63,6 +63,7 @@ public static class GcGamertagToUgs
                 }
 
                 // 2) Link versuchen → bei AlreadyLinked auf diesen Account SIGN-IN
+                bool gcExistingAccount = false;
                 if (payload != null && string.IsNullOrEmpty(payload.error))
                 {
                     try
@@ -86,6 +87,7 @@ public static class GcGamertagToUgs
                             payload.salt,
                             payload.timestamp
                         );
+                        gcExistingAccount = true;
                     }
                     catch (Exception linkEx)
                     {
@@ -99,7 +101,7 @@ public static class GcGamertagToUgs
 
                 // 3) Namen aus GC übernehmen (immer versuchen)
                 var gcName = Social.localUser.userName;
-                await TryUpdateUgsNameAsync(gcName);
+                await TryUpdateUgsNameAsync(gcName, gcExistingAccount);
 
                 tcs.TrySetResult(true);
             }
@@ -111,7 +113,7 @@ public static class GcGamertagToUgs
         });
 
         // Safety Timeout
-        _ = FailSafe(tcs, 8000);
+        _ = FailSafe(tcs, 20000);
         await tcs.Task;
 #else
         await Task.CompletedTask;
@@ -131,14 +133,28 @@ public static class GcGamertagToUgs
 #endif
 
     /// <summary>Schreibt den Namen in UGS (falls sinnvoll) und in PlayerPrefs (Fallback).</summary>
-    public static async Task TryUpdateUgsNameAsync(string newName)
+    public static async Task TryUpdateUgsNameAsync(string newName, bool isExistingAccount = false)
     {
         if (string.IsNullOrWhiteSpace(newName)) return;
 
         try
         {
             string current = null; try { current = AuthenticationService.Instance.PlayerName; } catch { }
-            if (!string.Equals(current, newName, StringComparison.Ordinal))
+            // Strip #discriminator before comparing — PlayerName is "Name#1234", newName is "Name"
+            string currentBase = current;
+            if (current != null) { int h = current.IndexOf('#'); if (h > 0) currentBase = current.Substring(0, h); }
+
+            // Guard: PlayerName null auf bestehendem Account → Update überspringen um Discriminator zu bewahren.
+            // Nur neue Accounts (frische Verlinkung) dürfen den Namen erstmalig setzen wenn current null ist.
+            if (isExistingAccount && string.IsNullOrEmpty(current))
+            {
+                Debug.LogWarning("[UGS] PlayerName null auf bestehendem Account — Name-Update übersprungen um Discriminator zu bewahren.");
+                PlayerPrefs.SetString("display_name", newName);
+                PlayerPrefs.Save();
+                return;
+            }
+
+            if (!string.Equals(currentBase, newName, StringComparison.Ordinal))
             {
                 await AuthenticationService.Instance.UpdatePlayerNameAsync(newName);
                 Debug.Log("[UGS] PlayerName updated to: " + newName);

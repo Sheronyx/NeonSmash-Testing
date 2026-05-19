@@ -14,6 +14,7 @@ public class DebugResetPrefs : MonoBehaviour
 
     private void OnResetPressed()
     {
+        if (!UnityEngine.InputSystem.Keyboard.current.ctrlKey.isPressed) return;
         PlayerPrefs.DeleteAll();
         PlayerPrefs.Save();
         Debug.Log("Alle PlayerPrefs gelöscht via neuem Input System.");

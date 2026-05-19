@@ -55,9 +55,6 @@ public class ConsentManager : MonoBehaviour
     {
         yield return null;
         yield return new WaitForSecondsRealtime(deferInitSeconds);
-
-        UgsBootstrap.Begin();
-        _ = UgsBootstrap.Initialization;
         _ = InitializeAnalyticsAsync();
     }
 

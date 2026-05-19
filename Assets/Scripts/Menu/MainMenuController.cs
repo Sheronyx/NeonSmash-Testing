@@ -8,6 +8,7 @@ public class MainMenuController : MonoBehaviour
     [Header("UI References")]
     public GameObject tutorialUI;
     [SerializeField] private GameObject matchmakingScreen;
+    [SerializeField] private GameObject friendsScreen;
 
     [Header("Time Mode – Lock")]
     [SerializeField] private Button timeModeButton;
@@ -33,22 +34,13 @@ public class MainMenuController : MonoBehaviour
 
     private void Start()
     {
-        // Time-Mode-Button sperren oder freigeben
-        bool unlocked = PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 1;
-        if (timeLockIcon   != null) timeLockIcon.SetActive(!unlocked);
-        if (timeModeButton != null) timeModeButton.interactable = unlocked;
-
-        // Grafiken und Material sofort setzen wenn bereits entsperrt
-        if (unlocked)
-        {
-            SetTimeModeColors(Color.white);
-            if (timeModeButtonImage != null && timeModeUnlockedMaterial != null)
-                timeModeButtonImage.material = timeModeUnlockedMaterial;
-        }
+        TimeModeProgress.OnProgressLoaded += RefreshTimeModeUI;
+        RefreshTimeModeUI();
 
         // Unlock-Notification anzeigen (einmalig nach erstem Infinity-Spiel)
         int showNotif = PlayerPrefs.GetInt("ShowTimeModeUnlockNotification", 0);
-        Debug.Log($"[MainMenu] ShowNotif={showNotif}  Unlocked={PlayerPrefs.GetInt("TimeModeUnlocked", 0)}  Panel={unlockNotificationPanel}");
+        bool unlocked = TimeModeProgress.IsUnlocked;
+        Debug.Log($"[MainMenu] ShowNotif={showNotif}  Unlocked={unlocked}  Panel={unlockNotificationPanel}");
         if (showNotif == 1)
         {
             PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 0);
@@ -62,6 +54,25 @@ public class MainMenuController : MonoBehaviour
             {
                 Debug.LogWarning("[MainMenu] unlockNotificationPanel is NULL – Coroutine nicht gestartet!");
             }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        TimeModeProgress.OnProgressLoaded -= RefreshTimeModeUI;
+    }
+
+    private void RefreshTimeModeUI()
+    {
+        bool unlocked = TimeModeProgress.IsUnlocked;
+        if (timeLockIcon   != null) timeLockIcon.SetActive(!unlocked);
+        if (timeModeButton != null) timeModeButton.interactable = unlocked;
+
+        if (unlocked)
+        {
+            SetTimeModeColors(Color.white);
+            if (timeModeButtonImage != null && timeModeUnlockedMaterial != null)
+                timeModeButtonImage.material = timeModeUnlockedMaterial;
         }
     }
 
@@ -87,6 +98,12 @@ public class MainMenuController : MonoBehaviour
     {
         if (matchmakingScreen != null)
             matchmakingScreen.SetActive(true);
+    }
+
+    public void OnFriends()
+    {
+        if (friendsScreen != null)
+            friendsScreen.SetActive(true);
     }
 
     // ── Sonstige Buttons ────────────────────────────────────────────────────

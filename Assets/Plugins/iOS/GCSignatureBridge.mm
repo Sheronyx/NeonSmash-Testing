@@ -23,29 +23,31 @@ void GCRequestIdentitySignature(const char* unityObject, const char* unityMethod
         UnitySendMessage(obj.UTF8String, met.UTF8String, s.UTF8String);
     };
 
-    [localPlayer setAuthenticateHandler:^(UIViewController* vc, NSError* error) {
-        if (error) { send(@{ @"error": error.localizedDescription ?: @"auth_error" }); return; }
-        if (vc) return; // Systemdialog wird gezeigt
-        if (!localPlayer.isAuthenticated) { send(@{ @"error": @"not_authenticated" }); return; }
+    // Do not call setAuthenticateHandler again — Unity already owns that handler.
+    // Instead call generateIdentityVerificationSignature directly since the player
+    // is already authenticated at this point.
+    if (!localPlayer.isAuthenticated) {
+        send(@{ @"error": @"not_authenticated" });
+        return;
+    }
 
-        NSString* teamPlayerId = @"";
-        if (@available(iOS 13.0, *)) teamPlayerId = localPlayer.teamPlayerID ?: @"";
+    NSString* teamPlayerId = @"";
+    if (@available(iOS 13.0, *)) teamPlayerId = localPlayer.teamPlayerID ?: @"";
 
-        [localPlayer generateIdentityVerificationSignatureWithCompletionHandler:
-         ^(NSURL* pkURL, NSData* sig, NSData* salt, uint64_t ts, NSError* genErr)
-        {
-            if (genErr || !sig || !salt || !pkURL)
-            { send(@{ @"error": genErr.localizedDescription ?: @"signature_failed" }); return; }
+    [localPlayer generateIdentityVerificationSignatureWithCompletionHandler:
+     ^(NSURL* pkURL, NSData* sig, NSData* salt, uint64_t ts, NSError* genErr)
+    {
+        if (genErr || !sig || !salt || !pkURL)
+        { send(@{ @"error": genErr.localizedDescription ?: @"signature_failed" }); return; }
 
-            NSDictionary* payload = @{
-                @"signature": _Base64(sig) ?: @"",
-                @"salt": _Base64(salt) ?: @"",
-                @"timestamp": @(ts),
-                @"publicKeyURL": pkURL.absoluteString ?: @"",
-                @"teamPlayerId": teamPlayerId ?: @""
-            };
-            send(payload);
-        }];
+        NSDictionary* payload = @{
+            @"signature": _Base64(sig) ?: @"",
+            @"salt": _Base64(salt) ?: @"",
+            @"timestamp": @(ts),
+            @"publicKeyURL": pkURL.absoluteString ?: @"",
+            @"teamPlayerId": teamPlayerId ?: @""
+        };
+        send(payload);
     }];
 }
 

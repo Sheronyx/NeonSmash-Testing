@@ -11,6 +11,7 @@ public class PauseMenuController : MonoBehaviour
 
     public void ShowPauseMenu()
     {
+        if (MultiplayerManager.IsMultiplayerGame) return;
         pauseMenuUI.SetActive(true);
 
         Time.timeScale = 0f;

@@ -10,13 +10,13 @@ public class MultiplayerHUD : MonoBehaviour
     [SerializeField] TextMeshProUGUI opponentScoreText;
 
     [Header("Tug-of-War Bar")]
-    [SerializeField] RectTransform tugFill;      // anchored center, scaled on x-axis
-    [SerializeField] float barHalfWidth = 200f;  // pixels from center to each edge
+    [SerializeField] RectTransform tugFill;
+    [SerializeField] float barHalfWidth = 200f;
     [SerializeField] int winThreshold = 30;
 
-    [Header("Win / Lose")]
-    [SerializeField] GameObject winPanel;
-    [SerializeField] GameObject losePanel;
+    [Header("Game Over")]
+    [SerializeField] GameObject gameOverPanel;
+    [SerializeField] TextMeshProUGUI winnerNameText;
 
     [Header("Buttons")]
     [SerializeField] List<Button> backToMenuButtons = new();
@@ -36,8 +36,7 @@ public class MultiplayerHUD : MonoBehaviour
         foreach (var btn in backToMenuButtons) btn.onClick.AddListener(GoToMenu);
         foreach (var btn in tryAgainButtons)   btn.onClick.AddListener(TryAgain);
 
-        if (winPanel)  winPanel.SetActive(false);
-        if (losePanel) losePanel.SetActive(false);
+        if (gameOverPanel) gameOverPanel.SetActive(false);
 
         UpdateUI(0, 0);
     }
@@ -67,16 +66,10 @@ public class MultiplayerHUD : MonoBehaviour
         UpdateUI(local, opponent);
     }
 
-    void HandleGameOver(bool won)
+    void HandleGameOver(bool won, string winnerName)
     {
-        if (won)
-        {
-            if (winPanel)  winPanel.SetActive(true);
-        }
-        else
-        {
-            if (losePanel) losePanel.SetActive(true);
-        }
+        if (winnerNameText) winnerNameText.text = $"{winnerName} wins";
+        if (gameOverPanel)  gameOverPanel.SetActive(true);
     }
 
     void UpdateUI(int local, int opponent)
@@ -87,7 +80,7 @@ public class MultiplayerHUD : MonoBehaviour
         if (tugFill == null) return;
 
         float diff    = Mathf.Clamp(local - opponent, -winThreshold, winThreshold);
-        float t       = diff / (float)winThreshold;            // -1 … +1
+        float t       = diff / (float)winThreshold;
         float centerX = t * barHalfWidth;
 
         var pos = tugFill.anchoredPosition;
