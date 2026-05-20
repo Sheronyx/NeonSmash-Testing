@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 using UnityEngine.SceneManagement;
 
@@ -10,6 +11,7 @@ public class IntroSceneController : MonoBehaviour
     [SerializeField] private CanvasGroup loadingGroup;
     [Tooltip("Image: Fill Method = Horizontal, Fill Origin = Left, Fill Amount = 0")]
     [SerializeField] private Image progressBarFill;
+    [SerializeField] private TextMeshProUGUI percentageText;
     [SerializeField] private float loadingFadeInDur  = 0.35f;
     [SerializeField] private float loadingFadeOutDur = 0.25f;
     [SerializeField] private float fillSpeed         = 0.32f;
@@ -66,18 +68,20 @@ public class IntroSceneController : MonoBehaviour
         // Vorladen sicherstellen
         while (preload.progress < 0.9f) yield return null;
 
-        // Kurz zu Schwarz faden → MainMenuScene aktivieren → aufblenden
+        // Zu Schwarz faden — alles (Titel, Hintergrund) verschwindet hinter dem SceneFader
         if (SceneFader.Instance != null)
             yield return SceneFader.Instance.FadeToBlack();
 
+        // MainMenuScene aktivieren während Bildschirm schwarz ist
         preload.allowSceneActivation = true;
         yield return null;
         yield return null;
 
+        // Aufblenden
         if (SceneFader.Instance != null)
             yield return SceneFader.Instance.FadeFromBlack();
 
-        // MainMenuScene als aktive Scene setzen, IntroScene entladen
+        // IntroScene entladen
         var mainScene = SceneManager.GetSceneByName(nextScene);
         if (mainScene.IsValid()) SceneManager.SetActiveScene(mainScene);
         SceneManager.UnloadSceneAsync(gameObject.scene);
@@ -109,12 +113,16 @@ public class IntroSceneController : MonoBehaviour
             if (progressBarFill != null)
                 progressBarFill.fillAmount = fill;
 
+            if (percentageText != null)
+                percentageText.text = "Loading... " +Mathf.FloorToInt(fill * 100f) + "%";
+
             if (platformDone && fill >= 1f) break;
 
             yield return null;
         }
 
         if (progressBarFill != null) progressBarFill.fillAmount = 1f;
+        if (percentageText != null) percentageText.text = "100%";
         yield return new WaitForSecondsRealtime(holdAtFullDur);
     }
 }
