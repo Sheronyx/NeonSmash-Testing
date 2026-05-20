@@ -585,6 +585,9 @@ public class MixedPointSpawner : MonoBehaviour
         NeonAnalytics.LogGameOver(CurrentMode, score, isInfinityMode ? _gameOverCause : "time_up");
         _gameOverCause = "timeout";
 
+        AchievementManager.OnGameFinished(score, CurrentMode);
+        MissionManager.OnGameFinished(score);
+
         onGameOver?.Invoke();
         uiManager?.ShowGameOver(score, isInfinityMode);
 

@@ -1,0 +1,25 @@
+using System.Collections.Generic;
+
+public struct RewardNotification
+{
+    public string Title;
+    public string Subtitle;
+    public int    Coins;
+}
+
+public static class RewardNotificationQueue
+{
+    static readonly Queue<RewardNotification> _queue = new();
+
+    public static int Count => _queue.Count;
+
+    public static void Enqueue(string title, string subtitle, int coins)
+    {
+        _queue.Enqueue(new RewardNotification { Title = title, Subtitle = subtitle, Coins = coins });
+    }
+
+    public static bool TryDequeue(out RewardNotification notification)
+    {
+        return _queue.TryDequeue(out notification);
+    }
+}

@@ -248,6 +248,7 @@ public class TutorialManager : MonoBehaviour
 
         // ── Tutorial abgeschlossen – Spiel läuft weiter ───────────────────────
         NeonAnalytics.LogTutorialCompleted();
+        AchievementManager.OnTutorialCompleted();
         _ = TimeModeProgress.SetTutorialCompletedAsync();
         if (!TimeModeProgress.IsUnlocked)
         {

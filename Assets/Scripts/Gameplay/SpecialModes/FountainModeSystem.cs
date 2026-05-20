@@ -35,6 +35,8 @@ public class FountainModeSystem : MonoBehaviour
     public void Activate()
     {
         NeonAnalytics.LogSpecialModeTriggered("fountain");
+        AchievementManager.OnSpecialModeTriggered("fountain");
+        MissionManager.OnSpecialModeTriggered();
 
         spawnedPoints = 0;
         activePoints = 0;

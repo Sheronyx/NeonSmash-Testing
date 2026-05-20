@@ -76,6 +76,9 @@ public class UgsBootstrap : MonoBehaviour
 
             // 2) Fortschritt aus Cloud laden — vor Initialization, damit Scenes direkt korrekte Werte sehen
             await TimeModeProgress.LoadFromCloudAsync();
+            await CoinManager.LoadFromCloudAsync();
+            await DailyRewardManager.LoadFromCloudAsync();
+            await AchievementManager.LoadFromCloudAsync();
 
             // 3) Online bereit
             _tcs.TrySetResult(true);

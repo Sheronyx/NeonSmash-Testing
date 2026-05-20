@@ -19,6 +19,8 @@ public class IntroSceneController : MonoBehaviour
 
     [Header("Scene")]
     public string nextScene = "MainMenuScene";
+    [SerializeField] private CanvasGroup rootCanvasGroup;
+    [SerializeField] private float sceneTransitionDur = 0.35f;
 
     private void Start()
     {
@@ -68,20 +70,28 @@ public class IntroSceneController : MonoBehaviour
         // Vorladen sicherstellen
         while (preload.progress < 0.9f) yield return null;
 
-        // Zu Schwarz faden — alles (Titel, Hintergrund) verschwindet hinter dem SceneFader
-        if (SceneFader.Instance != null)
-            yield return SceneFader.Instance.FadeToBlack();
-
-        // MainMenuScene aktivieren während Bildschirm schwarz ist
+        // MainMenu jetzt aktivieren damit es im Hintergrund rendert
         preload.allowSceneActivation = true;
         yield return null;
         yield return null;
 
-        // Aufblenden
-        if (SceneFader.Instance != null)
-            yield return SceneFader.Instance.FadeFromBlack();
+        // SceneFader leeren falls MainMenu ihn schwarz gesetzt hat
+        if (SceneFader.Instance != null) SceneFader.Instance.Clear();
 
-        // IntroScene entladen
+        // IntroScene ausblenden — MainMenu ist bereits sichtbar darunter
+        if (rootCanvasGroup != null)
+        {
+            float t = 0f;
+            while (t < sceneTransitionDur)
+            {
+                t += Time.unscaledDeltaTime;
+                rootCanvasGroup.alpha = 1f - Mathf.Clamp01(t / sceneTransitionDur);
+                yield return null;
+            }
+            rootCanvasGroup.alpha = 0f;
+        }
+
+        // Aktive Szene wechseln und entladen
         var mainScene = SceneManager.GetSceneByName(nextScene);
         if (mainScene.IsValid()) SceneManager.SetActiveScene(mainScene);
         SceneManager.UnloadSceneAsync(gameObject.scene);
