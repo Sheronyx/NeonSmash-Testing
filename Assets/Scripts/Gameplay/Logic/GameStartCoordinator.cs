@@ -66,6 +66,9 @@ if (!spawner)
         if (countdownUI)    countdownUI.OnCountdownFinished -= HandleCountdownFinished;
         if (ScoreManager.Instance) ScoreManager.Instance.ResetScore();
 
+        NeonAnalytics.LogGameStart(
+            GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
+
         var tmc = FindFirstObjectByType<TimeModeController>();
         if (tmc) tmc.BeginAfterCountdown();
 

@@ -1,5 +1,9 @@
 functions/.env
 
+# Firebase native macOS Editor plugins (>100MB, not needed for iOS/Android builds)
+Assets/Firebase/Plugins/x86_64/*.bundle
+Assets/Firebase/Plugins/x86_64/*.bundle.meta
+
 # This .gitignore file should be placed at the root of your Unity project directory
 #
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore

@@ -31,6 +31,7 @@ public void Activate()
 {
     if (isActive) return;
 
+    NeonAnalytics.LogSpecialModeTriggered("gravity");
     StartCoroutine(Co_GravityMode());
 }
 

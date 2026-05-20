@@ -51,6 +51,10 @@ public class PauseMenuController : MonoBehaviour
 
     public void ReturnToMainMenu()
     {
+        int score = ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
+        GameMode mode = GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity;
+        NeonAnalytics.LogPauseQuit(mode, score);
+
         ResumeGame();
 
         SceneFader.Instance.LoadScene("MainMenuScene");

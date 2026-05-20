@@ -247,6 +247,7 @@ public class TutorialManager : MonoBehaviour
         spawner.PauseSpawning(false);
 
         // ── Tutorial abgeschlossen – Spiel läuft weiter ───────────────────────
+        NeonAnalytics.LogTutorialCompleted();
         _ = TimeModeProgress.SetTutorialCompletedAsync();
         if (!TimeModeProgress.IsUnlocked)
         {

@@ -582,6 +582,9 @@ public class MixedPointSpawner : MonoBehaviour
             SfxManager.Instance?.PlayInfinityGameOver();
         }
 
+        NeonAnalytics.LogGameOver(CurrentMode, score, isInfinityMode ? _gameOverCause : "time_up");
+        _gameOverCause = "timeout";
+
         onGameOver?.Invoke();
         uiManager?.ShowGameOver(score, isInfinityMode);
 
@@ -591,7 +594,10 @@ public class MixedPointSpawner : MonoBehaviour
             {
                 bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.InfinityId);
                 if (uploaded)
+                {
+                    NeonAnalytics.LogHighscoreBeat(CurrentMode, score);
                     Debug.Log($"[LB] Infinity-Bestwert {score} hochgeladen.");
+                }
             }
             catch (System.Exception e)
             {
@@ -600,6 +606,8 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
+    private string _gameOverCause = "timeout";
+
     private void GameOver()
     {
         EndGame(CurrentScore, true);
@@ -607,6 +615,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void TriggerGameOverFromGravity()
     {
+        _gameOverCause = "gravity";
         GameOver();
     }
 

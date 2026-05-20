@@ -117,6 +117,8 @@ public class GameUIManager : MonoBehaviour
 
     public void RestartGame()
     {
+        NeonAnalytics.LogGameOverAction("restart");
+
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
@@ -126,16 +128,14 @@ public class GameUIManager : MonoBehaviour
 
         if (SceneFader.Instance != null)
             SceneFader.Instance.LoadScene(current);
-
     }
-
 
     public void BackToMenu()
     {
+        NeonAnalytics.LogGameOverAction("menu");
+
         Time.timeScale = 1f;
         AudioListener.pause = false;
         SceneFader.Instance.LoadScene("MainMenuScene");
-
-
     }
 }

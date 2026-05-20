@@ -51,6 +51,7 @@ public class BootstrapLoader : MonoBehaviour
 
         // Auth starten (läuft im Hintergrund während Warmup + Logo)
         UgsBootstrap.Begin();
+        NeonAnalytics.LogSessionStart();
 
         // VFX Warmup abwarten — SceneFader ist noch schwarz und versteckt die Effekte
         if (vfxWarmup != null)

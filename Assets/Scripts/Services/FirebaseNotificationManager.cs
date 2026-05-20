@@ -42,6 +42,9 @@ public class FirebaseNotificationManager : MonoBehaviour
             return;
         }
 
+        // Crashlytics — requires FirebaseCrashlytics.unitypackage to be imported
+        Firebase.Crashlytics.Crashlytics.ReportUncaughtExceptionsAsFatal = true;
+
 #if UNITY_IOS
         await FirebaseMessaging.RequestPermissionAsync();
 #elif UNITY_ANDROID
@@ -62,6 +65,12 @@ public class FirebaseNotificationManager : MonoBehaviour
     public void ResaveTokenForNewPlayer()
     {
         _ = ResaveCurrentTokenAsync();
+        try
+        {
+            string pid = Unity.Services.Authentication.AuthenticationService.Instance.PlayerId;
+            NeonAnalytics.SetCrashlyticsUserId(pid);
+        }
+        catch { }
     }
 
     async Task ResaveCurrentTokenAsync()
