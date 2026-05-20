@@ -24,8 +24,6 @@ public class IntroSceneController : MonoBehaviour
 
     private void Start()
     {
-        // SceneFader startet schwarz (alpha=1) — sofort clearen damit der Ladebildschirm sichtbar ist.
-        // Am Ende von PlayIntro() nutzen wir ihn wieder für den Übergang zum MainMenu.
         SceneFader.Instance?.Clear();
         StartCoroutine(PlayIntro());
     }
