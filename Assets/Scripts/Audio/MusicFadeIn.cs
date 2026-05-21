@@ -156,9 +156,7 @@ public class MusicManager : MonoBehaviour
 
     private bool IsGameScene(string sceneName)
     {
-        return sceneName == "GameScene_InfinityMode"
-            || sceneName == "GameScene_TimeMode";
-        // ggf. generisch: return sceneName.StartsWith("GameScene_");
+        return sceneName == "GameScene_InfinityMode";
     }
 
     // ========= Utilities =========

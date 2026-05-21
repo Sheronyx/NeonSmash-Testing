@@ -8,7 +8,7 @@ using Unity.Services.Leaderboards.Models;
 public class LeaderboardController : MonoBehaviour
 {
     [Header("Leaderboard")]
-    [SerializeField] private string leaderboardId = LeaderboardApi.TimeModeId;
+    [SerializeField] private string leaderboardId = LeaderboardApi.InfinityId;
 
     [Header("Wiring")]
     [SerializeField] private GameObject panelRoot;
@@ -16,15 +16,11 @@ public class LeaderboardController : MonoBehaviour
     [SerializeField] private ScrollRect scrollRect;
 
     [Header("Mode Buttons")]
-    [SerializeField] private Button timeModeButton;
     [SerializeField] private Button infinityModeButton;
     [SerializeField] private Button multiplayerModeButton;
 
     [Header("List")]
     [SerializeField] private LeaderboardEntryView entryPrefab;
-
-    [SerializeField] private Image timeButtonBackground;
-    [SerializeField] private Image timeButtonIcon;
 
     [SerializeField] private Image infinityButtonBackground;
     [SerializeField] private Image infinityButtonIcon;
@@ -50,9 +46,6 @@ public class LeaderboardController : MonoBehaviour
 
     private void Awake()
     {
-        if (timeModeButton)
-            timeModeButton.onClick.AddListener(() => SetLeaderboard(LeaderboardApi.TimeModeId));
-
         if (infinityModeButton)
             infinityModeButton.onClick.AddListener(() => SetLeaderboard(LeaderboardApi.InfinityId));
 
@@ -314,14 +307,8 @@ public class LeaderboardController : MonoBehaviour
 
     private void UpdateModeUI()
     {
-        bool isTime       = leaderboardId == LeaderboardApi.TimeModeId;
         bool isMultiplayer = leaderboardId == LeaderboardApi.MultiplayerId;
-        bool isInfinity   = !isTime && !isMultiplayer;
-
-        if (timeButtonBackground != null)
-            timeButtonBackground.material = isTime ? outlineMaterial : outlineDarkMaterial;
-        if (timeButtonIcon != null)
-            timeButtonIcon.color = isTime ? activeColor : inactiveColor;
+        bool isInfinity   = !isMultiplayer;
 
         if (infinityButtonBackground != null)
             infinityButtonBackground.material = isInfinity ? outlineMaterial : outlineDarkMaterial;

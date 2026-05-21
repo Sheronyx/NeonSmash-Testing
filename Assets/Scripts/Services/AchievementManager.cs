@@ -19,7 +19,6 @@ public enum AchievementId
     Streak3,
     Streak7,
     TutorialDone,
-    TimeModeGames5,
 }
 
 public class AchievementData
@@ -35,7 +34,6 @@ public static class AchievementManager
 {
     const string PrefKeyGamesTotal   = "ach_games_total";
     const string PrefKeySpecialMask  = "ach_special_mask";  // bitmask: 1=gravity 2=gold 4=fountain
-    const string PrefKeyTimeModeGames = "ach_timemode_games";
     const string PrefKeyCompletedSet  = "ach_completed";    // comma-separated IDs
     const string CloudKeyCompleted    = "ach_completed";
     const string CloudKeyStats        = "ach_stats";         // JSON
@@ -57,7 +55,6 @@ public static class AchievementManager
         new() { Id = AchievementId.Streak3,         Title = "Streak Starter",     Description = "Log in 3 days in a row",                Reward = 100, Target = 3   },
         new() { Id = AchievementId.Streak7,         Title = "Streak Master",      Description = "Log in 7 days in a row",                Reward = 300, Target = 7   },
         new() { Id = AchievementId.TutorialDone,    Title = "Tutorial Graduate",  Description = "Complete the tutorial",                 Reward = 100, Target = 1   },
-        new() { Id = AchievementId.TimeModeGames5,  Title = "Time Trialist",      Description = "Play 5 rounds in Time Mode",            Reward = 150, Target = 5   },
     };
 
     // ── Public API ────────────────────────────────────────────────────────────
@@ -71,13 +68,6 @@ public static class AchievementManager
     {
         int games = PlayerPrefs.GetInt(PrefKeyGamesTotal, 0) + 1;
         PlayerPrefs.SetInt(PrefKeyGamesTotal, games);
-
-        if (mode == GameMode.Time)
-        {
-            int timeModeGames = PlayerPrefs.GetInt(PrefKeyTimeModeGames, 0) + 1;
-            PlayerPrefs.SetInt(PrefKeyTimeModeGames, timeModeGames);
-            TryUnlock(AchievementId.TimeModeGames5, timeModeGames);
-        }
 
         PlayerPrefs.Save();
 
@@ -148,8 +138,6 @@ public static class AchievementManager
                         PlayerPrefs.SetInt(PrefKeyGamesTotal, stats.gamesTotal);
                     if (stats.specialMask > PlayerPrefs.GetInt(PrefKeySpecialMask, 0))
                         PlayerPrefs.SetInt(PrefKeySpecialMask, stats.specialMask);
-                    if (stats.timeModeGames > PlayerPrefs.GetInt(PrefKeyTimeModeGames, 0))
-                        PlayerPrefs.SetInt(PrefKeyTimeModeGames, stats.timeModeGames);
                 }
                 catch { }
             }
@@ -211,9 +199,8 @@ public static class AchievementManager
         {
             var stats = new AchievementStats
             {
-                gamesTotal    = PlayerPrefs.GetInt(PrefKeyGamesTotal, 0),
-                specialMask   = PlayerPrefs.GetInt(PrefKeySpecialMask, 0),
-                timeModeGames = PlayerPrefs.GetInt(PrefKeyTimeModeGames, 0),
+                gamesTotal  = PlayerPrefs.GetInt(PrefKeyGamesTotal, 0),
+                specialMask = PlayerPrefs.GetInt(PrefKeySpecialMask, 0),
             };
             string json = JsonUtility.ToJson(stats);
             await CloudSaveService.Instance.Data.Player.SaveAsync(
@@ -230,6 +217,5 @@ public static class AchievementManager
     {
         public int gamesTotal;
         public int specialMask;
-        public int timeModeGames;
     }
 }

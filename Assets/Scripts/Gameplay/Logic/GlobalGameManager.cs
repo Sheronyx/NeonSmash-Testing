@@ -3,7 +3,6 @@ using UnityEngine;
 public enum GameMode
 {
     Infinity,
-    Time,
     Multiplayer
 }
 
