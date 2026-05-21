@@ -270,9 +270,12 @@ public class UgsBootstrap : MonoBehaviour
     // Platform-Auth ist abgeschlossen — finale Player-ID steht fest
     _platformAuthTcs.TrySetResult(true);
 
-    // Fortschritt aus Cloud laden (jetzt unter der korrekten Player-ID)
+    // Fortschritt + Coins aus Cloud laden (jetzt unter der korrekten Player-ID)
     var progressTask = TimeModeProgress.LoadFromCloudAsync();
     while (!progressTask.IsCompleted) yield return null;
+
+    var coinsTask = CoinManager.LoadFromCloudAsync();
+    while (!coinsTask.IsCompleted) yield return null;
 
     if (OfflineScoreSync.Instance != null)
         _ = OfflineScoreSync.Instance.TryFlushAsync();

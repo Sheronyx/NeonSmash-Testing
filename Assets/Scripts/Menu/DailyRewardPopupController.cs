@@ -7,7 +7,6 @@ public class DailyRewardPopupController : MonoBehaviour
 {
     [Header("Panel")]
     [SerializeField] private CanvasGroup panel;
-    [SerializeField] private CanvasGroup dimOverlay;
 
     [Header("Text")]
     [SerializeField] private TextMeshProUGUI dayLabel;     // e.g. "Day 3"
@@ -28,12 +27,10 @@ public class DailyRewardPopupController : MonoBehaviour
     [SerializeField] private float delayAfterFade   = 0.4f;
     [SerializeField] private float popInDuration    = 0.3f;
     [SerializeField] private float popOutDuration   = 0.25f;
-    [SerializeField] private float dimTargetAlpha   = 0.6f;
 
     void Start()
     {
         if (panel != null) panel.gameObject.SetActive(false);
-        if (dimOverlay != null) dimOverlay.gameObject.SetActive(false);
 
         if (DailyRewardManager.CanClaimToday)
             StartCoroutine(Co_Show());
@@ -74,8 +71,8 @@ public class DailyRewardPopupController : MonoBehaviour
 
         RefreshText();
 
-        if (dimOverlay != null) { dimOverlay.gameObject.SetActive(true); dimOverlay.alpha = 0f; }
-        if (panel      != null) { panel.gameObject.SetActive(true);      panel.alpha = 0f; }
+        DimOverlay.Instance?.Show();
+        if (panel != null) { panel.gameObject.SetActive(true); panel.alpha = 0f; }
 
         var rt = panel != null ? panel.GetComponent<RectTransform>() : null;
         if (rt != null) rt.localScale = Vector3.one * 0.7f;
@@ -85,34 +82,32 @@ public class DailyRewardPopupController : MonoBehaviour
         {
             t += Time.unscaledDeltaTime;
             float p = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / popInDuration));
-            if (panel      != null) panel.alpha      = p;
-            if (dimOverlay != null) dimOverlay.alpha  = p * dimTargetAlpha;
-            if (rt         != null) rt.localScale     = Vector3.Lerp(Vector3.one * 0.7f, Vector3.one, p);
+            if (panel != null) panel.alpha   = p;
+            if (rt    != null) rt.localScale = Vector3.Lerp(Vector3.one * 0.7f, Vector3.one, p);
             yield return null;
         }
 
-        if (panel      != null) panel.alpha = 1f;
-        if (dimOverlay != null) dimOverlay.alpha = dimTargetAlpha;
-        if (rt         != null) rt.localScale = Vector3.one;
+        if (panel != null) panel.alpha   = 1f;
+        if (rt    != null) rt.localScale = Vector3.one;
     }
 
     IEnumerator Co_Hide()
     {
         var rt = panel != null ? panel.GetComponent<RectTransform>() : null;
 
+        DimOverlay.Instance?.Hide();
+
         float t = 0f;
         while (t < popOutDuration)
         {
             t += Time.unscaledDeltaTime;
             float p = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / popOutDuration));
-            if (panel      != null) panel.alpha     = 1f - p;
-            if (dimOverlay != null) dimOverlay.alpha = Mathf.Lerp(dimTargetAlpha, 0f, p);
-            if (rt         != null) rt.localScale    = Vector3.Lerp(Vector3.one, Vector3.one * 0.7f, p);
+            if (panel != null) panel.alpha   = 1f - p;
+            if (rt    != null) rt.localScale = Vector3.Lerp(Vector3.one, Vector3.one * 0.7f, p);
             yield return null;
         }
 
-        if (panel      != null) panel.gameObject.SetActive(false);
-        if (dimOverlay != null) dimOverlay.gameObject.SetActive(false);
+        if (panel != null) panel.gameObject.SetActive(false);
     }
 
     void RefreshText()

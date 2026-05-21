@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Services.CloudSave;
 using UnityEngine;
@@ -8,6 +9,10 @@ public static class CoinManager
 {
     const string PrefKey  = "coins_balance";
     const string CloudKey = "coins";
+
+    // Ensures cloud saves are sequential — prevents out-of-order writes
+    // when multiple AddCoins calls fire rapidly (e.g. score + mission + achievement rewards).
+    static readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
     public static event Action<int> OnCoinsChanged;
 
@@ -20,7 +25,7 @@ public static class CoinManager
         PlayerPrefs.SetInt(PrefKey, newBalance);
         PlayerPrefs.Save();
         OnCoinsChanged?.Invoke(newBalance);
-        _ = SaveToCloudAsync(newBalance);
+        _ = SaveToCloudAsync();
         Debug.Log($"[Coins] +{amount} → {newBalance}");
     }
 
@@ -31,7 +36,7 @@ public static class CoinManager
         PlayerPrefs.SetInt(PrefKey, newBalance);
         PlayerPrefs.Save();
         OnCoinsChanged?.Invoke(newBalance);
-        _ = SaveToCloudAsync(newBalance);
+        _ = SaveToCloudAsync();
         return true;
     }
 
@@ -60,16 +65,25 @@ public static class CoinManager
         }
     }
 
-    static async Task SaveToCloudAsync(int balance)
+    // Reads the current balance at the time the lock is acquired, so that even if
+    // multiple saves are queued, the last one always writes the most recent value.
+    static async Task SaveToCloudAsync()
     {
+        await _saveLock.WaitAsync();
         try
         {
+            int balance = Balance;
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKey, balance } });
+            Debug.Log($"[Coins] Cloud gespeichert: {balance}");
         }
         catch (Exception e)
         {
             Debug.LogWarning("[Coins] Cloud Save fehlgeschlagen: " + e.Message);
+        }
+        finally
+        {
+            _saveLock.Release();
         }
     }
 }

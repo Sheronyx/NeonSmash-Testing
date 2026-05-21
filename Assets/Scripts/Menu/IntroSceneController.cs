@@ -20,6 +20,7 @@ public class IntroSceneController : MonoBehaviour
     [Header("Scene")]
     public string nextScene = "MainMenuScene";
     [SerializeField] private CanvasGroup rootCanvasGroup;
+    [SerializeField] private Camera introCamera;
     [SerializeField] private float sceneTransitionDur = 0.35f;
 
     private void Start()
@@ -75,6 +76,9 @@ public class IntroSceneController : MonoBehaviour
 
         // SceneFader leeren falls MainMenu ihn schwarz gesetzt hat
         if (SceneFader.Instance != null) SceneFader.Instance.Clear();
+
+        // IntroScene-Kamera deaktivieren → MainMenu-Kamera rendert jetzt den Hintergrund
+        if (introCamera != null) introCamera.enabled = false;
 
         // IntroScene ausblenden — MainMenu ist bereits sichtbar darunter
         if (rootCanvasGroup != null)

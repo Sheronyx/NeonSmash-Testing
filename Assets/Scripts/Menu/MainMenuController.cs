@@ -23,9 +23,6 @@ public class MainMenuController : MonoBehaviour
 
     [Header("Time Mode Unlock Notification")]
     [SerializeField] private CanvasGroup unlockNotificationPanel;
-    [SerializeField] private CanvasGroup dimPanel;
-    [Tooltip("Ziel-Alpha des Dim-Panels während der Notification (0–1)")]
-    [SerializeField] private float dimTargetAlpha = 0.6f;
     [SerializeField] private RectTransform lockIconInNotification;
     [Tooltip("Sekunden, die das Panel sichtbar bleibt")]
     [SerializeField] private float notificationHoldDuration = 2.5f;
@@ -124,6 +121,11 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("Einstellungen werden später implementiert.");
     }
 
+    public void OpenTasks()
+    {
+        TasksPopupController.Instance?.Open();
+    }
+
     // ── Unlock-Notification ─────────────────────────────────────────────────
 
     private IEnumerator Co_ShowUnlockNotification()
@@ -148,9 +150,7 @@ public class MainMenuController : MonoBehaviour
         if (timeModeButtonImage != null && timeModeUnlockedMaterial != null)
             timeModeButtonImage.material = timeModeUnlockedMaterial;
 
-        // Dim-Panel aktivieren (startet bei alpha 0)
-        if (dimPanel != null) { dimPanel.gameObject.SetActive(true); dimPanel.alpha = 0f; }
-
+        DimOverlay.Instance?.Show();
         unlockNotificationPanel.gameObject.SetActive(true);
         unlockNotificationPanel.alpha = 0f;
         var rt = unlockNotificationPanel.GetComponent<RectTransform>();
@@ -164,12 +164,10 @@ public class MainMenuController : MonoBehaviour
             float p = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / popInDuration));
             unlockNotificationPanel.alpha = p;
             rt.localScale = Vector3.Lerp(Vector3.one * 0.6f, Vector3.one, p);
-            if (dimPanel != null) dimPanel.alpha = Mathf.Lerp(0f, dimTargetAlpha, p);
             yield return null;
         }
         unlockNotificationPanel.alpha = 1f;
         rt.localScale = Vector3.one;
-        if (dimPanel != null) dimPanel.alpha = dimTargetAlpha;
 
         // Lock-Icon im Popup: Rotation → Skalierung → Wegfaden
         if (lockIconInNotification != null)
@@ -237,6 +235,8 @@ public class MainMenuController : MonoBehaviour
         yield return new WaitForSecondsRealtime(notificationHoldDuration);
 
         // Pop-out (gleichzeitig Dim ausblenden)
+        DimOverlay.Instance?.Hide();
+
         t = 0f;
         while (t < popOutDuration)
         {
@@ -244,11 +244,9 @@ public class MainMenuController : MonoBehaviour
             float p = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / popOutDuration));
             unlockNotificationPanel.alpha = 1f - p;
             rt.localScale = Vector3.Lerp(Vector3.one, Vector3.one * 0.7f, p);
-            if (dimPanel != null) dimPanel.alpha = Mathf.Lerp(dimTargetAlpha, 0f, p);
             yield return null;
         }
         unlockNotificationPanel.gameObject.SetActive(false);
-        if (dimPanel != null) dimPanel.gameObject.SetActive(false);
     }
 
     private void SetTimeModeColors(Color c)

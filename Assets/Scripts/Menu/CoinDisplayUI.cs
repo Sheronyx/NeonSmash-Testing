@@ -25,7 +25,10 @@ public class CoinDisplayUI : MonoBehaviour
 
     void OnEnable()
     {
-        _displayedBalance = CoinManager.Balance;
+        // Start from the pre-reward balance so each FlyCoinsFrom animation counts up correctly.
+        // Coins for queued notifications are already in CoinManager.Balance — subtract them
+        // so the display shows what the player had before rewards, then animates up to the final value.
+        _displayedBalance = CoinManager.Balance - RewardNotificationQueue.PendingCoins;
         Refresh();
         // Do NOT subscribe to OnCoinsChanged — display only updates via FlyCoinsFrom
     }
