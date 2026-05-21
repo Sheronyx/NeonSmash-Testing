@@ -12,6 +12,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-analytics-unity:13.11.0' // Assets/Firebase/Editor/AnalyticsDependencies.xml:21
     implementation 'com.google.firebase:firebase-app-unity:13.11.0' // Assets/Firebase/Editor/AppDependencies.xml:25
     implementation 'com.google.firebase:firebase-common:22.0.1' // Assets/Firebase/Editor/AppDependencies.xml:16
+    implementation 'com.google.firebase:firebase-crashlytics-ndk:20.0.6' // Assets/Firebase/Editor/CrashlyticsDependencies.xml:16
+    implementation 'com.google.firebase:firebase-crashlytics-unity:13.11.0' // Assets/Firebase/Editor/CrashlyticsDependencies.xml:23
     implementation 'com.google.firebase:firebase-iid:21.1.0' // Assets/Firebase/Editor/MessagingDependencies.xml:20
     implementation 'com.google.firebase:firebase-messaging:25.0.2' // Assets/Firebase/Editor/MessagingDependencies.xml:16
     implementation 'com.google.firebase:firebase-messaging-unity:13.11.0' // Assets/Firebase/Editor/MessagingDependencies.xml:27
