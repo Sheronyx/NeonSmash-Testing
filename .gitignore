@@ -1,8 +1,18 @@
 functions/.env
 
-# Firebase native macOS Editor plugins (>100MB, not needed for iOS/Android builds)
+# Firebase native macOS Editor plugins (not needed for iOS/Android builds)
 Assets/Firebase/Plugins/x86_64/*.bundle
 Assets/Firebase/Plugins/x86_64/*.bundle.meta
+Assets/Firebase/Plugins/x86_64/*.so
+Assets/Firebase/Plugins/x86_64/*.so.meta
+
+# Large audio assets - store locally, not in git (746MB)
+Assets/Soundbits_freeSFX_2025/
+
+# NeonSmash branding assets (belong to the other project, shared folder)
+Assets/Images/NeonSmash*
+Assets/Images/GooglePlayStore/NeonSmash*
+Assets/Images/Title/NeonSmash*
 
 # This .gitignore file should be placed at the root of your Unity project directory
 #
@@ -49,6 +59,17 @@ ExportedObj/
 *.csproj
 *.unityproj
 *.sln
+*.slnx
+
+# macOS system files
+.DS_Store
+.DS_Store?
+
+# PlasticSCM config (not needed for git)
+ignore.conf
+
+# Unity burst compiler output
+*BurstDebugInformation_DoNotShip/
 *.suo
 *.tmp
 *.user
