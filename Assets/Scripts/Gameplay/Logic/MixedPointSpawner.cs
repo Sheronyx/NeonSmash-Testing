@@ -39,7 +39,7 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private PortalSpawnBeam portalBeam;
 
     private GameMode CurrentMode =>
-        GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Time;
+        GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity;
 
     private bool IsInfinityMode => CurrentMode == GameMode.Infinity || CurrentMode == GameMode.Multiplayer;
 
@@ -566,7 +566,7 @@ public class MixedPointSpawner : MonoBehaviour
             return;
         }
 
-        Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
+        Debug.Log("GAME OVER ERREICHT");
 
         if (ScreenShakeManager.Instance != null)
             ScreenShakeManager.Instance.Shake(
@@ -633,12 +633,6 @@ public class MixedPointSpawner : MonoBehaviour
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
     }
-
-    public void ShowFinishedFromTimeMode(int finalScore)
-    {
-        EndGame(finalScore, false);
-    }
-
 
     // ─── Spawn-Area ───────────────────────────────────────────────────────────
 

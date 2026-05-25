@@ -69,9 +69,6 @@ if (!spawner)
         NeonAnalytics.LogGameStart(
             GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
 
-        var tmc = FindFirstObjectByType<TimeModeController>();
-        if (tmc) tmc.BeginAfterCountdown();
-
         if (spawner) spawner.Begin();
     }
 

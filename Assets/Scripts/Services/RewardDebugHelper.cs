@@ -60,7 +60,6 @@ public class RewardDebugHelper : MonoBehaviour
         PlayerPrefs.DeleteKey("ach_completed");
         PlayerPrefs.DeleteKey("ach_games_total");
         PlayerPrefs.DeleteKey("ach_special_mask");
-        PlayerPrefs.DeleteKey("ach_timemode_games");
         PlayerPrefs.Save();
         try
         {

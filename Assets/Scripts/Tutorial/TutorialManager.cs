@@ -142,10 +142,6 @@ public class TutorialManager : MonoBehaviour
         // Pause-Button im Tutorial deaktivieren
         if (pauseButton != null) pauseButton.SetActive(false);
 
-        // Timer deaktivieren – Tutorial hat kein Zeitlimit
-        var tmc = FindFirstObjectByType<TimeModeController>();
-        if (tmc != null) tmc.enabled = false;
-
         // TIME-Box: normale Elemente ausblenden, eigenes TUTORIAL-Label aktivieren
         if (timeObjectsToHide != null)
             foreach (var obj in timeObjectsToHide)
@@ -250,12 +246,6 @@ public class TutorialManager : MonoBehaviour
         NeonAnalytics.LogTutorialCompleted();
         AchievementManager.OnTutorialCompleted();
         _ = TimeModeProgress.SetTutorialCompletedAsync();
-        if (!TimeModeProgress.IsUnlocked)
-        {
-            _ = TimeModeProgress.UnlockAsync();
-            PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 1);
-            PlayerPrefs.Save();
-        }
         // Kein EndScreen, kein Redirect. Das Spiel läuft als normaler InfinityMode weiter.
     }
 
@@ -383,8 +373,6 @@ public class TutorialManager : MonoBehaviour
     public void ResetTutorial()
     {
         PlayerPrefs.DeleteKey(PrefKey);
-        PlayerPrefs.DeleteKey("TimeModeUnlocked");
-        PlayerPrefs.DeleteKey("ShowTimeModeUnlockNotification");
         PlayerPrefs.Save();
         Debug.Log("[Tutorial] Reset. Bitte Szene neu laden.");
     }

@@ -22,7 +22,6 @@ public static class NeonAnalytics
 
     static string ModeStr(GameMode m) => m switch
     {
-        GameMode.Time        => "time",
         GameMode.Multiplayer => "multiplayer",
         _                    => "infinity"
     };

@@ -19,13 +19,10 @@ public class LeaderboardPanelController : MonoBehaviour
     [SerializeField] private ScrollRect scrollRect;
 
     [Header("Mode Buttons")]
-    [SerializeField] private Button timeModeButton;
     [SerializeField] private Button infinityModeButton;
     [SerializeField] private Button multiplayerModeButton;
 
     [Header("Button Sprites")]
-    [SerializeField] private Sprite timeNormalSprite;
-    [SerializeField] private Sprite timeActiveSprite;
     [SerializeField] private Sprite infinityNormalSprite;
     [SerializeField] private Sprite infinityActiveSprite;
     [SerializeField] private Sprite multiplayerNormalSprite;
@@ -45,9 +42,6 @@ public class LeaderboardPanelController : MonoBehaviour
     private void Awake()
     {
         if (closeButton) closeButton.onClick.AddListener(Close);
-
-        if (timeModeButton)
-            timeModeButton.onClick.AddListener(OnClickTimeMode);
 
         if (infinityModeButton)
             infinityModeButton.onClick.AddListener(OnClickInfinityMode);
@@ -70,11 +64,6 @@ public class LeaderboardPanelController : MonoBehaviour
     public void Close()
     {
         panelRoot.SetActive(false);
-    }
-
-    public void OnClickTimeMode()
-    {
-        SetLeaderboard(LeaderboardApi.TimeModeId);
     }
 
     public void OnClickInfinityMode()
@@ -103,20 +92,15 @@ public class LeaderboardPanelController : MonoBehaviour
 
     private void UpdateModeButtons()
     {
-        if (!timeModeButton || !infinityModeButton) return;
+        if (!infinityModeButton) return;
 
-        bool isTime       = leaderboardId == LeaderboardApi.TimeModeId;
         bool isMultiplayer = leaderboardId == LeaderboardApi.MultiplayerId;
 
-        var timeImage       = timeModeButton?.GetComponent<Image>();
         var infinityImage   = infinityModeButton?.GetComponent<Image>();
         var multiplayerImage = multiplayerModeButton?.GetComponent<Image>();
 
-        if (timeImage)
-            timeImage.sprite = isTime ? timeActiveSprite : timeNormalSprite;
-
         if (infinityImage)
-            infinityImage.sprite = (!isTime && !isMultiplayer) ? infinityActiveSprite : infinityNormalSprite;
+            infinityImage.sprite = !isMultiplayer ? infinityActiveSprite : infinityNormalSprite;
 
         if (multiplayerImage && multiplayerNormalSprite && multiplayerActiveSprite)
             multiplayerImage.sprite = isMultiplayer ? multiplayerActiveSprite : multiplayerNormalSprite;

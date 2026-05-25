@@ -9,8 +9,8 @@ public class LeaderboardPager : MonoBehaviour, IBeginDragHandler, IEndDragHandle
     [SerializeField] TMP_Text title;                     // optional: Header-Titel
 
     [Header("Tabs")]
-    [SerializeField] string[] ids    = { LeaderboardApi.TimeModeId, LeaderboardApi.InfinityId };
-    [SerializeField] string[] titles = { "Time Mode", "Infinity Mode" };
+    [SerializeField] string[] ids    = { LeaderboardApi.InfinityId };
+    [SerializeField] string[] titles = { "Infinity Mode" };
 
     [Header("UX")]
     [SerializeField] float swipeThreshold = 70f;         // Pixel, ab wann wir swipen
