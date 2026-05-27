@@ -6,8 +6,8 @@ using UnityEngine;
 
 public static class LeaderboardApi
 {
-    public const string TimeModeId = "timemode_highscore";
-    public const string InfinityId = "infinity_highscore";
+    public const string InfinityId    = "infinity_highscore";
+    public const string MultiplayerId = "multiplayer_rank";
 
     public static string DefaultId = null;
 

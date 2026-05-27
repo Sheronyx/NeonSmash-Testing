@@ -12,9 +12,6 @@ public class SfxManager : MonoBehaviour
     [Tooltip("SFX für GameOver im InfinityMode.")]
     public AudioClip infinityGameOverClip;
 
-    [Tooltip("SFX für Zeitablauf im TimeMode.")]
-    public AudioClip timeModeTimeUpClip;
-
     [Header("Lautstärke")]
     [Range(0f, 1f)] public float defaultVolume = 1f;
 
@@ -35,12 +32,6 @@ public class SfxManager : MonoBehaviour
     {
         if (infinityGameOverClip == null) return;
         sfxSource.PlayOneShot(infinityGameOverClip, Mathf.Clamp01(volume ?? defaultVolume));
-    }
-
-    public void PlayTimeModeTimeUp(float? volume = null)
-    {
-        if (timeModeTimeUpClip == null) return;
-        sfxSource.PlayOneShot(timeModeTimeUpClip, Mathf.Clamp01(volume ?? defaultVolume));
     }
 
     public void PlayOneShot(AudioClip clip, float? volume = null)

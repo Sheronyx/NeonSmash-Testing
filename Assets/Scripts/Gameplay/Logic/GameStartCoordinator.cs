@@ -26,21 +26,35 @@ if (!spawner)
 
     void Start()
     {
-        // Gameplay vorerst blocken
-        if (spawner) spawner.enabled = false;
-        if (playerInput)  playerInput.enabled  = false;
-
+        if (spawner)     spawner.enabled      = false;
+        if (playerInput) playerInput.enabled  = false;
         if (blockTimeScale) Time.timeScale = 0f;
+
+        if (MultiplayerManager.IsMultiplayerGame)
+        {
+            // Countdown erst starten wenn beide Seiten in der Szene sind
+            if (MultiplayerGameSession.IsGameStarted)
+                StartCountdown();
+            else
+                MultiplayerGameSession.OnGameStarted += StartCountdown;
+        }
+        else
+        {
+            StartCountdown();
+        }
+    }
+
+    private void StartCountdown()
+    {
+        MultiplayerGameSession.OnGameStarted -= StartCountdown;
 
         if (countdownUI)
         {
-            // abonnieren und starten
             countdownUI.OnCountdownFinished += HandleCountdownFinished;
             countdownUI.StartCountdown();
         }
         else
         {
-            // Fallback: kein Countdown gefunden -> direkt starten
             HandleCountdownFinished();
         }
     }
@@ -48,21 +62,19 @@ if (!spawner)
     private void HandleCountdownFinished()
     {
         if (blockTimeScale) Time.timeScale = 1f;
-
-        if (playerInput) playerInput.enabled = true;
-        if (spawner) spawner.Begin();
-        if (countdownUI) countdownUI.OnCountdownFinished -= HandleCountdownFinished;
-
-        // Score für neuen Run zurücksetzen
+        if (playerInput)    playerInput.enabled = true;
+        if (countdownUI)    countdownUI.OnCountdownFinished -= HandleCountdownFinished;
         if (ScoreManager.Instance) ScoreManager.Instance.ResetScore();
 
-        // Time-Mode-Timer starten (nur in Game_Time vorhanden)
-        var tmc = FindFirstObjectByType<TimeModeController>();
-        if (tmc) tmc.BeginAfterCountdown();
+        NeonAnalytics.LogGameStart(
+            GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
+
+        if (spawner) spawner.Begin();
     }
 
     void OnDestroy()
     {
+        MultiplayerGameSession.OnGameStarted -= StartCountdown;
         if (countdownUI) countdownUI.OnCountdownFinished -= HandleCountdownFinished;
         if (blockTimeScale) Time.timeScale = 1f;
     }

@@ -43,6 +43,9 @@ public class GoldModeSystem : MonoBehaviour
     {
         if (isActive) return;
 
+        NeonAnalytics.LogSpecialModeTriggered("gold");
+        AchievementManager.OnSpecialModeTriggered("gold");
+        MissionManager.OnSpecialModeTriggered();
         // Erst Point clearen (Spawner ist noch pausiert, nichts spawnt)
         spawner.ClearAllGameplayPoints();
 

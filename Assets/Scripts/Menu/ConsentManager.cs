@@ -1,7 +1,4 @@
-using System.Collections;
-using System.Threading.Tasks;
 using UnityEngine;
-using Unity.Services.Analytics;
 
 public class ConsentManager : MonoBehaviour
 {
@@ -10,10 +7,6 @@ public class ConsentManager : MonoBehaviour
 
     [Tooltip("Canvas mit Impressumsinformationen.")]
     public GameObject impressumCanvas;
-
-    [Header("Perf")]
-    [Tooltip("Kleine Verzögerung, damit erste Frames (Intro/Fade) nicht ruckeln.")]
-    [SerializeField] float deferInitSeconds = 0.3f;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
     [Header("Dev")]
@@ -33,14 +26,8 @@ public class ConsentManager : MonoBehaviour
         }
 #endif
 
-        if (consentGiven)
-        {
-            StartCoroutine(DeferInit());
-        }
-        else
-        {
+        if (!consentGiven)
             if (consentCanvas) consentCanvas.SetActive(true);
-        }
     }
 
     public void OnConsentGiven()
@@ -48,35 +35,6 @@ public class ConsentManager : MonoBehaviour
         PlayerPrefs.SetInt("consent_given", 1);
         PlayerPrefs.Save();
         if (consentCanvas) consentCanvas.SetActive(false);
-        StartCoroutine(DeferInit());
-    }
-
-    private IEnumerator DeferInit()
-    {
-        yield return null;
-        yield return new WaitForSecondsRealtime(deferInitSeconds);
-
-        UgsBootstrap.Begin();
-        _ = UgsBootstrap.Initialization;
-        _ = InitializeAnalyticsAsync();
-    }
-
-    private async Task InitializeAnalyticsAsync()
-    {
-        try
-        {
-            if (UgsBootstrap.Initialization != null)
-                _ = await UgsBootstrap.Initialization;
-
-            await Task.Delay(150);
-
-            AnalyticsService.Instance.StartDataCollection();
-            Debug.Log("[Analytics] Consent gesetzt → Analytics aktiv.");
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogWarning("[Analytics] delayed start: " + ex.Message);
-        }
     }
 
     public void OnMoreInfo()

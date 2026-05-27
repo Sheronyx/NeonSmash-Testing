@@ -4,6 +4,8 @@ using System.Collections;
 
 public class MixedPointSpawner : MonoBehaviour
 {
+    public static MixedPointSpawner Instance { get; private set; }
+
     [SerializeField] private GameObject fountainModeActivationPointPrefab;
     [SerializeField] private GameObject normalPointGoldPrefab;
     [SerializeField] private GameObject swipePointGoldPrefab;
@@ -37,9 +39,9 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private PortalSpawnBeam portalBeam;
 
     private GameMode CurrentMode =>
-        GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Time;
+        GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity;
 
-    private bool IsInfinityMode => CurrentMode == GameMode.Infinity;
+    private bool IsInfinityMode => CurrentMode == GameMode.Infinity || CurrentMode == GameMode.Multiplayer;
 
     [Header("Safe Area / Gesten")]
     [SerializeField] private bool useSafeAreaForSpawns = true;
@@ -122,6 +124,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
         if (!mainCamera) mainCamera = Camera.main;
 
         if (autoComputePaddingFromPrefab && paddingSamplePrefab != null && mainCamera != null)
@@ -557,7 +560,13 @@ public class MixedPointSpawner : MonoBehaviour
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
 
-        Debug.Log(isInfinityMode ? "GAME OVER ERREICHT" : "TIME MODE FINISHED");
+        if (MultiplayerManager.IsMultiplayerGame)
+        {
+            MultiplayerGameSession.Instance?.DeclareLocalPlayerLost();
+            return;
+        }
+
+        Debug.Log("GAME OVER ERREICHT");
 
         if (ScreenShakeManager.Instance != null)
             ScreenShakeManager.Instance.Shake(
@@ -573,6 +582,12 @@ public class MixedPointSpawner : MonoBehaviour
             SfxManager.Instance?.PlayInfinityGameOver();
         }
 
+        NeonAnalytics.LogGameOver(CurrentMode, score, isInfinityMode ? _gameOverCause : "time_up");
+        _gameOverCause = "timeout";
+
+        AchievementManager.OnGameFinished(score, CurrentMode);
+        MissionManager.OnGameFinished(score);
+
         onGameOver?.Invoke();
         uiManager?.ShowGameOver(score, isInfinityMode);
 
@@ -582,7 +597,10 @@ public class MixedPointSpawner : MonoBehaviour
             {
                 bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.InfinityId);
                 if (uploaded)
+                {
+                    NeonAnalytics.LogHighscoreBeat(CurrentMode, score);
                     Debug.Log($"[LB] Infinity-Bestwert {score} hochgeladen.");
+                }
             }
             catch (System.Exception e)
             {
@@ -591,6 +609,8 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
+    private string _gameOverCause = "timeout";
+
     private void GameOver()
     {
         EndGame(CurrentScore, true);
@@ -598,14 +618,21 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void TriggerGameOverFromGravity()
     {
+        _gameOverCause = "gravity";
         GameOver();
     }
 
-    public void ShowFinishedFromTimeMode(int finalScore)
+    public void StopImmediate()
     {
-        EndGame(finalScore, false);
+        if (gameOver) return;
+        gameOver = true;
+        running = false;
+        StopPointTimer();
+        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
+        CurrentSwipePoint = null;
+        if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
+        if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
     }
-
 
     // ─── Spawn-Area ───────────────────────────────────────────────────────────
 

@@ -127,19 +127,20 @@ public class TutorialManager : MonoBehaviour
 
     private void Awake() => Instance = this;
 
-    private void Start()
+    private IEnumerator Start()
     {
 #if !UNITY_EDITOR
         forceTutorialInEditor = false;
 #endif
-        if (!forceTutorialInEditor && PlayerPrefs.GetInt(PrefKey, 0) == 1) { enabled = false; return; }
+        // Wait until GPGS/Game Center auth is done so we have the correct cloud data.
+        // PlatformAuthReady resolves instantly if auth was already completed (e.g. returning player).
+        var platformReady = UgsBootstrap.PlatformAuthReady;
+        while (!platformReady.IsCompleted) yield return null;
+
+        if (!forceTutorialInEditor && TimeModeProgress.IsTutorialCompleted) { enabled = false; yield break; }
 
         // Pause-Button im Tutorial deaktivieren
         if (pauseButton != null) pauseButton.SetActive(false);
-
-        // Timer deaktivieren – Tutorial hat kein Zeitlimit
-        var tmc = FindFirstObjectByType<TimeModeController>();
-        if (tmc != null) tmc.enabled = false;
 
         // TIME-Box: normale Elemente ausblenden, eigenes TUTORIAL-Label aktivieren
         if (timeObjectsToHide != null)
@@ -242,13 +243,9 @@ public class TutorialManager : MonoBehaviour
         spawner.PauseSpawning(false);
 
         // ── Tutorial abgeschlossen – Spiel läuft weiter ───────────────────────
-        PlayerPrefs.SetInt(PrefKey, 1);
-        if (PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 0)
-        {
-            PlayerPrefs.SetInt("TimeModeUnlocked", 1);
-            PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 1);
-        }
-        PlayerPrefs.Save();
+        NeonAnalytics.LogTutorialCompleted();
+        AchievementManager.OnTutorialCompleted();
+        _ = TimeModeProgress.SetTutorialCompletedAsync();
         // Kein EndScreen, kein Redirect. Das Spiel läuft als normaler InfinityMode weiter.
     }
 
@@ -376,8 +373,6 @@ public class TutorialManager : MonoBehaviour
     public void ResetTutorial()
     {
         PlayerPrefs.DeleteKey(PrefKey);
-        PlayerPrefs.DeleteKey("TimeModeUnlocked");
-        PlayerPrefs.DeleteKey("ShowTimeModeUnlockNotification");
         PlayerPrefs.Save();
         Debug.Log("[Tutorial] Reset. Bitte Szene neu laden.");
     }

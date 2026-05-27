@@ -32,10 +32,11 @@ public class FountainModeSystem : MonoBehaviour
 
     private MixedPointSpawner spawner;
 
-    // 🔥 Wird von außen getriggert
     public void Activate()
     {
-        Debug.Log("💧 Fountain Mode ACTIVATED");
+        NeonAnalytics.LogSpecialModeTriggered("fountain");
+        AchievementManager.OnSpecialModeTriggered("fountain");
+        MissionManager.OnSpecialModeTriggered();
 
         spawnedPoints = 0;
         activePoints = 0;

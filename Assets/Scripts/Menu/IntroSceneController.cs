@@ -1,138 +1,140 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 using UnityEngine.SceneManagement;
 
 public class IntroSceneController : MonoBehaviour
 {
-    public RawImage logo;
-    public float displayTime = 1f;
+    [Header("Ladescreen")]
+    [Tooltip("Root-Panel für die Progressbar (im Editor deaktiviert lassen)")]
+    [SerializeField] private CanvasGroup loadingGroup;
+    [Tooltip("Image: Fill Method = Horizontal, Fill Origin = Left, Fill Amount = 0")]
+    [SerializeField] private Image progressBarFill;
+    [SerializeField] private TextMeshProUGUI percentageText;
+    [SerializeField] private float loadingFadeInDur  = 0.35f;
+    [SerializeField] private float loadingFadeOutDur = 0.25f;
+    [SerializeField] private float fillSpeed         = 0.32f;
+    [SerializeField] private float holdAtFullDur     = 0.45f;
+
+    [Header("Scene")]
     public string nextScene = "MainMenuScene";
-
-    public float durationPulse = 1.0f;
-    public float shrinkAmount = 0.9f;
-    public float growAmount = 1.15f;
-
-    public float baseScale = 0.25f; // 👈 Deine gewünschte Grundgröße
+    [SerializeField] private CanvasGroup rootCanvasGroup;
+    [SerializeField] private Camera introCamera;
+    [SerializeField] private float sceneTransitionDur = 0.35f;
 
     private void Start()
     {
-        // Logo zu Beginn auf Basisgröße setzen
-        logo.transform.localScale = Vector3.one * baseScale;
-
+        SceneFader.Instance?.Clear();
         StartCoroutine(PlayIntro());
     }
 
     private IEnumerator PlayIntro()
     {
-        // Warten bis VFX-Warmup abgeschlossen ist (läuft während Bildschirm schwarz ist)
-        var warmup = FindFirstObjectByType<VFXWarmup>();
-        if (warmup != null)
-            yield return new WaitUntil(() => warmup.IsComplete);
-
-        // Nächste Szene im Hintergrund vorladen während die Animation läuft
-        AsyncOperation preload = SceneManager.LoadSceneAsync(nextScene);
+        // MainMenuScene additiv vorladen — IntroScene bleibt sichtbar
+        AsyncOperation preload = SceneManager.LoadSceneAsync(nextScene, LoadSceneMode.Additive);
         preload.allowSceneActivation = false;
 
-        if (SceneFader.Instance != null)
-            yield return SceneFader.Instance.FadeFromBlack();
+        // Progressbar einblenden — Loading Background ist bereits sichtbar (alpha=1 im Inspector)
+        if (loadingGroup != null)
+        {
+            loadingGroup.gameObject.SetActive(true);
+            loadingGroup.alpha = 0f;
+            float t = 0f;
+            while (t < loadingFadeInDur)
+            {
+                t += Time.unscaledDeltaTime;
+                loadingGroup.alpha = Mathf.Clamp01(t / loadingFadeInDur);
+                yield return null;
+            }
+            loadingGroup.alpha = 1f;
+        }
 
-        // Heartbeat-Animation (Puls + kurzes Absinken)
-        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale * shrinkAmount, durationPulse * 0.25f);
-        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale * growAmount,   durationPulse * 0.35f);
-        yield return ScaleOverTime(logo.transform, Vector3.one * baseScale,                durationPulse * 0.4f);
-        yield return MoveOverTime(logo.transform, Vector3.down * 400f, 0.3f, relative: true);
+        // Auf GPGS / Game Center Auth warten, Progressbar animieren
+        yield return AnimateLoadingPhase();
 
-        // Sicherstellen dass Vorladen bei 90% ist (sollte längst fertig sein)
+        // Progressbar ausblenden
+        if (loadingGroup != null)
+        {
+            float t = 0f;
+            while (t < loadingFadeOutDur)
+            {
+                t += Time.unscaledDeltaTime;
+                loadingGroup.alpha = 1f - Mathf.Clamp01(t / loadingFadeOutDur);
+                yield return null;
+            }
+            loadingGroup.gameObject.SetActive(false);
+        }
+
+        // Vorladen sicherstellen
         while (preload.progress < 0.9f) yield return null;
 
-        // FadeToBlack startet gleichzeitig mit dem Logo-Abschuss (beide 0.4s)
-        if (SceneFader.Instance != null)
-            SceneFader.Instance.StartFadeToBlack(0.4f);
-        yield return MoveUpAndOut(logo.transform, 2800f, 0.4f);
+        // MainMenu jetzt aktivieren damit es im Hintergrund rendert
+        preload.allowSceneActivation = true;
+        yield return null;
+        yield return null;
 
-        // Screen ist jetzt schwarz, Szene sofort aktivieren → kurzes FadeFromBlack im Menü
-        if (SceneFader.Instance != null)
-            SceneFader.Instance.ActivatePreloaded(preload, 0.3f);
-        else
-            preload.allowSceneActivation = true;
-    }
+        // SceneFader leeren falls MainMenu ihn schwarz gesetzt hat
+        if (SceneFader.Instance != null) SceneFader.Instance.Clear();
 
-private IEnumerator ScaleOverTime(Transform target, Vector3 targetScale, float duration)
-    {
-        Vector3 startScale = target.localScale;
-        float t = 0;
+        // IntroScene-Kamera deaktivieren → MainMenu-Kamera rendert jetzt den Hintergrund
+        if (introCamera != null) introCamera.enabled = false;
 
-        while (t < duration)
+        // IntroScene ausblenden — MainMenu ist bereits sichtbar darunter
+        if (rootCanvasGroup != null)
         {
-            t += Time.deltaTime;
-            float progress = t / duration;
-
-            // Smooth-Animation (Herzschlag-Style)
-            target.localScale = Vector3.Lerp(startScale, targetScale, Mathf.SmoothStep(0, 1, progress));
-
-            yield return null; // 1 Frame warten
+            float t = 0f;
+            while (t < sceneTransitionDur)
+            {
+                t += Time.unscaledDeltaTime;
+                rootCanvasGroup.alpha = 1f - Mathf.Clamp01(t / sceneTransitionDur);
+                yield return null;
+            }
+            rootCanvasGroup.alpha = 0f;
         }
 
-        target.localScale = targetScale;
-    }
-    
-    private IEnumerator MoveOverTime(Transform target, Vector3 offset, float duration, bool relative = false)
-{
-    Vector3 startPos = target.localPosition;
-    Vector3 endPos = relative ? startPos + offset : offset;
-    float t = 0f;
-
-    while (t < duration)
-    {
-        t += Time.deltaTime;
-        float p = Mathf.Clamp01(t / duration);
-        target.localPosition = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, p));
-        yield return null;
+        // Aktive Szene wechseln und entladen
+        var mainScene = SceneManager.GetSceneByName(nextScene);
+        if (mainScene.IsValid()) SceneManager.SetActiveScene(mainScene);
+        SceneManager.UnloadSceneAsync(gameObject.scene);
     }
 
-    target.localPosition = endPos;
-}
-
-
-private IEnumerator MoveUpAndOut(Transform target, float distance, float duration)
-{
-    Vector3 startPos = target.localPosition;
-    Vector3 endPos = startPos + new Vector3(0, distance, 0);
-    Vector3 startScale = target.localScale;
-    Vector3 endScale = startScale * 0.3f;
-
-    float t = 0f;
-    float fadeDuration = 0.4f; // Alpha-Fade-Zeit
-    Image img = target.GetComponent<Image>();
-
-    while (t < duration)
+    private IEnumerator AnimateLoadingPhase()
     {
-        t += Time.deltaTime;
-        float p = Mathf.Clamp01(t / duration);
+        if (progressBarFill != null) progressBarFill.fillAmount = 0f;
 
-        // Position hoch
-        target.localPosition = Vector3.Lerp(startPos, endPos, Mathf.SmoothStep(0f, 1f, p));
+        // Guard: warten bis UgsBootstrap.Begin() aufgerufen wurde.
+        while (!UgsBootstrap.HasBegun) yield return null;
 
-        // Gleichzeitig kleiner werden
-        target.localScale = Vector3.Lerp(startScale, endScale, Mathf.SmoothStep(0f, 1f, p));
+        float fill = 0f;
+        var initTask     = UgsBootstrap.Initialization;
+        var platformTask = UgsBootstrap.PlatformAuthReady;
 
-        // Alpha nur während der ersten 0.4 Sekunden verringern
-        if (img != null)
+        while (true)
         {
-            float fadeProgress = Mathf.Clamp01(t / fadeDuration);
-            Color c = img.color;
-            c.a = Mathf.Lerp(1f, 0f, fadeProgress);
-            img.color = c;
+            bool initDone     = initTask.IsCompleted;
+            bool platformDone = platformTask.IsCompleted;
+
+            float target = platformDone ? 1.00f
+                         : initDone     ? 0.90f
+                                        : 0.42f;
+
+            float speed = (platformDone && fill > 0.88f) ? fillSpeed * 6f : fillSpeed;
+            fill = Mathf.MoveTowards(fill, target, speed * Time.unscaledDeltaTime);
+
+            if (progressBarFill != null)
+                progressBarFill.fillAmount = fill;
+
+            if (percentageText != null)
+                percentageText.text = "Loading... " +Mathf.FloorToInt(fill * 100f) + "%";
+
+            if (platformDone && fill >= 1f) break;
+
+            yield return null;
         }
 
-        yield return null;
+        if (progressBarFill != null) progressBarFill.fillAmount = 1f;
+        if (percentageText != null) percentageText.text = "100%";
+        yield return new WaitForSecondsRealtime(holdAtFullDur);
     }
-
-    target.localPosition = endPos;
-    target.localScale = endScale;
-}
-
-
-
 }

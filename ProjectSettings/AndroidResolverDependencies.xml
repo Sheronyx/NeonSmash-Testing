@@ -1,16 +1,35 @@
 <dependencies>
   <packages>
+    <package>com.google.android.gms:play-services-base:18.10.0</package>
     <package>com.google.android.play:core-common:2.0.4</package>
     <package>com.google.android.play:review:2.0.2</package>
+    <package>com.google.firebase:firebase-analytics:23.2.0</package>
+    <package>com.google.firebase:firebase-analytics-unity:13.11.0</package>
+    <package>com.google.firebase:firebase-app-unity:13.11.0</package>
+    <package>com.google.firebase:firebase-common:22.0.1</package>
+    <package>com.google.firebase:firebase-crashlytics-ndk:20.0.6</package>
+    <package>com.google.firebase:firebase-crashlytics-unity:13.11.0</package>
+    <package>com.google.firebase:firebase-iid:21.1.0</package>
+    <package>com.google.firebase:firebase-messaging:25.0.2</package>
+    <package>com.google.firebase:firebase-messaging-unity:13.11.0</package>
+    <package>com.google.flatbuffers:flatbuffers-java:1.12.0</package>
     <package>com.google.games:gpgs-plugin-support:2.1.0</package>
   </packages>
   <files>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-analytics-unity/13.11.0/firebase-analytics-unity-13.11.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-analytics-unity/13.11.0/firebase-analytics-unity-13.11.0.pom</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-app-unity/13.11.0/firebase-app-unity-13.11.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-app-unity/13.11.0/firebase-app-unity-13.11.0.pom</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-crashlytics-unity/13.11.0/firebase-crashlytics-unity-13.11.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-crashlytics-unity/13.11.0/firebase-crashlytics-unity-13.11.0.pom</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-messaging-unity/13.11.0/firebase-messaging-unity-13.11.0.aar</file>
+    <file>Assets/GeneratedLocalRepo/Firebase/m2repository/com/google/firebase/firebase-messaging-unity/13.11.0/firebase-messaging-unity-13.11.0.pom</file>
     <file>Assets/GeneratedLocalRepo/GooglePlayGames/com.google.play.games/Editor/m2repository/com/google/games/gpgs-plugin-support/2.1.0/gpgs-plugin-support-2.1.0.aar</file>
     <file>Assets/GeneratedLocalRepo/GooglePlayGames/com.google.play.games/Editor/m2repository/com/google/games/gpgs-plugin-support/2.1.0/gpgs-plugin-support-2.1.0.pom</file>
   </files>
   <settings>
     <setting name="androidAbis" value="arm64-v8a,armeabi-v7a" />
-    <setting name="bundleId" value="com.sheronyx.neonsmash" />
+    <setting name="bundleId" value="com.sheronyx.clashofelements" />
     <setting name="explodeAars" value="True" />
     <setting name="gradleBuildEnabled" value="True" />
     <setting name="gradlePropertiesTemplateEnabled" value="True" />

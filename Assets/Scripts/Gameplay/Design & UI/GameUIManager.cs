@@ -30,6 +30,9 @@ public class GameUIManager : MonoBehaviour
 
         if (backToMenuButton != null)
             backToMenuButton.onClick.AddListener(BackToMenu);
+
+        if (MultiplayerManager.IsMultiplayerGame && pauseButton != null)
+            pauseButton.SetActive(false);
     }
 
     public void ShowGameOver(int score, bool isInfinityMode)
@@ -41,14 +44,6 @@ public class GameUIManager : MonoBehaviour
     {
         if (pauseButton != null)
             pauseButton.SetActive(false);
-
-        // Time Mode nach dem ersten Infinity-Spiel freischalten
-        if (isInfinityMode && PlayerPrefs.GetInt("TimeModeUnlocked", 0) == 0)
-        {
-            PlayerPrefs.SetInt("TimeModeUnlocked", 1);
-            PlayerPrefs.SetInt("ShowTimeModeUnlockNotification", 1);
-            PlayerPrefs.Save();
-        }
 
         string text = isInfinityMode ? "GAME OVER" : "FINISHED";
 
@@ -114,6 +109,8 @@ public class GameUIManager : MonoBehaviour
 
     public void RestartGame()
     {
+        NeonAnalytics.LogGameOverAction("restart");
+
         Time.timeScale = 1f;
         AudioListener.pause = false;
 
@@ -123,16 +120,14 @@ public class GameUIManager : MonoBehaviour
 
         if (SceneFader.Instance != null)
             SceneFader.Instance.LoadScene(current);
-
     }
-
 
     public void BackToMenu()
     {
+        NeonAnalytics.LogGameOverAction("menu");
+
         Time.timeScale = 1f;
         AudioListener.pause = false;
         SceneFader.Instance.LoadScene("MainMenuScene");
-
-
     }
 }
