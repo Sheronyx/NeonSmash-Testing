@@ -40,6 +40,11 @@ public class MainMenuController : MonoBehaviour
         Debug.Log("Leaderboard wird später implementiert.");
     }
 
+    public void OpenShop()
+    {
+        ShopController.Instance?.Open();
+    }
+
     public void OpenSettings()
     {
         Debug.Log("Einstellungen werden später implementiert.");
