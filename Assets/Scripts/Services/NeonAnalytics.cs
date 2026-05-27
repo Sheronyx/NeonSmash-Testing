@@ -10,9 +10,9 @@ public static class NeonAnalytics
     // Release builds from the App Store / Play Store have isDebugBuild = false.
     // NEON_ANALYTICS_TEST overrides this for DebugView testing on device.
 #if NEON_ANALYTICS_TEST
-    static bool Active => true;
+    static bool Active => !Application.isEditor;
 #else
-    static bool Active => !Debug.isDebugBuild;
+    static bool Active => !Debug.isDebugBuild && !Application.isEditor;
 #endif
 
     const string KeyInstallDate = "na_install_ts";

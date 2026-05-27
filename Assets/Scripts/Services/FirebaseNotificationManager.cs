@@ -28,6 +28,7 @@ public class FirebaseNotificationManager : MonoBehaviour
     public static void Begin()
     {
         if (Instance != null) return;
+        if (Application.isEditor) return;
         var go = new GameObject("FirebaseNotificationManager");
         go.AddComponent<FirebaseNotificationManager>();
         _ = Instance.InitializeAsync();
