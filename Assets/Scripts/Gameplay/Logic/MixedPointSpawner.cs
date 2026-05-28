@@ -75,6 +75,11 @@ public class MixedPointSpawner : MonoBehaviour
     [Header("Prefabs & Refs")]
     public GameObject normalPointPrefab;
     public GameObject swipePointPrefab;
+
+    GameObject ActiveNormalPrefab =>
+        SkinManager.Instance?.ActiveTheme?.tapPointPrefab ?? normalPointPrefab;
+    GameObject ActiveSwipePrefab =>
+        SkinManager.Instance?.ActiveTheme?.swipePointPrefab ?? swipePointPrefab;
     public Camera mainCamera;
 
     [Header("Start/Timing")]
@@ -191,7 +196,7 @@ public class MixedPointSpawner : MonoBehaviour
         }
         else
         {
-            prefabToSpawn = spawnSwipe ? swipePointPrefab : normalPointPrefab;
+            prefabToSpawn = spawnSwipe ? ActiveSwipePrefab : ActiveNormalPrefab;
         }
 
         if (spawnSwipe)
@@ -285,8 +290,8 @@ public class MixedPointSpawner : MonoBehaviour
             currentPoint = null;
         }
         Vector3 pos = ViewportToWorldOnZ0(viewport);
-        if (portalBeam != null) portalBeam.SpawnWithBeam(normalPointPrefab, pos);
-        else                    CreatePoint(normalPointPrefab, pos);
+        if (portalBeam != null) portalBeam.SpawnWithBeam(ActiveNormalPrefab, pos);
+        else                    CreatePoint(ActiveNormalPrefab, pos);
     }
 
 
@@ -963,8 +968,8 @@ public class MixedPointSpawner : MonoBehaviour
 
         bool goldActive = GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive;
         GameObject prefab = isTap
-            ? (goldActive ? normalPointGoldPrefab : normalPointPrefab)
-            : (goldActive ? swipePointGoldPrefab  : swipePointPrefab);
+            ? (goldActive ? normalPointGoldPrefab : ActiveNormalPrefab)
+            : (goldActive ? swipePointGoldPrefab  : ActiveSwipePrefab);
 
         if (portalBeam != null)
         {

@@ -34,10 +34,8 @@ public class ShopController : MonoBehaviour
     [SerializeField] ShopItemCardUI  itemCardPrefab;
 
     [Header("Items")]
-    [SerializeField] ShopItem[] skinsItems;
-    [SerializeField] ShopItem[] soundsItems;
-    [SerializeField] ShopItem[] currencyItems;
-    [SerializeField] ShopItem   dailyItem;
+    [SerializeField] ShopCatalogue catalogue;
+    [SerializeField] ShopItem      dailyItem;
 
     [Header("Animation")]
     [SerializeField] float popInDuration  = 0.28f;
@@ -50,6 +48,14 @@ public class ShopController : MonoBehaviour
     {
         Instance = this;
         if (panel != null) panel.gameObject.SetActive(false);
+    }
+
+    [ContextMenu("DEBUG: Reset Shop Inventory")]
+    void DebugResetInventory()
+    {
+        ShopInventory.DebugClearAll();
+        if (_open) RefreshDailyBanner();
+        Debug.Log("[Shop] Inventory cleared.");
     }
 
     void OnEnable()
@@ -121,21 +127,28 @@ public class ShopController : MonoBehaviour
         foreach (Transform child in gridParent)
             Destroy(child.gameObject);
 
-        ShopItem[] items = _activeTab switch
-        {
-            ShopItemType.Skin     => skinsItems,
-            ShopItemType.Sound    => soundsItems,
-            ShopItemType.Currency => currencyItems,
-            _                     => skinsItems
-        };
+        if (catalogue == null) return;
+        var items = System.Array.FindAll(catalogue.allItems,
+            i => i != null && i.type == _activeTab);
 
-        if (items == null) return;
         foreach (var item in items)
         {
             if (item == null) continue;
             var card = Instantiate(itemCardPrefab, gridParent);
-            card.Bind(item, OnBuyItem);
+            card.Bind(item, OnBuyItem, OnEquipItem);
         }
+    }
+
+    void OnEquipItem(ShopItem item)
+    {
+        ShopInventory.SetEquipped(item.type, item.itemId);
+
+        if (item.type == ShopItemType.Skin)
+            SkinManager.Instance?.Apply(item.skinTheme);
+        else if (item.type == ShopItemType.Sound)
+            SoundThemeManager.Instance?.Apply(item.soundTheme);
+
+        PopulateGrid();
     }
 
     void OnBuyItem(ShopItem item)
@@ -166,6 +179,7 @@ public class ShopController : MonoBehaviour
         if (dailyBannerThumbnail != null) dailyBannerThumbnail.sprite = dailyItem.thumbnail;
         if (dailyBannerName      != null) dailyBannerName.text        = dailyItem.displayName;
         if (dailyClaimButton     != null) dailyClaimButton.gameObject.SetActive(!claimed);
+        Debug.Log($"[Shop] claimed={claimed}  label-ref={dailyClaimedLabel != null}");
         if (dailyClaimedLabel    != null) dailyClaimedLabel.SetActive(claimed);
     }
 

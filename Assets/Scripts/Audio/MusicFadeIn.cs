@@ -343,6 +343,38 @@ public void IncreaseGameMusicSpeed(float? customStep = null)
         pitchRoutine = null;
     }
 
+    // ===== Öffentliche API: Shop-Preview =====
+    public void PauseForPreview()
+    {
+        if (menuSource != null && menuSource.isPlaying) menuSource.Pause();
+    }
+
+    public void ResumeAfterPreview()
+    {
+        if (menuSource != null && !menuSource.isPlaying) menuSource.UnPause();
+    }
+
+    // ===== Öffentliche API: Sound-Theme wechseln =====
+    public void ApplyMenuClip(AudioClip clip)
+    {
+        if (clip == null || menuSource == null) return;
+        menuSource.clip = clip;
+        if (!inGameContext) RestartMenuMusicFromZeroNow();
+    }
+
+    public void ApplyGameClip(AudioClip clip)
+    {
+        if (clip == null || gameSource == null) return;
+        gameSource.clip = clip;
+    }
+
+    public void RestartMenuMusicFromZeroNow()
+    {
+        PrepareAndPlayFromStart(menuSource);
+        FadeTo(menuSource, 1f);
+        StopAndReset(gameSource);
+    }
+
     // ===== Öffentliche API: Game-Musik jetzt sofort neu starten =====
     public void RestartGameMusicFromZeroNow()
     {

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f4ea0a69e8345299ca5721f4af44c2, type: 3}
+  m_Name: sound_menu_default
+  m_EditorClassIdentifier: Assembly-CSharp::ShopItem
+  itemId: sound_menu_default
+  displayName: Default
+  type: 1
+  thumbnail: {fileID: 21300000, guid: bb5cadc8cd7eb4fd3b319be1bdfcabd2, type: 3}
+  coinPrice: 0
+  isDaily: 0
+  isFeatured: 0
+  iapProductId: 
+  skinTheme: {fileID: 0}
+  soundTheme: {fileID: 11400000, guid: 0654e234643464a4da37da7773b95618, type: 2}

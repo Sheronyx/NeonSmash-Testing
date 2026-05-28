@@ -14,4 +14,8 @@ public class ShopItem : ScriptableObject
     public bool         isFeatured;    // im Daily-Banner oben anzeigen
     [Tooltip("Leer lassen — Platzhalter für spätere IAP-Integration")]
     public string       iapProductId;
+
+    [Header("Gameplay Assets")]
+    public SkinTheme  skinTheme;   // nur für type == Skin
+    public SoundTheme soundTheme;  // nur für type == Sound
 }

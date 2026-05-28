@@ -3,7 +3,8 @@ using UnityEngine;
 
 public static class ShopInventory
 {
-    const string PrefKey = "shop_owned";
+    const string PrefKey     = "shop_owned";
+    const string EquipPrefix = "shop_equipped_";
 
     static HashSet<string> _owned;
 
@@ -33,11 +34,27 @@ public static class ShopInventory
         return true;
     }
 
+    public static string GetEquipped(ShopItemType type) =>
+        PlayerPrefs.GetString(EquipPrefix + (int)type, "");
+
+    public static void SetEquipped(ShopItemType type, string itemId)
+    {
+        PlayerPrefs.SetString(EquipPrefix + (int)type, itemId);
+        PlayerPrefs.Save();
+    }
+
     public static void ClaimFree(ShopItem item)
     {
         if (item == null || IsOwned(item.itemId)) return;
         Owned.Add(item.itemId);
         Save();
+    }
+
+    public static void DebugClearAll()
+    {
+        _owned = null;
+        PlayerPrefs.DeleteKey(PrefKey);
+        PlayerPrefs.Save();
     }
 
     static void Save()
