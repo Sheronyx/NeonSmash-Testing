@@ -37,6 +37,9 @@ public class ShopController : MonoBehaviour
     [SerializeField] ShopCatalogue catalogue;
     [SerializeField] ShopItem      dailyItem;
 
+    [Header("Shop Button Badge")]
+    [SerializeField] ShopButtonBadge shopButtonBadge;
+
     [Header("Animation")]
     [SerializeField] float popInDuration  = 0.28f;
     [SerializeField] float popOutDuration = 0.2f;
@@ -48,6 +51,11 @@ public class ShopController : MonoBehaviour
     {
         Instance = this;
         if (panel != null) panel.gameObject.SetActive(false);
+    }
+
+    void Start()
+    {
+        shopButtonBadge?.Refresh();
     }
 
     [ContextMenu("DEBUG: Reset Shop Inventory")]
@@ -188,6 +196,7 @@ public class ShopController : MonoBehaviour
         if (dailyItem == null) return;
         ShopInventory.ClaimFree(dailyItem);
         RefreshDailyBanner();
+        shopButtonBadge?.Refresh();
     }
 
     // ── Coin Display ─────────────────────────────────────────────────────────
