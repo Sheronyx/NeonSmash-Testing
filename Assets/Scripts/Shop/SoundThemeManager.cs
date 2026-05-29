@@ -31,11 +31,14 @@ public class SoundThemeManager : MonoBehaviour
         string id   = ShopInventory.GetEquipped(ShopItemType.Sound);
         var    item = catalogue.FindById(id);
 
-        if (item == null && catalogue.defaultSound != null)
+        if (item == null)
         {
-            item = catalogue.defaultSound;
-            ShopInventory.ClaimFree(item);
-            ShopInventory.SetEquipped(ShopItemType.Sound, item.itemId);
+            item = catalogue.FindDefault(ShopItemType.Sound);
+            if (item != null)
+            {
+                ShopInventory.ClaimFree(item);
+                ShopInventory.SetEquipped(ShopItemType.Sound, item.itemId);
+            }
         }
 
         if (item?.soundTheme != null) Apply(item.soundTheme);

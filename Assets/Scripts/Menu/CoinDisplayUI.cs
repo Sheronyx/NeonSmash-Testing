@@ -36,6 +36,8 @@ public class CoinDisplayUI : MonoBehaviour
     // Called by toast and popup after showing a reward
     public void FlyCoinsFrom(int amount, Vector3 worldSourcePos)
     {
+        if (coinIconTarget == null) { Debug.LogWarning("[CoinDisplayUI] coinIconTarget not assigned — coins won't fly!"); return; }
+        if (coinSprite     == null) { Debug.LogWarning("[CoinDisplayUI] coinSprite not assigned — coins would be invisible!"); }
         StartCoroutine(Co_FlyAndCount(amount, worldSourcePos));
     }
 
@@ -48,12 +50,15 @@ public class CoinDisplayUI : MonoBehaviour
         var canvasRect = canvas.GetComponent<RectTransform>();
         Camera cam     = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
+        // coinIconTarget may be on a different canvas with a different render mode — resolve its camera separately.
+        Camera targetCam = CanvasCamOf(coinIconTarget);
+
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect, RectTransformUtility.WorldToScreenPoint(cam, worldSourcePos),
             cam, out Vector2 sourceLocal);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect, RectTransformUtility.WorldToScreenPoint(cam, coinIconTarget.position),
+            canvasRect, RectTransformUtility.WorldToScreenPoint(targetCam, coinIconTarget.position),
             cam, out Vector2 targetLocal);
 
         int arrived = 0;
@@ -102,4 +107,12 @@ public class CoinDisplayUI : MonoBehaviour
     }
 
     void Refresh() => amountText.text = _displayedBalance.ToString("N0");
+
+    static Camera CanvasCamOf(RectTransform rt)
+    {
+        var c = rt.GetComponentInParent<Canvas>();
+        if (c == null) return null;
+        c = c.rootCanvas;
+        return c.renderMode == RenderMode.ScreenSpaceOverlay ? null : c.worldCamera;
+    }
 }

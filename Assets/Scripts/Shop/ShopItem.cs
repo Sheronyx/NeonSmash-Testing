@@ -12,6 +12,7 @@ public class ShopItem : ScriptableObject
     public int          coinPrice;     // 0 = free
     public bool         isDaily;       // täglich kostenlos abrufbar
     public bool         isFeatured;    // im Daily-Banner oben anzeigen
+    public bool         isDefault;     // beim ersten Start automatisch equipped
     [Tooltip("Leer lassen — Platzhalter für spätere IAP-Integration")]
     public string       iapProductId;
 

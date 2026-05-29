@@ -31,11 +31,14 @@ public class SkinManager : MonoBehaviour
         string id   = ShopInventory.GetEquipped(ShopItemType.Skin);
         var    item = catalogue.FindById(id);
 
-        if (item == null && catalogue.defaultSkin != null)
+        if (item == null)
         {
-            item = catalogue.defaultSkin;
-            ShopInventory.ClaimFree(item);
-            ShopInventory.SetEquipped(ShopItemType.Skin, item.itemId);
+            item = catalogue.FindDefault(ShopItemType.Skin);
+            if (item != null)
+            {
+                ShopInventory.ClaimFree(item);
+                ShopInventory.SetEquipped(ShopItemType.Skin, item.itemId);
+            }
         }
 
         if (item?.skinTheme != null) Apply(item.skinTheme);
