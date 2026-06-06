@@ -460,6 +460,8 @@ public class MixedPointSpawner : MonoBehaviour
                 currentPoint = null;
                 CurrentSwipePoint = null;
 
+                ComboManager.Instance?.RegisterMiss();
+
                 bool stillAlive = LivesManager.Instance.LoseLife(pointPos, 1f);
                 if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
                 if (stillAlive)
@@ -500,6 +502,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
+        ComboManager.Instance?.ResetCombo();
 
         if (MultiplayerManager.IsMultiplayerGame)
         {
@@ -758,6 +761,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void HandlePointHit(GameObject point)
     {
+        ComboManager.Instance?.RegisterHit();
         ScoreManager.Instance?.AddPointsFromHit();
 
         var basePoint = point.GetComponent<BasePoint>();

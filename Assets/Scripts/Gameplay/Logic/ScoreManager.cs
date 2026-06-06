@@ -14,16 +14,11 @@ public class ScoreManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
-    private void OnEnable()
-    {
-        UpdateUI();
-    }
+    private void OnEnable() => UpdateUI();
 
     public void AddPoints(int amount)
     {
@@ -31,10 +26,12 @@ public class ScoreManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void AddPointsFromHit(int basePoints = 1)
+    // basePoints = 10 per hit; multiplied by combo and special mode
+    public void AddPointsFromHit(int basePoints = 10)
     {
-        score += basePoints;
-
+        int combo   = ComboManager.Instance != null ? ComboManager.Instance.Multiplier : 1;
+        bool special = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
+        score += basePoints * combo * (special ? 2 : 1);
         UpdateUI();
     }
 
@@ -46,58 +43,37 @@ public class ScoreManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        if (scoreText != null)
-            scoreText.text = score.ToString();
+        if (scoreText != null) scoreText.text = score.ToString();
         PunchScore();
     }
 
     public void PunchScore()
     {
-        if (scoreText == null)
-            return;
-
-        if (punchRoutine != null)
-            StopCoroutine(punchRoutine);
-
+        if (scoreText == null) return;
+        if (punchRoutine != null) StopCoroutine(punchRoutine);
         punchRoutine = StartCoroutine(Co_Punch());
     }
 
     private IEnumerator Co_Punch()
     {
         RectTransform rect = scoreText.GetComponent<RectTransform>();
-
-        Vector3 start = Vector3.one;
+        Vector3 start  = Vector3.one;
         Vector3 target = start * 1.2f;
 
-        float upDuration = 0.08f;
-        float downDuration = 0.12f;
-
         float t = 0f;
-
-        // 🔼 UP (ease out)
-        while (t < upDuration)
+        while (t < 0.08f)
         {
             t += Time.deltaTime;
-            float p = Mathf.Sin((t / upDuration) * Mathf.PI * 0.5f);
-
-            rect.localScale = Vector3.Lerp(start, target, p);
+            rect.localScale = Vector3.Lerp(start, target, Mathf.Sin((t / 0.08f) * Mathf.PI * 0.5f));
             yield return null;
         }
-
         t = 0f;
-
-        // 🔽 DOWN (ease in)
-        while (t < downDuration)
+        while (t < 0.12f)
         {
             t += Time.deltaTime;
-            float p = t / downDuration;
-
-            rect.localScale = Vector3.Lerp(target, start, p);
+            rect.localScale = Vector3.Lerp(target, start, t / 0.12f);
             yield return null;
         }
-
         rect.localScale = start;
     }
-
-
 }

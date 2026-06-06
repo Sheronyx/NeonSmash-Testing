@@ -149,11 +149,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FullScreenManager
   gravityFeature: {fileID: -3947423171857660942, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
-  goldFeature: {fileID: 8376930454273509939, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
   chaosFeature: {fileID: 1760235388702043137, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
   fountainFeature: {fileID: 6427664988018909874, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
   gravityMaterial: {fileID: 2100000, guid: cbef78923e39c4cf79ecce0c6b239538, type: 2}
-  goldMaterial: {fileID: 2100000, guid: dcaf334c8947742c9a871546098188d5, type: 2}
   chaosMaterial: {fileID: 0}
   fountainMaterial: {fileID: 2100000, guid: 71d4dcee25c0846d9b306cb95b3a3073, type: 2}
   fadeInTime: 0.6
@@ -677,13 +675,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fountainModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c8538a4355f784f589e2ad02f52cbd0e, type: 3}
-  normalPointGoldPrefab: {fileID: 7634417711000780290, guid: 0236b3b4c26674f6480befca046eb7a1, type: 3}
-  swipePointGoldPrefab: {fileID: 723352877289022949, guid: c712b213a35a94248ad2f65939f12c3d, type: 3}
   gravityModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c9973cacd31de40fe9b140af9659b4d7, type: 3}
   uiManager: {fileID: 1942897538}
-  goldModeActivationPointPrefab: {fileID: 6289792914184658287, guid: c878f24f6e5944512829675b4a9dce8d, type: 3}
-  goldModeSpawnScoreThreshold: 5
-  goldModeSpawnChance: 0.3
   activationOrbCooldown: 35
   initialOrbDelayMin: 20
   initialOrbDelayMax: 25
@@ -1411,6 +1404,7 @@ GameObject:
   m_Component:
   - component: {fileID: 413701485}
   - component: {fileID: 413701484}
+  - component: {fileID: 413701486}
   m_Layer: 0
   m_Name: ScoreManager
   m_TagString: Untagged
@@ -1447,6 +1441,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &413701486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 413701483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1edb7b7cbcb1647b19cfc4474039ccc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ComboManager
 --- !u!1 &422470846
 GameObject:
   m_ObjectHideFlags: 0
@@ -2232,7 +2238,6 @@ MonoBehaviour:
   - {fileID: 1241259586}
   - {fileID: 1442282449}
   normalMaterial: {fileID: 2100000, guid: 377a592334a914be1a678ce3250e03b5, type: 2}
-  goldMaterial: {fileID: 2100000, guid: 7acc0d8c022cb49898041751690d7b88, type: 2}
   fountainMaterial: {fileID: 2100000, guid: 708470fd4eb4d414f9724a10f59b7405, type: 2}
 --- !u!1 &755055028
 GameObject:
@@ -2889,7 +2894,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PortalSpawnBeam
   spawner: {fileID: 190732374}
-  goldProjectilePrefab: {fileID: 6237600531714503956, guid: 2723edac540a449c98dad3e7e3712b09, type: 3}
   projectileSpeed: 50
   projectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
   portalOrigin: {fileID: 911621387}
@@ -10001,6 +10005,7 @@ GameObject:
   - component: {fileID: 1442282448}
   - component: {fileID: 1442282450}
   - component: {fileID: 1442282449}
+  - component: {fileID: 1442282451}
   m_Layer: 5
   m_Name: Combo Factor
   m_TagString: Untagged
@@ -10069,6 +10074,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1442282447}
   m_CullTransparentMesh: 1
+--- !u!114 &1442282451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1442282447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfc7efde681f849a2ad4375d40d1fe1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ComboDisplay
+  multiplierText: {fileID: 121914568}
+  comboRoot: {fileID: 1442282447}
+  punchScale: 1.25
+  punchDuration: 0.12
 --- !u!1 &1460804115
 GameObject:
   m_ObjectHideFlags: 0
@@ -22216,7 +22237,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   trailPrefab: {fileID: 6593613985249772415, guid: 83c4fa8edc21e4524a7684e620195064, type: 3}
-  goldTrailPrefab: {fileID: 6593613985249772415, guid: e46b636b09e2f41cc8fc64d9870162d8, type: 3}
   fountainTrailPrefab: {fileID: 6593613985249772415, guid: e59dbb440f99f496a9e8861de8bee78c, type: 3}
   sortingLayerName: Default
   sortingOrder: 2
