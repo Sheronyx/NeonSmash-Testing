@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Unity.Services.CloudSave;
 using UnityEngine;
 
-public static class TimeModeProgress
+public static class TutorialProgress
 {
     const string CloudKeyTutorial = "tutorial_completed";
     const string PrefKeyTutorial  = "TutorialCompleted_v1";

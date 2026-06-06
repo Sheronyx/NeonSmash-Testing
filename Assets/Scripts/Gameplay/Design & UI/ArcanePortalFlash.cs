@@ -6,8 +6,8 @@ public class ArcanePortalFlash : MonoBehaviour
 {
     public VisualEffect vfx;
 
-    public float fadeInTime = 0.15f;
-    public float holdTime = 0.05f;
+    public float fadeInTime  = 0.15f;
+    public float holdTime    = 0.05f;
     public float fadeOutTime = 0.25f;
 
     [Header("Flash Strength")]
@@ -16,7 +16,6 @@ public class ArcanePortalFlash : MonoBehaviour
     private Coroutine flashRoutine;
 
     private Vector4 baseNormal;
-    private Vector4 baseGold;
     private Vector4 baseBlue;
 
     private void Start()
@@ -24,121 +23,67 @@ public class ArcanePortalFlash : MonoBehaviour
         if (vfx != null)
         {
             baseNormal = vfx.GetVector4("Color Particles Normal");
-            baseGold   = vfx.GetVector4("Color Particles Gold");
             baseBlue   = vfx.GetVector4("Color Particles Blue");
         }
     }
 
-    // 🔥 NEU: hört auf ALLE Modes
     private void OnEnable()
     {
         SpecialModeManager.OnModeStarted += HandleModeStart;
-        SpecialModeManager.OnModeEnded += HandleModeEnd;
+        SpecialModeManager.OnModeEnded   += HandleModeEnd;
     }
 
     private void OnDisable()
     {
         SpecialModeManager.OnModeStarted -= HandleModeStart;
-        SpecialModeManager.OnModeEnded -= HandleModeEnd;
+        SpecialModeManager.OnModeEnded   -= HandleModeEnd;
     }
 
-    private void HandleModeStart(SpecialMode mode)
-    {
-        SetMode(mode);
-    }
-
-    private void HandleModeEnd(SpecialMode mode)
-    {
-        SetMode(SpecialMode.None);
-    }
-
-    // =========================
-    // 💥 FLASH
-    // =========================
+    private void HandleModeStart(SpecialMode mode) => SetMode(mode);
+    private void HandleModeEnd(SpecialMode mode)   => SetMode(SpecialMode.None);
 
     public void FlashParticles()
     {
-        if (flashRoutine != null)
-            StopCoroutine(flashRoutine);
-
+        if (flashRoutine != null) StopCoroutine(flashRoutine);
         flashRoutine = StartCoroutine(CoFlash());
     }
 
     IEnumerator CoFlash()
     {
-        if (vfx == null)
-            yield break;
+        if (vfx == null) yield break;
 
-        // 🔥 MODE CHECK (NEU)
         bool isFountain = vfx.GetBool("IsFountainMode");
-        bool isGold = vfx.GetBool("IsGoldMode");
 
-        string particlesName;
+        string  particlesName   = isFountain ? "Color Particles Blue" : "Color Particles Normal";
+        Vector4 normalParticles = isFountain ? baseBlue : baseNormal;
+        Vector4 brightParticles = normalParticles * flashMultiplier;
 
-        if (isFountain)
-            particlesName = "Color Particles Blue";
-        else if (isGold)
-            particlesName = "Color Particles Gold";
-        else
-            particlesName = "Color Particles Normal";
-
-        Vector4 normalParticles = isFountain ? baseBlue : isGold ? baseGold : baseNormal;
-        Vector4 clearedParticles = normalParticles * flashMultiplier;
-
-        // --- Fade IN ---
         float t = 0f;
         while (t < fadeInTime)
         {
-            float n = t / fadeInTime;
-
-            vfx.SetVector4(particlesName, Vector4.Lerp(normalParticles, clearedParticles, n));
-
+            vfx.SetVector4(particlesName, Vector4.Lerp(normalParticles, brightParticles, t / fadeInTime));
             t += Time.deltaTime;
             yield return null;
         }
-
-        vfx.SetVector4(particlesName, clearedParticles);
+        vfx.SetVector4(particlesName, brightParticles);
 
         yield return new WaitForSeconds(holdTime);
 
-        // --- Fade OUT ---
         t = 0f;
         while (t < fadeOutTime)
         {
-            float n = t / fadeOutTime;
-
-            vfx.SetVector4(particlesName, Vector4.Lerp(clearedParticles, normalParticles, n));
-
+            vfx.SetVector4(particlesName, Vector4.Lerp(brightParticles, normalParticles, t / fadeOutTime));
             t += Time.deltaTime;
             yield return null;
         }
-
         vfx.SetVector4(particlesName, normalParticles);
 
         flashRoutine = null;
     }
 
-    // =========================
-    // 🎨 MODE SWITCH
-    // =========================
-
     public void SetMode(SpecialMode mode)
     {
         if (vfx == null) return;
-
-        // Reset
-        vfx.SetBool("IsGoldMode", false);
-        vfx.SetBool("IsFountainMode", false);
-
-        switch (mode)
-        {
-            case SpecialMode.Gold:
-                vfx.SetBool("IsGoldMode", true);
-                break;
-
-            case SpecialMode.Fountain:
-                vfx.SetBool("IsFountainMode", true);
-                break;
-        }
+        vfx.SetBool("IsFountainMode", mode == SpecialMode.Fountain);
     }
 }

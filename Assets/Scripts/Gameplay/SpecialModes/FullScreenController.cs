@@ -6,7 +6,6 @@ public class FullScreenController : MonoBehaviour
 {
     [Header("Renderer Features")]
     [SerializeField] private ScriptableRendererFeature gravityFeature;
-    [SerializeField] private ScriptableRendererFeature goldFeature;
     [SerializeField] private ScriptableRendererFeature chaosFeature;
     [SerializeField] private ScriptableRendererFeature fountainFeature;
 
@@ -15,38 +14,31 @@ public class FullScreenController : MonoBehaviour
 
     [Header("Materials")]
     [SerializeField] private Material gravityMaterial;
-    [SerializeField] private Material goldMaterial;
     [SerializeField] private Material chaosMaterial;
     [SerializeField] private Material fountainMaterial;
 
     [Header("Timing")]
-    [SerializeField] private float fadeInTime = 0.3f;
+    [SerializeField] private float fadeInTime  = 0.3f;
     [SerializeField] private float fadeOutTime = 0.5f;
 
     [Header("Intensity Cap (1 = volle Shader-Stärke)")]
     [SerializeField] [Range(0f, 1f)] private float maxIntensity = 1f;
 
-
     private int FadeID = Shader.PropertyToID("_Fade");
-
     private Coroutine activeRoutine;
 
     private void Start()
     {
         SetFade(gravityMaterial,  0f);
-        SetFade(goldMaterial,     0f);
         SetFade(chaosMaterial,    0f);
         SetFade(fountainMaterial, 0f);
         StartCoroutine(WarmUpPipeline());
     }
 
-    // Aktiviert alle Features kurz beim Start damit URP die Pipeline einmal baut.
-    // Danach sind spätere SetActive-Aufrufe flicker-frei weil die Shader bereits kompiliert sind.
     private IEnumerator WarmUpPipeline()
     {
         EnableAllFeatures();
-        for (int i = 0; i < 5; i++)
-            yield return null;
+        for (int i = 0; i < 5; i++) yield return null;
         DisableAllFeatures();
     }
 
@@ -63,28 +55,21 @@ public class FullScreenController : MonoBehaviour
         Cleanup();
     }
 
-    private void OnDestroy()
-    {
-        Cleanup();
-    }
+    private void OnDestroy() => Cleanup();
 
     private void Cleanup()
     {
         SetFade(gravityMaterial,  0f);
-        SetFade(goldMaterial,     0f);
         SetFade(chaosMaterial,    0f);
         SetFade(fountainMaterial, 0f);
         DisableAllFeatures();
-
         currentFeature  = null;
         currentMaterial = null;
     }
 
     private void HandleModeStarted(SpecialMode mode)
     {
-        // Alle anderen Materials auf 0 (kein SetActive-Toggle)
         SetFade(gravityMaterial,  0f);
-        SetFade(goldMaterial,     0f);
         SetFade(chaosMaterial,    0f);
         SetFade(fountainMaterial, 0f);
 
@@ -93,10 +78,6 @@ public class FullScreenController : MonoBehaviour
             case SpecialMode.Gravity:
                 currentFeature  = gravityFeature;
                 currentMaterial = gravityMaterial;
-                break;
-            case SpecialMode.Gold:
-                currentFeature  = goldFeature;
-                currentMaterial = goldMaterial;
                 break;
             case SpecialMode.Chaos:
                 currentFeature  = chaosFeature;
@@ -108,24 +89,19 @@ public class FullScreenController : MonoBehaviour
                 break;
         }
 
-        if (activeRoutine != null)
-            StopCoroutine(activeRoutine);
-
+        if (activeRoutine != null) StopCoroutine(activeRoutine);
         activeRoutine = StartCoroutine(Co_Start());
     }
 
     private void HandleModeEnded(SpecialMode mode)
     {
-        if (activeRoutine != null)
-            StopCoroutine(activeRoutine);
-
+        if (activeRoutine != null) StopCoroutine(activeRoutine);
         activeRoutine = StartCoroutine(Co_End());
     }
 
     private IEnumerator Co_Start()
     {
-        if (DevicePerformance.IsLowEnd)
-            Application.targetFrameRate = 30;
+        if (DevicePerformance.IsLowEnd) Application.targetFrameRate = 30;
         currentFeature?.SetActive(true);
         yield return null;
         yield return null;
@@ -139,23 +115,18 @@ public class FullScreenController : MonoBehaviour
         currentFeature?.SetActive(false);
         currentFeature  = null;
         currentMaterial = null;
-        if (DevicePerformance.IsLowEnd)
-            Application.targetFrameRate = 60;
+        if (DevicePerformance.IsLowEnd) Application.targetFrameRate = 60;
     }
 
     private IEnumerator Fade(float from, float to, float duration)
     {
         float elapsed = 0f;
-
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
-            float t     = Mathf.Clamp01(elapsed / duration);
-            float eased = Mathf.SmoothStep(from, to, t);
-            ApplyFade(eased);
+            ApplyFade(Mathf.SmoothStep(from, to, Mathf.Clamp01(elapsed / duration)));
             yield return null;
         }
-
         ApplyFade(to);
     }
 
@@ -174,7 +145,6 @@ public class FullScreenController : MonoBehaviour
     private void EnableAllFeatures()
     {
         gravityFeature?.SetActive(true);
-        goldFeature?.SetActive(true);
         chaosFeature?.SetActive(true);
         fountainFeature?.SetActive(true);
     }
@@ -182,7 +152,6 @@ public class FullScreenController : MonoBehaviour
     private void DisableAllFeatures()
     {
         gravityFeature?.SetActive(false);
-        goldFeature?.SetActive(false);
         chaosFeature?.SetActive(false);
         fountainFeature?.SetActive(false);
     }

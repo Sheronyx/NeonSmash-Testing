@@ -5,11 +5,16 @@ public class GravityModeActivationPoint : MonoBehaviour
 {
     public MixedPointSpawner spawner;
 
-    [Header("Settings")]
-    [SerializeField] private float lifetime = 3f;
-    [SerializeField] private float flySpeed = 10f;
+    [Header("Animation")]
+    [SerializeField] private float pulseFreq        = 1.5f;   // Hz — langsamer Herzschlag
+    [SerializeField] private float flyInDuration    = 0.70f;
+    [SerializeField] private float bloomDuration    = 1.10f;
+    [SerializeField] private float flyOutDuration   = 0.60f;
+    [SerializeField] private float flyCurveStrength = 2.5f;
+
+    [Header("Portal")]
     [SerializeField] private float delayBeforeGravityMode = 1.6f;
-        [SerializeField] private float slashClipVolume = 2.6f;
+    [SerializeField] private float slashClipVolume        = 2.6f;
 
     [Header("VFX")]
     [SerializeField] private GameObject SlashVFXPrefab;
@@ -22,169 +27,157 @@ public class GravityModeActivationPoint : MonoBehaviour
     private ArcanePortalFlash portal;
     private Transform portalTransform;
 
-    private bool isDestroyed = false;
-    private bool isFinishing = false;
-
-    private bool orbArrived = false;
-    private bool pointArrived = false;
-
     void Start()
     {
         portal = FindFirstObjectByType<ArcanePortalFlash>();
-        if (portal != null)
-            portalTransform = portal.transform;
+        if (portal != null) portalTransform = portal.transform;
+
+        var col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        StartCoroutine(OrbSequence());
+    }
+
+    private IEnumerator OrbSequence()
+    {
+        Camera cam  = Camera.main;
+        float  camZ = Mathf.Abs(cam.transform.position.z);
+
+        Vector3 center    = cam.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, camZ));
+        center.z          = 0f;
+        Vector3 startPos  = OffScreenPos(cam, camZ);
+        Vector3 ctrl      = CurveControl(startPos, center);
+        Vector3 baseScale = transform.localScale;
+
+        transform.position   = startPos;
+        transform.localScale = Vector3.zero;
+
+        float totalTime = 0f;
+
+        // ── Phase 1: Einflug mit sanftem, beginnendem Puls ───────────────────
+        float elapsed = 0f;
+        while (elapsed < flyInDuration)
+        {
+            elapsed   += Time.deltaTime;
+            totalTime += Time.deltaTime;
+            float t  = Mathf.Clamp01(elapsed / flyInDuration);
+            float ts = Mathf.SmoothStep(0f, 1f, t);
+            float u  = 1f - ts;
+
+            transform.position = u * u * startPos + 2f * u * ts * ctrl + ts * ts * center;
+
+            // Scale 0→1, Puls-Amplitude wächst mit ts (kaum sichtbar beim Start)
+            float sin01 = (Mathf.Sin(totalTime * pulseFreq * Mathf.PI * 2f) + 1f) * 0.5f;
+            float s     = Mathf.Lerp(0f, 1f, ts) * (1f + sin01 * 0.3f * ts);
+            transform.localScale = baseScale * Mathf.Max(0f, s);
+            yield return null;
+        }
+        transform.position = center;
 
         TutorialManager.Instance?.OnElementSpawnedShowOverlay(
-            TutorialPointType.GravityOrb, transform.position, gameObject);
+            TutorialPointType.GravityOrb, center, gameObject);
 
-        StartCoroutine(AutoDestroy());
-    }
+        // ── Phase 2: Pulsierend auf 200% anwachsen ───────────────────────────
+        // Min und Max beider Puls-Grenzen steigen gleichmäßig → jeder Atemzug
+        // ist größer als der vorherige.
+        elapsed = 0f;
+        while (elapsed < bloomDuration)
+        {
+            elapsed   += Time.deltaTime;
+            totalTime += Time.deltaTime;
+            float bt   = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / bloomDuration));
 
-    private IEnumerator AutoDestroy()
-    {
-        yield return new WaitForSeconds(lifetime);
-        if (!isDestroyed && !isFinishing)
-            DestroySelf();
-    }
+            float minS  = Mathf.Lerp(0.85f, 1.70f, bt);
+            float maxS  = Mathf.Lerp(1.30f, 2.30f, bt);
+            float sin01 = (Mathf.Sin(totalTime * pulseFreq * Mathf.PI * 2f) + 1f) * 0.5f;
+            transform.localScale = baseScale * Mathf.Lerp(minS, maxS, sin01);
+            yield return null;
+        }
 
-    public void TryTap()
-    {
-        if (spawner != null && spawner.IsLevelUpActive()) return;
-        OnTapped();
-    }
+        // Aktuelle Scale für nahtlosen Übergang merken
+        Vector3 flyOutStartScale = transform.localScale;
 
-    public void OnTapped()
-    {
-        if (isDestroyed || isFinishing) return;
+        TutorialManager.Instance?.OnActionPerformed(TutorialPointType.GravityOrb);
+        spawner?.PauseSpawning(true);
 
-        if (TutorialManager.Instance != null)
-            TutorialManager.Instance.OnActionPerformed(TutorialPointType.GravityOrb);
-
-        isDestroyed = true;
-        isFinishing = true;
-
-        // Orb-Fly-Sound: Pitch so anpassen dass Clip genau so lang dauert wie der Flug
         if (orbFlyClip != null)
         {
-            orbAudioSource = gameObject.AddComponent<AudioSource>();
-            orbAudioSource.clip = orbFlyClip;
-            orbAudioSource.loop = false;
+            orbAudioSource             = gameObject.AddComponent<AudioSource>();
+            orbAudioSource.clip        = orbFlyClip;
+            orbAudioSource.loop        = false;
             orbAudioSource.spatialBlend = 0f;
             orbAudioSource.Play();
         }
 
-        spawner?.PauseSpawning(true);
-
-        GameObject stolenPoint = spawner != null ? spawner.StealCurrentPoint() : null;
-
-        StartCoroutine(CoFlyBothToPortal(stolenPoint));
-    }
-
-    private IEnumerator CoFlyBothToPortal(GameObject stolenPoint)
-    {
-        if (portalTransform == null)
+        // ── Phase 3: Smooth Abflug zum Portal ─────────────────────────────────
+        Vector3 flyTo = portalTransform != null ? portalTransform.position : center;
+        elapsed = 0f;
+        while (elapsed < flyOutDuration)
         {
-            FinishCombo();
-            yield break;
+            elapsed += Time.deltaTime;
+            float t  = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(elapsed / flyOutDuration));
+            transform.position   = Vector3.Lerp(center, flyTo, t);
+            transform.localScale = Vector3.Lerp(flyOutStartScale, Vector3.zero, t);
+            yield return null;
         }
 
-        orbArrived = false;
-        pointArrived = stolenPoint == null;
+        transform.localScale = Vector3.zero;
+        var sr  = GetComponent<SpriteRenderer>(); if (sr  != null) sr.enabled  = false;
+        var col = GetComponent<Collider2D>();      if (col != null) col.enabled = false;
 
-        StartCoroutine(CoFlyOrb());
-        if (stolenPoint != null)
-            StartCoroutine(CoFlyNeonPoint(stolenPoint));
-
-        yield return new WaitUntil(() => orbArrived && pointArrived);
-
-        // Beide angekommen → Portal färben + Slash
-        if (portal != null)
-            portal.FlashParticles();
-
+        // ── Portal-Flash + Slash ───────────────────────────────────────────────
+        if (portal != null) portal.FlashParticles();
         AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeGravityMode > 0f ? delayBeforeGravityMode : 1.5f;
-        if (SlashVFXPrefab != null)
+        if (SlashVFXPrefab != null && portalTransform != null)
         {
             var slash = Instantiate(SlashVFXPrefab, portalTransform.position, Quaternion.identity);
-            var ps = slash.GetComponentInChildren<ParticleSystem>();
-            if (ps != null)
-                slashDuration = ps.main.duration + ps.main.startLifetime.constantMax;
+            var ps    = slash.GetComponentInChildren<ParticleSystem>();
+            if (ps != null) slashDuration = ps.main.duration + ps.main.startLifetime.constantMax;
             Destroy(slash, slashDuration);
         }
-
         yield return new WaitForSeconds(slashDuration);
 
         FinishCombo();
     }
 
-    private IEnumerator CoFlyOrb()
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private Vector3 OffScreenPos(Camera cam, float z)
     {
-        Vector3 startPos = transform.position;
-        Vector3 endPos = portalTransform.position;
-        Vector3 startScale = transform.localScale;
-        float t = 0f;
-
-        while (t < 1f)
+        int   edge = Random.Range(0, 4);
+        float u    = Random.Range(0.1f, 0.9f);
+        Vector2 vp = edge switch
         {
-            t += Time.unscaledDeltaTime * flySpeed;
-            float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
-            transform.position = Vector3.Lerp(startPos, endPos, eased);
-            transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
-            yield return null;
-        }
-
-        var sr = GetComponent<SpriteRenderer>();
-        if (sr != null) sr.enabled = false;
-        var col = GetComponent<Collider2D>();
-        if (col != null) col.enabled = false;
-
-        orbArrived = true;
+            0 => new Vector2(u,     1.3f),
+            1 => new Vector2(1.3f,  u),
+            2 => new Vector2(u,    -0.3f),
+            _ => new Vector2(-0.3f, u),
+        };
+        var p = cam.ViewportToWorldPoint(new Vector3(vp.x, vp.y, z));
+        p.z = 0f;
+        return p;
     }
 
-    private IEnumerator CoFlyNeonPoint(GameObject point)
+    private Vector3 CurveControl(Vector3 from, Vector3 to)
     {
-        if (point == null) { pointArrived = true; yield break; }
-
-        Vector3 startPos = point.transform.position;
-        Vector3 endPos = portalTransform.position;
-        Vector3 startScale = point.transform.localScale;
-        float t = 0f;
-
-        while (t < 1f)
-        {
-            if (point == null) break;
-            t += Time.unscaledDeltaTime * flySpeed;
-            float eased = Mathf.Clamp01(t) * Mathf.Clamp01(t);
-            point.transform.position = Vector3.Lerp(startPos, endPos, eased);
-            point.transform.localScale = Vector3.Lerp(startScale, Vector3.zero, eased);
-            yield return null;
-        }
-
-        if (point != null) Destroy(point);
-        pointArrived = true;
+        Vector3 mid  = (from + to) * 0.5f;
+        Vector3 dir  = (to - from).normalized;
+        Vector3 perp = new Vector3(-dir.y, dir.x, 0f);
+        return mid + perp * flyCurveStrength * (Random.value > 0.5f ? 1f : -1f);
     }
 
     private void FinishCombo()
     {
         if (orbAudioSource != null) orbAudioSource.Stop();
-
         if (spawner != null)
         {
             if (SpecialModeManager.Instance != null && !SpecialModeManager.Instance.IsModeActive)
                 SpecialModeManager.Instance.StartMode(SpecialMode.Gravity);
-
             spawner.ForceClearCurrentPoint();
         }
-
-        DestroySelf();
-    }
-
-    private void DestroySelf()
-    {
-        if (spawner != null)
-            spawner.ClearActivationPoint();
-
+        spawner?.ClearActivationPoint();
         Destroy(gameObject);
     }
 }

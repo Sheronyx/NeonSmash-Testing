@@ -67,7 +67,7 @@ public class RewardDebugHelper : MonoBehaviour
                 new Dictionary<string, object>
                 {
                     { "ach_completed", "" },
-                    { "ach_stats", "{\"gamesTotal\":0,\"specialMask\":0,\"timeModeGames\":0}" }
+                    { "ach_stats", "{\"gamesTotal\":0,\"specialMask\":0}" }
                 });
         }
         catch { }

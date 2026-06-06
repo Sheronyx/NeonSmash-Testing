@@ -201,22 +201,6 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     private void ProcessHit(Collider2D col, bool fromSwipe = false)
     {
-        // 🟡 Gold Orb
-        var gold = col.GetComponent<GoldModeActivationPoint>();
-        if (gold != null)
-        {
-            gold.OnTapped();
-            return;
-        }
-
-        // 🔴 Gravity Orb
-        var gravityOrb = col.GetComponent<GravityModeActivationPoint>();
-        if (gravityOrb != null)
-        {
-            gravityOrb.TryTap();
-            return;
-        }
-
         // 🔴 Gravity Points — nie per Swipe treffbar
         if (!fromSwipe)
         {
@@ -226,14 +210,6 @@ public class PlayerInputHandler : MonoBehaviour
                 gravityPoint.TryTap();
                 return;
             }
-        }
-
-        // 🔵 Fountain Orb
-        var fountainOrb = col.GetComponent<FountainModeActivationPoint>();
-        if (fountainOrb != null)
-        {
-            fountainOrb.TryTap();
-            return;
         }
 
         // 🔵 Fountain Points — nie per Swipe treffbar

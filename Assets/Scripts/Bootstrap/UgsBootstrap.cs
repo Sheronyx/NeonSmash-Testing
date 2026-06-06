@@ -75,7 +75,7 @@ public class UgsBootstrap : MonoBehaviour
             Debug.Log($"[DIAG] AnonSignIn fertig — PlayerId={pidAfterAnon}, IsSignedIn={AuthenticationService.Instance.IsSignedIn}");
 
             // 2) Fortschritt aus Cloud laden — vor Initialization, damit Scenes direkt korrekte Werte sehen
-            await TimeModeProgress.LoadFromCloudAsync();
+            await TutorialProgress.LoadFromCloudAsync();
             await CoinManager.LoadFromCloudAsync();
             await DailyRewardManager.LoadFromCloudAsync();
             await AchievementManager.LoadFromCloudAsync();
@@ -271,7 +271,7 @@ public class UgsBootstrap : MonoBehaviour
     _platformAuthTcs.TrySetResult(true);
 
     // Fortschritt + Coins aus Cloud laden (jetzt unter der korrekten Player-ID)
-    var progressTask = TimeModeProgress.LoadFromCloudAsync();
+    var progressTask = TutorialProgress.LoadFromCloudAsync();
     while (!progressTask.IsCompleted) yield return null;
 
     var coinsTask = CoinManager.LoadFromCloudAsync();

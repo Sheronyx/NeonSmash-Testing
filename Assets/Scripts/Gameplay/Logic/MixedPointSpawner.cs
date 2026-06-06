@@ -7,23 +7,13 @@ public class MixedPointSpawner : MonoBehaviour
     public static MixedPointSpawner Instance { get; private set; }
 
     [SerializeField] private GameObject fountainModeActivationPointPrefab;
-    [SerializeField] private GameObject normalPointGoldPrefab;
-    [SerializeField] private GameObject swipePointGoldPrefab;
-
     [SerializeField] private GameObject gravityModeActivationPointPrefab;
 
     [SerializeField] private GameUIManager uiManager;
     private GameObject currentActivationPoint;
 
-
     private int CurrentScore =>
-    ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
-
-    [Header("Gold Mode")]
-    [SerializeField] private GameObject goldModeActivationPointPrefab;
-    [SerializeField] private int goldModeSpawnScoreThreshold = 5;
-    [SerializeField] private float goldModeSpawnChance = 1f;
-    private GameObject currentGoldModePoint;
+        ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
 
     [Header("Activation Orb Cooldown (geteilt)")]
     [SerializeField] private float activationOrbCooldown = 60f;
@@ -153,6 +143,8 @@ public class MixedPointSpawner : MonoBehaviour
         gameOver = false;
         spawnPausedForBanner = false;
 
+        levelUp?.StartTimer();
+
         // Ersten Orb erst nach initialOrbDelay erlauben
         activationOrbOnCooldown = true;
         StartCoroutine(InitialOrbDelayRoutine());
@@ -175,8 +167,10 @@ public class MixedPointSpawner : MonoBehaviour
     {
         if (IsTutorialMode) return;
 
-        if (levelUp != null && levelUp.IsShowingPanel) return;
         if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
+
+        // Activation Orb kommt allein (kein normaler Tap-/SwipePoint daneben)
+        if (IsInfinityMode && TrySpawnActivationOrb()) return;
 
         bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
         bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
@@ -190,14 +184,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         
 
-        if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
-        {
-            prefabToSpawn = spawnSwipe ? swipePointGoldPrefab : normalPointGoldPrefab;
-        }
-        else
-        {
-            prefabToSpawn = spawnSwipe ? ActiveSwipePrefab : ActiveNormalPrefab;
-        }
+        prefabToSpawn = spawnSwipe ? ActiveSwipePrefab : ActiveNormalPrefab;
 
         if (spawnSwipe)
         {
@@ -219,7 +206,7 @@ public class MixedPointSpawner : MonoBehaviour
         Vector2 viewportPos = new Vector2(0.5f, 0.5f);
         bool foundValid = false;
 
-        int maxAttempts = (currentActivationPoint != null || currentGoldModePoint != null) ? 80 : 40;
+        int maxAttempts = currentActivationPoint != null ? 80 : 40;
         int attempts = 0;
 
         while (attempts < maxAttempts)
@@ -231,8 +218,7 @@ public class MixedPointSpawner : MonoBehaviour
 
             attempts++;
 
-            bool farFromLast = true;
-            bool farFromGold = true;
+            bool farFromLast       = true;
             bool farFromActivation = true;
 
             // Abstand zu letztem Punkt
@@ -242,23 +228,15 @@ public class MixedPointSpawner : MonoBehaviour
                 farFromLast = IsFarEnough(viewportPos, lastVP);
             }
 
-            // Abstand zu Gold Orb — mit Größen beider Objekte
-            if (currentGoldModePoint != null)
-            {
-                Vector2 goldVP = mainCamera.WorldToViewportPoint(currentGoldModePoint.transform.position);
-                float goldHalfSizePx = GetHalfSizePixels(currentGoldModePoint);
-                farFromGold = IsFarEnoughFromOrb(viewportPos, goldVP, spawnPointHalfSizePx, goldHalfSizePx);
-            }
-
-            // Abstand zu Activation Orb (Gravity etc.) — mit Größen beider Objekte
+            // Abstand zu Activation Orb — mit Größen beider Objekte
             if (currentActivationPoint != null)
             {
-                Vector2 activationVP = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
-                float activationHalfSizePx = GetHalfSizePixels(currentActivationPoint);
+                Vector2 activationVP      = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
+                float   activationHalfSizePx = GetHalfSizePixels(currentActivationPoint);
                 farFromActivation = IsFarEnoughFromOrb(viewportPos, activationVP, spawnPointHalfSizePx, activationHalfSizePx);
             }
 
-            if (farFromLast && farFromGold && farFromActivation)
+            if (farFromLast && farFromActivation)
             {
                 foundValid = true;
                 break;
@@ -279,21 +257,6 @@ public class MixedPointSpawner : MonoBehaviour
             CreatePoint(prefabToSpawn, worldPos);
         }
     }
-
-    /// <summary>Spawnt einen normalen TapPoint direkt an der angegebenen Viewport-Position,
-    /// ohne Abstands- oder Zustands-Checks. Für Tutorial-Zwecke.</summary>
-    private void SpawnTutorialCompanionPoint(Vector2 viewport)
-    {
-        if (currentPoint != null)
-        {
-            Destroy(currentPoint);
-            currentPoint = null;
-        }
-        Vector3 pos = ViewportToWorldOnZ0(viewport);
-        if (portalBeam != null) portalBeam.SpawnWithBeam(ActiveNormalPrefab, pos);
-        else                    CreatePoint(ActiveNormalPrefab, pos);
-    }
-
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
 
@@ -333,7 +296,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     /// <summary>
     /// Prüft ob eine Kandidatenposition weit genug vom aktuellen Point entfernt ist.
-    /// Wird von TrySpawnGoldModePoint / TrySpawnGravityModePoint genutzt.
+    /// Wird von TrySpawnGravityModePoint genutzt.
     /// </summary>
     private bool IsFarEnoughFromCurrentPoint(Vector2 candidateVP, float orbHalfSizePx)
     {
@@ -408,24 +371,15 @@ public class MixedPointSpawner : MonoBehaviour
         currentPoint = newPoint;
 
 
-        if (IsInfinityMode && !IsTutorialMode && levelUp != null)
+        if (IsInfinityMode && !IsTutorialMode)
         {
-            int score = CurrentScore;
-            float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
-
+            float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
             timeoutRoutine = StartCoroutine(Co_PointTimeout(newPoint, dynamicTime, useUnscaledTime));
-            if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s (Score={score}, Mode=Infinity)");
+            if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s (Intensität={(levelUp != null ? levelUp.CurrentLevel : 0)})");
         }
         else if (!IsTutorialMode)
         {
-            if (debugLogs) Debug.Log("[Spawner] Kein Timer gestartet (Mode=Time).");
-        }
-
-        if (!IsTutorialMode)
-        {
-            TrySpawnGoldModePoint();
-            TrySpawnGravityModePoint();
-            TrySpawnFountainModePoint();
+            if (debugLogs) Debug.Log("[Spawner] Kein Timer gestartet.");
         }
 
         if (portalFlash != null)
@@ -450,17 +404,6 @@ public class MixedPointSpawner : MonoBehaviour
         if (CurrentSwipePoint != null && point == CurrentSwipePoint.gameObject) CurrentSwipePoint = null;
 
         Destroy(point);
-
-        if (IsInfinityMode && !IsTutorialMode && levelUp != null)
-        {
-            int score = CurrentScore;
-            if (levelUp.TryTriggerLevelUp(score))
-            {
-                MusicManager.Instance?.IncreaseGameMusicSpeed();
-                StartCoroutine(LevelRoutine());
-                return;
-            }
-        }
 
         SpawnNextPoint();
     }
@@ -492,13 +435,6 @@ public class MixedPointSpawner : MonoBehaviour
         CurrentSwipePoint = null;
         return stolen;
     }
-
-    private IEnumerator LevelRoutine()
-    {
-        SpawnNextPoint();
-        yield break;
-    }
-
 
     // ─── Countdown ────────────────────────────────────────────────────────────
 
@@ -550,7 +486,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     // ─── Game Over ────────────────────────────────────────────────────────────
 
-    private async void EndGame(int score, bool isInfinityMode)
+    private async void EndGame(int score)
     {
         if (gameOver) return;
         gameOver = true;
@@ -574,43 +510,34 @@ public class MixedPointSpawner : MonoBehaviour
         Debug.Log("GAME OVER ERREICHT");
 
         if (ScreenShakeManager.Instance != null)
-            ScreenShakeManager.Instance.Shake(
-                isInfinityMode ? 0.3f : 0.2f,
-                isInfinityMode ? 0.2f : 0.15f
-            );
+            ScreenShakeManager.Instance.Shake(0.3f, 0.2f);
 
         InAppReviewManager.Instance?.OnGameFinished();
 
-        if (isInfinityMode)
-        {
-            MusicManager.Instance?.ResetGameOnGameOver();
-            SfxManager.Instance?.PlayInfinityGameOver();
-        }
+        MusicManager.Instance?.ResetGameOnGameOver();
+        SfxManager.Instance?.PlayInfinityGameOver();
 
-        NeonAnalytics.LogGameOver(CurrentMode, score, isInfinityMode ? _gameOverCause : "time_up");
+        NeonAnalytics.LogGameOver(CurrentMode, score, _gameOverCause);
         _gameOverCause = "timeout";
 
         AchievementManager.OnGameFinished(score, CurrentMode);
         MissionManager.OnGameFinished(score);
 
         onGameOver?.Invoke();
-        uiManager?.ShowGameOver(score, isInfinityMode);
+        uiManager?.ShowGameOver(score);
 
-        if (isInfinityMode)
+        try
         {
-            try
+            bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.InfinityId);
+            if (uploaded)
             {
-                bool uploaded = await HighscoreUploader.TrySubmitAsync(score, LeaderboardApi.InfinityId);
-                if (uploaded)
-                {
-                    NeonAnalytics.LogHighscoreBeat(CurrentMode, score);
-                    Debug.Log($"[LB] Infinity-Bestwert {score} hochgeladen.");
-                }
+                NeonAnalytics.LogHighscoreBeat(CurrentMode, score);
+                Debug.Log($"[LB] Infinity-Bestwert {score} hochgeladen.");
             }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"[LB] Upload fehlgeschlagen: {e.Message}");
-            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[LB] Upload fehlgeschlagen: {e.Message}");
         }
     }
 
@@ -618,7 +545,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void GameOver()
     {
-        EndGame(CurrentScore, true);
+        EndGame(CurrentScore);
     }
 
     public void TriggerGameOverFromGravity()
@@ -752,13 +679,6 @@ public class MixedPointSpawner : MonoBehaviour
     }
 
 
-    // ─── Gold Mode ────────────────────────────────────────────────────────────
-
-    public void OnGoldModePointDestroyed()
-    {
-        currentGoldModePoint = null;
-    }
-
     private IEnumerator SharedOrbCooldownRoutine()
     {
         yield return new WaitForSeconds(activationOrbCooldown);
@@ -771,89 +691,48 @@ public class MixedPointSpawner : MonoBehaviour
         StartCoroutine(SharedOrbCooldownRoutine());
     }
 
-    private void TrySpawnGoldModePoint()
+    // ─── Activation Orb (gemeinsam) ───────────────────────────────────────────
+
+    private bool TrySpawnActivationOrb()
     {
-        if (!IsInfinityMode) return;
-        if (levelUp != null && levelUp.IsShowingPanel) return;
-        if (currentActivationPoint != null) return;
-        if (currentGoldModePoint != null || activationOrbOnCooldown) return;
-        if (lastSpawnedOrbMode == SpecialMode.Gold) return;
-        if (ScoreManager.Instance == null) return;
+        if (activationOrbOnCooldown) return false;
+        if (currentActivationPoint != null) return false;
 
-        if (TutorialManager.IsWaitingForTutorialOrb) return; // Tutorial zeigt immer Gravity Orb
-
-        int score = CurrentScore;
-        if (score < goldModeSpawnScoreThreshold) return;
-        if (Random.value > goldModeSpawnChance) return;
-
-        Vector3 worldPos;
+        // Tutorial erzwingt immer Gravity-Orb an fester Position
         if (TutorialManager.IsWaitingForTutorialOrb)
-        {
-            worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
-            if (currentPoint != null)
-                SpawnTutorialCompanionPoint(TutorialManager.TutorialNormalPointViewport);
-        }
-        else
-        {
-            Rect allowedViewport = GetOrbSpawnViewport();
-            float goldOrbHalfSizePx = GetHalfSizePixels(goldModeActivationPointPrefab);
-            Vector2 viewportPos = Vector2.zero;
-            int attempts = 0;
-            do
-            {
-                viewportPos = GetRandomViewportPosition(allowedViewport);
-                attempts++;
-                if (IsFarEnoughFromCurrentPoint(viewportPos, goldOrbHalfSizePx)) break;
-            } while (attempts < 20);
-            worldPos = ViewportToWorldOnZ0(viewportPos);
-        }
+            return TrySpawnGravityModePoint();
 
-        var goldModePoint = Instantiate(goldModeActivationPointPrefab, worldPos, Quaternion.identity);
-        var goldModeScript = goldModePoint.GetComponent<GoldModeActivationPoint>();
-        if (goldModeScript != null) goldModeScript.spawner = this;
+        if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
+            return false;
 
-        currentGoldModePoint = goldModePoint;
-        currentActivationPoint = goldModePoint;
-        lastSpawnedOrbMode = SpecialMode.Gold;
-
-        StartSharedCooldown();
+        return TrySpawnGravityModePoint() || TrySpawnFountainModePoint();
     }
-
 
     // ─── Gravity Mode ─────────────────────────────────────────────────────────
 
-    private void TrySpawnGravityModePoint()
+    private bool TrySpawnGravityModePoint()
     {
-        if (!IsInfinityMode) return;
-        if (levelUp != null && levelUp.IsShowingPanel) return;
-        if (currentActivationPoint != null) return;
-        if (activationOrbOnCooldown) return;
-        if (lastSpawnedOrbMode == SpecialMode.Gravity) return;
-
-        if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
-            return;
-
-        // Im Tutorial immer spawnen (kein Zufallscheck), sonst 30% Chance
-        if (!TutorialManager.IsWaitingForTutorialOrb && Random.value > 0.3f) return;
+        if (currentActivationPoint != null) return false;
+        if (activationOrbOnCooldown) return false;
+        if (lastSpawnedOrbMode == SpecialMode.Gravity) return false;
+        if (!TutorialManager.IsWaitingForTutorialOrb && Random.value > 0.3f) return false;
 
         Vector3 worldPos;
         if (TutorialManager.IsWaitingForTutorialOrb)
         {
             worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
-            if (currentPoint != null)
-                SpawnTutorialCompanionPoint(TutorialManager.TutorialNormalPointViewport);
         }
         else
         {
             Rect allowedViewport = GetOrbSpawnViewport();
-            float gravityOrbHalfSizePx = GetHalfSizePixels(gravityModeActivationPointPrefab);
+            float orbHalf = GetHalfSizePixels(gravityModeActivationPointPrefab);
             Vector2 vp = Vector2.zero;
             int attempts = 0;
             do
             {
                 vp = GetRandomViewportPosition(allowedViewport);
                 attempts++;
-                if (IsFarEnoughFromCurrentPoint(vp, gravityOrbHalfSizePx)) break;
+                if (IsFarEnoughFromCurrentPoint(vp, orbHalf)) break;
             } while (attempts < 20);
             worldPos = ViewportToWorldOnZ0(vp);
         }
@@ -865,6 +744,7 @@ public class MixedPointSpawner : MonoBehaviour
         currentActivationPoint = orb;
         lastSpawnedOrbMode = SpecialMode.Gravity;
         StartSharedCooldown();
+        return true;
     }
 
 
@@ -880,9 +760,6 @@ public class MixedPointSpawner : MonoBehaviour
     {
         ScoreManager.Instance?.AddPointsFromHit();
 
-        if (GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive)
-            GoldModeSystem.Instance.OnGoldPointHit();
-
         var basePoint = point.GetComponent<BasePoint>();
         if (basePoint != null) basePoint.SendMessage("SpawnExplosion");
         PointCleared(point);
@@ -895,8 +772,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (IsInfinityMode)
         {
-            int score = CurrentScore;
-            float dynamicTime = levelUp.GetReactionTimeForScore(score, reactionTime);
+            float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
             timeoutRoutine = StartCoroutine(Co_PointTimeout(currentPoint, dynamicTime, useUnscaledTime));
         }
     }
@@ -911,9 +787,6 @@ public class MixedPointSpawner : MonoBehaviour
         foreach (var t in FindObjectsByType<TapPoint>(FindObjectsSortMode.None))
             Destroy(t.gameObject);
 
-        foreach (var g in FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None))
-            Destroy(g.gameObject);
-
         currentPoint = null;
         CurrentSwipePoint = null;
     }
@@ -921,9 +794,6 @@ public class MixedPointSpawner : MonoBehaviour
     public void ClearAllActivationOrbs()
     {
         foreach (var orb in FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None))
-            Destroy(orb.gameObject);
-
-        foreach (var orb in FindObjectsByType<GoldModeActivationPoint>(FindObjectsSortMode.None))
             Destroy(orb.gameObject);
     }
 
@@ -966,10 +836,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; CurrentSwipePoint = null; }
         StopPointTimer();
 
-        bool goldActive = GoldModeSystem.Instance != null && GoldModeSystem.Instance.IsActive;
-        GameObject prefab = isTap
-            ? (goldActive ? normalPointGoldPrefab : ActiveNormalPrefab)
-            : (goldActive ? swipePointGoldPrefab  : ActiveSwipePrefab);
+        GameObject prefab = isTap ? ActiveNormalPrefab : ActiveSwipePrefab;
 
         if (portalBeam != null)
         {
@@ -1031,45 +898,26 @@ public class MixedPointSpawner : MonoBehaviour
     public void RegisterTutorialOrb(GameObject orb)
     {
         currentActivationPoint = orb;
-
-        var goldOrb = orb.GetComponent<GoldModeActivationPoint>();
-        if (goldOrb != null) currentGoldModePoint = orb;
     }
 
-    private void TrySpawnFountainModePoint()
+    private bool TrySpawnFountainModePoint()
     {
-        if (!IsInfinityMode) return;
-        if (currentActivationPoint != null) return;
-        if (activationOrbOnCooldown) return;
-        if (lastSpawnedOrbMode == SpecialMode.Fountain) return;
+        if (currentActivationPoint != null) return false;
+        if (activationOrbOnCooldown) return false;
+        if (lastSpawnedOrbMode == SpecialMode.Fountain) return false;
+        if (TutorialManager.IsWaitingForTutorialOrb) return false;
+        if (Random.value > 0.3f) return false;
 
-        if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
-            return;
-
-        if (TutorialManager.IsWaitingForTutorialOrb) return; // Tutorial zeigt immer Gravity Orb
-
-        if (Random.value > 0.3f) return;
-
-        Vector3 worldPos;
-        if (TutorialManager.IsWaitingForTutorialOrb)
-        {
-            worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
-            if (currentPoint != null)
-                SpawnTutorialCompanionPoint(TutorialManager.TutorialNormalPointViewport);
-        }
-        else
-        {
-            Rect allowedViewport = GetOrbSpawnViewport();
-            worldPos = ViewportToWorldOnZ0(GetRandomViewportPosition(allowedViewport));
-        }
+        Rect allowedViewport = GetOrbSpawnViewport();
+        Vector3 worldPos = ViewportToWorldOnZ0(GetRandomViewportPosition(allowedViewport));
 
         var orb = Instantiate(fountainModeActivationPointPrefab, worldPos, Quaternion.identity);
         var script = orb.GetComponent<FountainModeActivationPoint>();
-
         if (script != null) script.spawner = this;
 
         currentActivationPoint = orb;
         lastSpawnedOrbMode = SpecialMode.Fountain;
         StartSharedCooldown();
+        return true;
     }
 }

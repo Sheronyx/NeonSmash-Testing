@@ -33,12 +33,7 @@ public class ScoreManager : MonoBehaviour
 
     public void AddPointsFromHit(int basePoints = 1)
     {
-        int finalPoints = basePoints;
-
-        if (GoldModeSystem.Instance != null)
-            finalPoints = GoldModeSystem.Instance.ModifyPoints(finalPoints);
-
-        score += finalPoints;
+        score += basePoints;
 
         UpdateUI();
     }

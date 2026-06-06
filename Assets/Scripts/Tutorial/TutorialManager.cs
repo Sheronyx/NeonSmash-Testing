@@ -5,10 +5,8 @@ public enum TutorialPointType
 {
     NormalPoint,
     SwipePoint,
-    GoldPoint,     // referenced by TapPoint.cs
     GravityPoint,  // referenced by GravityModeSystem.cs
     FountainPoint, // referenced by FountainModeSystem.cs
-    GoldOrb,
     GravityOrb,
     FountainOrb
 }
@@ -137,7 +135,7 @@ public class TutorialManager : MonoBehaviour
         var platformReady = UgsBootstrap.PlatformAuthReady;
         while (!platformReady.IsCompleted) yield return null;
 
-        if (!forceTutorialInEditor && TimeModeProgress.IsTutorialCompleted) { enabled = false; yield break; }
+        if (!forceTutorialInEditor && TutorialProgress.IsTutorialCompleted) { enabled = false; yield break; }
 
         // Pause-Button im Tutorial deaktivieren
         if (pauseButton != null) pauseButton.SetActive(false);
@@ -245,7 +243,7 @@ public class TutorialManager : MonoBehaviour
         // ── Tutorial abgeschlossen – Spiel läuft weiter ───────────────────────
         NeonAnalytics.LogTutorialCompleted();
         AchievementManager.OnTutorialCompleted();
-        _ = TimeModeProgress.SetTutorialCompletedAsync();
+        _ = TutorialProgress.SetTutorialCompletedAsync();
         // Kein EndScreen, kein Redirect. Das Spiel läuft als normaler InfinityMode weiter.
     }
 

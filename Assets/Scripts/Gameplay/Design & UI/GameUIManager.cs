@@ -35,17 +35,17 @@ public class GameUIManager : MonoBehaviour
             pauseButton.SetActive(false);
     }
 
-    public void ShowGameOver(int score, bool isInfinityMode)
+    public void ShowGameOver(int score)
     {
-        StartCoroutine(Co_ShowGameOver(score, isInfinityMode));
+        StartCoroutine(Co_ShowGameOver(score));
     }
 
-    private IEnumerator Co_ShowGameOver(int score, bool isInfinityMode)
+    private IEnumerator Co_ShowGameOver(int score)
     {
         if (pauseButton != null)
             pauseButton.SetActive(false);
 
-        string text = isInfinityMode ? "GAME OVER" : "FINISHED";
+        string text = "GAME OVER";
 
         if (gameOverBanner != null && gameOverTextTMP != null)
         {
