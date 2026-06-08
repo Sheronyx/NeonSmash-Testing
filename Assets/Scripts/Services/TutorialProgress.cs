@@ -9,7 +9,7 @@ public static class TutorialProgress
     const string CloudKeyTutorial = "tutorial_completed";
     const string PrefKeyTutorial  = "TutorialCompleted_v1";
 
-    public static bool IsTutorialCompleted => PlayerPrefs.GetInt(PrefKeyTutorial, 0) == 1;
+    public static bool IsTutorialCompleted => true; // Tutorial deaktiviert
 
     public static async Task LoadFromCloudAsync()
     {
@@ -36,6 +36,13 @@ public static class TutorialProgress
         {
             Debug.LogWarning($"[DIAG][Progress] Cloud Load fehlgeschlagen: {e.Message}");
         }
+    }
+
+    public static void DisableTutorial()
+    {
+        PlayerPrefs.SetInt(PrefKeyTutorial, 1);
+        PlayerPrefs.Save();
+        Debug.Log("[TutorialProgress] Tutorial deaktiviert");
     }
 
     public static async Task SetTutorialCompletedAsync()

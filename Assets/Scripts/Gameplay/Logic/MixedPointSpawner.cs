@@ -376,6 +376,23 @@ public class MixedPointSpawner : MonoBehaviour
             float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
             timeoutRoutine = StartCoroutine(Co_PointTimeout(newPoint, dynamicTime, useUnscaledTime));
             if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s (Intensität={(levelUp != null ? levelUp.CurrentLevel : 0)})");
+
+            var fuse = newPoint.GetComponentInChildren<FuseCountdown>();
+            if (fuse) fuse.StartBurn(dynamicTime);
+
+            var lineFuse = newPoint.GetComponentInChildren<LineFuse>();
+            if (lineFuse) lineFuse.StartBurn(dynamicTime);
+
+            var sparks = newPoint.GetComponentInChildren<BurnSparks>();
+            if (sparks)
+            {
+                bool isTapPoint = newPoint.GetComponent<TapPoint>() != null;
+                sparks.SetQuadMode(isTapPoint);
+                sparks.StartBurn(dynamicTime);
+            }
+
+            var pulse = newPoint.GetComponent<PointPulse>();
+            if (pulse) pulse.StartPulsing();
         }
         else if (!IsTutorialMode)
         {
