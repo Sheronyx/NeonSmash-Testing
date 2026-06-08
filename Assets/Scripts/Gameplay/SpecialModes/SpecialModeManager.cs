@@ -41,10 +41,21 @@ public void StartMode(SpecialMode mode)
     {
         if (currentMode == SpecialMode.None) return;
 
-        Debug.Log($"🛑 Mode END: {currentMode}");
-
-        OnModeEnded?.Invoke(currentMode);
-
+        var ended = currentMode;
         currentMode = SpecialMode.None;
+        Debug.Log($"🛑 Mode END: {ended}");
+        OnModeEnded?.Invoke(ended);
+    }
+
+    // Zentrale Hit/Miss-Logik für alle Special Modes
+    public static void RegisterSpecialHit()
+    {
+        ScoreManager.Instance?.AddPointsFromHit();
+        ComboManager.Instance?.RegisterHit();
+    }
+
+    public static void RegisterSpecialMiss()
+    {
+        ComboManager.Instance?.RegisterMiss();
     }
 }

@@ -102,9 +102,9 @@ public class FountainModeSystem : MonoBehaviour
     public void OnPointFinished(bool hit)
     {
         if (hit)
-        {
-            ScoreManager.Instance?.AddPointsFromHit();
-        }
+            SpecialModeManager.RegisterSpecialHit();
+        else
+            SpecialModeManager.RegisterSpecialMiss();
 
         activePoints--;
 
@@ -133,13 +133,13 @@ public class FountainModeSystem : MonoBehaviour
     {
         Debug.Log("💧 Fountain Mode END");
 
+        OnFountainModeEnded?.Invoke();
+        SpecialModeManager.Instance?.EndCurrentMode(); // Display aktualisiert sich VOR dem ersten neuen Point
+
         if (spawner != null)
         {
             spawner.PauseSpawning(false);
             spawner.SpawnNextPoint();
         }
-
-        OnFountainModeEnded?.Invoke();
-        SpecialModeManager.Instance?.EndCurrentMode();
     }
 }

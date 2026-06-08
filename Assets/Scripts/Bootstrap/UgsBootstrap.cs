@@ -277,6 +277,10 @@ public class UgsBootstrap : MonoBehaviour
     var coinsTask = CoinManager.LoadFromCloudAsync();
     while (!coinsTask.IsCompleted) yield return null;
 
+    // Highscore-Cache mit Server synchronisieren (Server ist Source of Truth)
+    var syncTask = HighscoreUploader.SyncFromServerAsync(LeaderboardApi.InfinityId);
+    while (!syncTask.IsCompleted) yield return null;
+
     if (OfflineScoreSync.Instance != null)
         _ = OfflineScoreSync.Instance.TryFlushAsync();
 

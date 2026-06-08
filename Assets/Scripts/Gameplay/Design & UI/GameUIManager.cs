@@ -58,7 +58,7 @@ public class GameUIManager : MonoBehaviour
         if (resultPanel != null)
         {
             resultHeadlineTMP.text = text;
-            resultScoreTMP.text = score.ToString();
+            resultScoreTMP.text = ScoreManager.Format(score);
 
             // Buttons sofort klickbar — nicht erst nach der Fade-Animation
             resultPanel.interactable = true;

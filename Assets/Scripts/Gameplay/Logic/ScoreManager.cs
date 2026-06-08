@@ -1,21 +1,40 @@
 using System.Collections;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance;
+
+    [Header("Live Score")]
     public TextMeshProUGUI scoreText;
+
+    [Header("Personal Best (kleines Label unter dem Score)")]
+    [SerializeField] private TextMeshProUGUI personalBestText;
+
     public TextMeshProUGUI endscoreText;
+
     private Coroutine punchRoutine;
-    private int score = 0;
+    private int score      = 0;
+    private int sessionBest = 0;   // Bestwert zu Spielbeginn (für In-Game-Anzeige)
 
     public int CurrentScore => score;
+
+    private static readonly CultureInfo ScoreCulture = new CultureInfo("en-US");
+
+    public static string Format(int value) => value.ToString("N0", ScoreCulture);
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+    }
+
+    private void Start()
+    {
+        sessionBest = HighscoreUploader.GetLocalBest(LeaderboardApi.InfinityId);
+        UpdateUI();
     }
 
     private void OnEnable() => UpdateUI();
@@ -26,10 +45,9 @@ public class ScoreManager : MonoBehaviour
         UpdateUI();
     }
 
-    // basePoints = 10 per hit; multiplied by combo and special mode
     public void AddPointsFromHit(int basePoints = 10)
     {
-        int combo   = ComboManager.Instance != null ? ComboManager.Instance.Multiplier : 1;
+        int combo    = ComboManager.Instance != null ? ComboManager.Instance.Multiplier : 1;
         bool special = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
         score += basePoints * combo * (special ? 2 : 1);
         UpdateUI();
@@ -38,12 +56,18 @@ public class ScoreManager : MonoBehaviour
     public void ResetScore()
     {
         score = 0;
+        sessionBest = HighscoreUploader.GetLocalBest(LeaderboardApi.InfinityId);
         UpdateUI();
     }
 
     private void UpdateUI()
     {
-        if (scoreText != null) scoreText.text = score.ToString();
+        if (scoreText != null)
+            scoreText.text = Format(score);
+
+        if (personalBestText != null)
+            personalBestText.text = Format(Mathf.Max(score, sessionBest));
+
         PunchScore();
     }
 

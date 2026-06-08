@@ -18,6 +18,34 @@ public static class HighscoreUploader
     public static int GetLocalBest(string leaderboardId)
         => PlayerPrefs.GetInt(Key(leaderboardId), 0);
 
+    /// Server ist Source of Truth: holt den echten Score vom Leaderboard und
+    /// überschreibt (oder löscht) den lokalen Cache entsprechend.
+    public static async System.Threading.Tasks.Task SyncFromServerAsync(string leaderboardId)
+    {
+        try
+        {
+            var entry = await LeaderboardApi.GetMyScoreAsync(leaderboardId);
+            if (entry == null)
+            {
+                // Kein Server-Eintrag → lokalen Cache löschen
+                PlayerPrefs.DeleteKey(Key(leaderboardId));
+                PlayerPrefs.Save();
+                Debug.Log($"[HighscoreUploader] Sync: kein Server-Eintrag für '{leaderboardId}' → lokaler Cache gelöscht.");
+            }
+            else
+            {
+                int serverScore = (int)entry.Score;
+                PlayerPrefs.SetInt(Key(leaderboardId), serverScore);
+                PlayerPrefs.Save();
+                Debug.Log($"[HighscoreUploader] Sync: lokaler Cache auf Server-Score {serverScore} gesetzt ('{leaderboardId}').");
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[HighscoreUploader] SyncFromServer fehlgeschlagen: {e.Message}");
+        }
+    }
+
     /// Löscht den lokal gespeicherten Bestwert (z. B. für Tests auf dem aktuellen Gerät)
     public static void ClearLocalBest(string leaderboardId)
     {

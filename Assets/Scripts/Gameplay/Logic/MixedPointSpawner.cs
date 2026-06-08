@@ -462,7 +462,7 @@ public class MixedPointSpawner : MonoBehaviour
 
                 ComboManager.Instance?.RegisterMiss();
 
-                bool stillAlive = LivesManager.Instance.LoseLife(pointPos, 1f);
+                bool stillAlive = LivesManager.Instance.LoseLife(pointPos);
                 if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
                 if (stillAlive)
                 {
@@ -761,8 +761,8 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void HandlePointHit(GameObject point)
     {
-        ComboManager.Instance?.RegisterHit();
         ScoreManager.Instance?.AddPointsFromHit();
+        ComboManager.Instance?.RegisterHit();
 
         var basePoint = point.GetComponent<BasePoint>();
         if (basePoint != null) basePoint.SendMessage("SpawnExplosion");

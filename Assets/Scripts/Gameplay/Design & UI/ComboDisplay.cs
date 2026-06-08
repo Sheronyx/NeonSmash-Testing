@@ -2,14 +2,9 @@ using TMPro;
 using UnityEngine;
 using System.Collections;
 
-/// <summary>
-/// Zeigt den aktuellen Combo-Multiplikator an.
-/// An ein UI-GameObject hängen; comboRoot wird versteckt solange Combo ≤ 1.
-/// </summary>
 public class ComboDisplay : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI multiplierText;
-    [SerializeField] private GameObject      comboRoot;
 
     [Header("Punch Animation")]
     [SerializeField] private float punchScale    = 1.25f;
@@ -19,13 +14,17 @@ public class ComboDisplay : MonoBehaviour
 
     private void OnEnable()
     {
-        ComboManager.OnComboChanged += HandleComboChanged;
-        Refresh(ComboManager.Instance != null ? ComboManager.Instance.ComboCount : 0);
+        ComboManager.OnComboChanged    += HandleComboChanged;
+        SpecialModeManager.OnModeStarted += HandleModeChanged;
+        SpecialModeManager.OnModeEnded   += HandleModeChanged;
+        RefreshCurrent();
     }
 
     private void OnDisable()
     {
-        ComboManager.OnComboChanged -= HandleComboChanged;
+        ComboManager.OnComboChanged    -= HandleComboChanged;
+        SpecialModeManager.OnModeStarted -= HandleModeChanged;
+        SpecialModeManager.OnModeEnded   -= HandleModeChanged;
     }
 
     private void HandleComboChanged(int combo)
@@ -34,11 +33,24 @@ public class ComboDisplay : MonoBehaviour
         if (combo > 1) Punch();
     }
 
+    private void HandleModeChanged(SpecialMode _)
+    {
+        RefreshCurrent();
+        Punch();
+    }
+
+    private void RefreshCurrent()
+    {
+        Refresh(ComboManager.Instance != null ? ComboManager.Instance.ComboCount : 0);
+    }
+
     private void Refresh(int combo)
     {
-        int mult = Mathf.Clamp(combo, 1, 10);
-        if (comboRoot != null) comboRoot.SetActive(combo > 1);
-        if (multiplierText != null) multiplierText.text = $"x{mult}";
+        if (multiplierText == null) return;
+        int comboMult = Mathf.Min(combo + 1, 10); // identisch mit ComboManager.Multiplier
+        bool special  = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
+        int totalMult = comboMult * (special ? 2 : 1);
+        multiplierText.text = $"{totalMult}.0";
     }
 
     private void Punch()
@@ -50,9 +62,9 @@ public class ComboDisplay : MonoBehaviour
     private IEnumerator Co_Punch()
     {
         if (multiplierText == null) yield break;
-        var rt = multiplierText.rectTransform;
+        var rt   = multiplierText.rectTransform;
         float half = punchDuration * 0.5f;
-        float t = 0f;
+        float t  = 0f;
         while (t < half)
         {
             t += Time.deltaTime;

@@ -7,8 +7,9 @@ public class ComboManager : MonoBehaviour
     public static event Action<int> OnComboChanged;
 
     public int ComboCount    { get; private set; }
-    public int Multiplier    => Mathf.Clamp(ComboCount, 1, 10);
-    public bool IsMaxCombo   => ComboCount >= 10;
+    // ComboCount 0 → x1.0, ComboCount 1 → x2.0, ..., ComboCount 9 → x10.0 (max)
+    public int Multiplier    => Mathf.Min(ComboCount + 1, 10);
+    public bool IsMaxCombo   => ComboCount >= 9;
 
     private void Awake()
     {
@@ -19,7 +20,9 @@ public class ComboManager : MonoBehaviour
     // Aufgerufen bei jedem erfolgreichen Tap/Swipe-Hit
     public void RegisterHit()
     {
-        ComboCount++;
+        int next = Mathf.Min(ComboCount + 1, 9); // Multiplier cap: 9+1 = x10.0
+        if (next == ComboCount) return;           // schon am Maximum, kein Event nötig
+        ComboCount = next;
         OnComboChanged?.Invoke(ComboCount);
     }
 

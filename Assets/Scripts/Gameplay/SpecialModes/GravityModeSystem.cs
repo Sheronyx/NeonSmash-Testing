@@ -115,10 +115,11 @@ public void Activate()
     {
         if (tapped)
         {
-            ScoreManager.Instance?.AddPoints(1);
+            SpecialModeManager.RegisterSpecialHit();
         }
         else
         {
+            SpecialModeManager.RegisterSpecialMiss();
             if (LivesManager.Instance != null)
             {
                 bool stillAlive = LivesManager.Instance.LoseLife(position);
@@ -150,10 +151,9 @@ private void EndMode()
 
     isActive = false;
 
+    SpecialModeManager.Instance.EndCurrentMode(); // Display aktualisiert sich VOR dem ersten neuen Point
     spawner.PauseSpawning(false);
     spawner.SpawnNextPoint();
-
-    SpecialModeManager.Instance.EndCurrentMode();
 }
 
 private float GetSpeedMultiplier()
