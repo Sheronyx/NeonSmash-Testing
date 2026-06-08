@@ -5,6 +5,7 @@ public class SlashTrail : MonoBehaviour
     [Header("Trail Prefab")]
     [SerializeField] private GameObject trailPrefab;
     [SerializeField] private GameObject fountainTrailPrefab;
+    [SerializeField] private GameObject electricTrailPrefab;
 
     private bool isFountain = false;
 
@@ -32,8 +33,16 @@ public class SlashTrail : MonoBehaviour
     public float width = 0.06f;
     public float trailTime = 0.15f;
 
+    [Header("Electric Trail Einstellungen (Combo >= 10)")]
+    [Range(0.01f, 2f)]
+    public float electricWidth = 1.0f;
+    public float electricTrailTime = 1.0f;
+
+    private GameObject activeTrailObject;
     private TrailRenderer activeTrail;
+    private TrailRenderer[] activeTrails;
     private bool swiping;
+    private bool isElectricTrail;
     private Vector3 prevPos;
 
     public void Begin(Vector3 worldPos)
@@ -43,33 +52,103 @@ public class SlashTrail : MonoBehaviour
 
         if (activeTrail == null)
         {
-            GameObject prefabToUse = isFountain ? fountainTrailPrefab : trailPrefab;
+            GameObject prefabToUse = null;
+            isElectricTrail = false;
+
+            if (isFountain)
+            {
+                prefabToUse = fountainTrailPrefab;
+            }
+            else if (ComboManager.Instance != null && ComboManager.Instance.Multiplier >= 10f && electricTrailPrefab != null)
+            {
+                prefabToUse = electricTrailPrefab;
+                isElectricTrail = true;
+                Debug.Log("[SlashTrail] ELECTRIC TRAIL aktiviert! Combo=" + ComboManager.Instance.Multiplier);
+            }
+            else
+            {
+                prefabToUse = trailPrefab;
+            }
 
             if (prefabToUse != null)
             {
-                GameObject trailObj = Instantiate(prefabToUse);
-                activeTrail = trailObj.GetComponent<TrailRenderer>();
+                activeTrailObject = Instantiate(prefabToUse);
+                activeTrailObject.transform.position = worldPos;
+                Debug.Log($"[SlashTrail] Trail spawned: {activeTrailObject.name}, Pos={worldPos}, IsElectric={isElectricTrail}");
+
+                activeTrail = activeTrailObject.GetComponent<TrailRenderer>();
+                if (activeTrail == null)
+                {
+                    activeTrail = activeTrailObject.GetComponentInChildren<TrailRenderer>();
+                }
+
+                activeTrails = activeTrailObject.GetComponentsInChildren<TrailRenderer>();
+                Debug.Log($"[SlashTrail] {activeTrails.Length} TrailRenderer gefunden");
             }
 
-            activeTrail.sortingLayerName = sortingLayerName;
-            activeTrail.sortingOrder     = sortingOrder;
+            if (activeTrail != null)
+            {
+                activeTrail.sortingLayerName = sortingLayerName;
+                activeTrail.sortingOrder     = sortingOrder;
+            }
+
+            if (activeTrails != null)
+            {
+                foreach (TrailRenderer tr in activeTrails)
+                {
+                    tr.sortingLayerName = sortingLayerName;
+                    tr.sortingOrder     = sortingOrder;
+                }
+            }
         }
 
         if (activeTrail != null)
         {
             activeTrail.emitting = false;
-            activeTrail.transform.position = worldPos;
             activeTrail.Clear();
-            activeTrail.widthMultiplier = width;
-            activeTrail.time            = trailTime;
-            activeTrail.emitting        = true;
+
+            // Nutze Electric-Werte wenn Electric Trail, sonst normale Werte
+            if (isElectricTrail)
+            {
+                activeTrail.widthMultiplier = electricWidth;
+                activeTrail.time = electricTrailTime;
+            }
+            else
+            {
+                activeTrail.widthMultiplier = width;
+                activeTrail.time = trailTime;
+            }
+
+            activeTrail.emitting = true;
+        }
+
+        if (activeTrails != null)
+        {
+            foreach (TrailRenderer tr in activeTrails)
+            {
+                tr.emitting = false;
+                tr.Clear();
+
+                if (isElectricTrail)
+                {
+                    tr.widthMultiplier = electricWidth;
+                    tr.time = electricTrailTime;
+                }
+                else
+                {
+                    tr.widthMultiplier = width;
+                    tr.time = trailTime;
+                }
+
+                tr.emitting = true;
+            }
         }
     }
 
     public void Move(Vector3 worldPos)
     {
-        if (!swiping || activeTrail == null) return;
-        activeTrail.transform.position = worldPos;
+        if (!swiping || activeTrailObject == null) return;
+        activeTrailObject.transform.position = worldPos;
         prevPos = worldPos;
     }
 
@@ -80,17 +159,21 @@ public class SlashTrail : MonoBehaviour
         if (activeTrail != null)
         {
             activeTrail.emitting = false;
-            Destroy(activeTrail.gameObject, activeTrail.time + 0.1f);
+            Destroy(activeTrailObject, activeTrail.time + 0.1f);
             activeTrail = null;
+            activeTrails = null;
+            activeTrailObject = null;
         }
     }
 
     private void ResetActiveTrail()
     {
-        if (activeTrail != null)
+        if (activeTrailObject != null)
         {
-            Destroy(activeTrail.gameObject);
+            Destroy(activeTrailObject);
             activeTrail = null;
+            activeTrails = null;
+            activeTrailObject = null;
         }
     }
 }
