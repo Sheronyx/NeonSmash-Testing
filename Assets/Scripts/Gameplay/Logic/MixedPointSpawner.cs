@@ -391,6 +391,9 @@ public class MixedPointSpawner : MonoBehaviour
                 sparks.StartBurn(dynamicTime);
             }
 
+            var countdownSquare = newPoint.GetComponentInChildren<CountdownSquare>();
+            if (countdownSquare) countdownSquare.StartCountdown(dynamicTime);
+
             var pulse = newPoint.GetComponent<PointPulse>();
             if (pulse) pulse.StartPulsing();
         }

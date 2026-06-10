@@ -66,7 +66,7 @@ public class ScoreManager : MonoBehaviour
             scoreText.text = Format(score);
 
         if (personalBestText != null)
-            personalBestText.text = Format(Mathf.Max(score, sessionBest));
+            personalBestText.text = "BEST: " + Format(Mathf.Max(score, sessionBest));
 
         PunchScore();
     }
