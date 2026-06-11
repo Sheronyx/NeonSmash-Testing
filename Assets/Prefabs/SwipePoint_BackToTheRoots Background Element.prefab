@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 5166969201471264380}
   - component: {fileID: 8931704811500311744}
-  - component: {fileID: 1649725331794309114}
   - component: {fileID: 7567942805859784516}
+  - component: {fileID: 8621798698629812710}
   m_Layer: 0
-  m_Name: SwipePoint
+  m_Name: SwipePoint_BackToTheRoots Background Element
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -37,6 +37,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &8931704811500311744
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -55,6 +56,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -76,11 +79,13 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_Sprite: {fileID: -5991000454661237860, guid: eea90c6d607a5402f930f13013566ea4, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.30588236}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -88,34 +93,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1649725331794309114
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 619024527856261657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b4e90447f97ab948876c313c35aea91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawner: {fileID: 0}
-  directionAngleTolerance: 25
-  strikePadding: 0.1
-  minSwipeLengthWorld: 0.03
-  minSwipeLengthPixels: 8
-  minT: 0.02
-  maxT: 0.8
-  allowBidirectional: 1
-  onlyBidirectionalOnDiagonals: 0
-  explodeVFXPrefab: {fileID: 1695188875398850540, guid: 686d05a8b76594630a4c15496169dd48, type: 3}
-  directionBoost: 7
-  lateralJitter: 0.7
-  forwardJitter: 0.4
-  radialMix: 0.25
 --- !u!61 &7567942805859784516
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -162,6 +140,21 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.6, y: 2.6}
   m_EdgeRadius: 0
+--- !u!114 &8621798698629812710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 619024527856261657}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3770304074c014e47b64a93755402e8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IdleFloat
+  amplitude: 0.06
+  period: 2
+  spawnDelay: 0.25
 --- !u!1 &5301724814681504018
 GameObject:
   m_ObjectHideFlags: 0
@@ -197,6 +190,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &309159367998732388
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -215,6 +209,8 @@ SpriteRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -236,11 +232,13 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_Sprite: {fileID: -5991000454661237860, guid: eea90c6d607a5402f930f13013566ea4, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.29803923}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -248,7 +246,6 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!114 &1465050890609384073
 MonoBehaviour:
@@ -316,7 +313,3 @@ MonoBehaviour:
     m_RotationOrder: 4
   doFade: 1
   fadeDuration: 0.14
-  fadeOutAfterPulse: 1
-  fadeOutDelay: 0.1
-  fadeOutDuration: 0.1
-  deactivateAfterFade: 1

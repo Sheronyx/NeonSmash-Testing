@@ -50,7 +50,7 @@ public class ComboDisplay : MonoBehaviour
         int comboMult = Mathf.Min(combo + 1, 10); // identisch mit ComboManager.Multiplier
         bool special  = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
         int totalMult = comboMult * (special ? 2 : 1);
-        multiplierText.text = $"{totalMult}.0";
+        multiplierText.text = "x" + $"{totalMult}.0";
     }
 
     private void Punch()
