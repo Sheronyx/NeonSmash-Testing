@@ -19,6 +19,10 @@ public class SoundThemeManager : MonoBehaviour
     public void Apply(SoundTheme theme)
     {
         if (theme == null) return;
+        // Lautstärke VOR den Clips setzen, damit ApplyMenuClip direkt zum
+        // richtigen Ziel faded.
+        MusicManager.Instance?.SetMenuBaseVolume(theme.menuMusicVolume);
+        MusicManager.Instance?.SetGameBaseVolume(theme.gameMusicVolume);
         MusicManager.Instance?.ApplyMenuClip(theme.menuMusicClip);
         MusicManager.Instance?.ApplyGameClip(theme.gameMusicClip);
     }

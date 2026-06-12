@@ -24,6 +24,7 @@ public class ShopController : MonoBehaviour
     [SerializeField] Button tabSkins;
     [SerializeField] Button tabSounds;
     [SerializeField] Button tabCoins;
+    [SerializeField] Button tabBundles;
 
     [Header("Tab Colors")]
     [SerializeField] Color tabActiveColor   = Color.white;
@@ -72,6 +73,7 @@ public class ShopController : MonoBehaviour
         if (tabSkins         != null) tabSkins.onClick.AddListener(() => SwitchTab(ShopItemType.Skin));
         if (tabSounds        != null) tabSounds.onClick.AddListener(() => SwitchTab(ShopItemType.Sound));
         if (tabCoins         != null) tabCoins.onClick.AddListener(() => SwitchTab(ShopItemType.Currency));
+        if (tabBundles       != null) tabBundles.onClick.AddListener(() => SwitchTab(ShopItemType.Bundle));
         if (dailyClaimButton != null) dailyClaimButton.onClick.AddListener(OnClaimDaily);
     }
 
@@ -81,6 +83,7 @@ public class ShopController : MonoBehaviour
         if (tabSkins         != null) tabSkins.onClick.RemoveAllListeners();
         if (tabSounds        != null) tabSounds.onClick.RemoveAllListeners();
         if (tabCoins         != null) tabCoins.onClick.RemoveAllListeners();
+        if (tabBundles       != null) tabBundles.onClick.RemoveAllListeners();
         if (dailyClaimButton != null) dailyClaimButton.onClick.RemoveAllListeners();
     }
 
@@ -114,9 +117,10 @@ public class ShopController : MonoBehaviour
 
     void UpdateTabHighlights()
     {
-        SetTabColor(tabSkins,  _activeTab == ShopItemType.Skin);
-        SetTabColor(tabSounds, _activeTab == ShopItemType.Sound);
-        SetTabColor(tabCoins,  _activeTab == ShopItemType.Currency);
+        SetTabColor(tabSkins,   _activeTab == ShopItemType.Skin);
+        SetTabColor(tabSounds,  _activeTab == ShopItemType.Sound);
+        SetTabColor(tabCoins,   _activeTab == ShopItemType.Currency);
+        SetTabColor(tabBundles, _activeTab == ShopItemType.Bundle);
     }
 
     void SetTabColor(Button btn, bool active)
@@ -149,12 +153,32 @@ public class ShopController : MonoBehaviour
 
     void OnEquipItem(ShopItem item)
     {
-        ShopInventory.SetEquipped(item.type, item.itemId);
+        if (item.type == ShopItemType.Bundle)
+        {
+            // Bundle equippt Skin + Sound zugleich. Damit RestoreEquipped (das
+            // per Typ nachschlägt) das Bundle wiederfindet, equipped[Skin] und
+            // equipped[Sound] ebenfalls auf die Bundle-ID setzen — FindById
+            // liefert dann das Bundle und liest dessen skinTheme/soundTheme.
+            ShopInventory.SetEquipped(ShopItemType.Bundle, item.itemId);
+            ShopInventory.SetEquipped(ShopItemType.Skin,   item.itemId);
+            ShopInventory.SetEquipped(ShopItemType.Sound,  item.itemId);
 
-        if (item.type == ShopItemType.Skin)
             SkinManager.Instance?.Apply(item.skinTheme);
-        else if (item.type == ShopItemType.Sound)
             SoundThemeManager.Instance?.Apply(item.soundTheme);
+        }
+        else
+        {
+            ShopInventory.SetEquipped(item.type, item.itemId);
+
+            // Standalone-Equip löst ein aktives Bundle auf, damit dessen Card
+            // nicht fälschlich "EQUIPPED" zeigt.
+            ShopInventory.SetEquipped(ShopItemType.Bundle, "");
+
+            if (item.type == ShopItemType.Skin)
+                SkinManager.Instance?.Apply(item.skinTheme);
+            else if (item.type == ShopItemType.Sound)
+                SoundThemeManager.Instance?.Apply(item.soundTheme);
+        }
 
         PopulateGrid();
     }

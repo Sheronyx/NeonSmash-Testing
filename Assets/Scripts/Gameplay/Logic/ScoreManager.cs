@@ -39,6 +39,15 @@ public class ScoreManager : MonoBehaviour
 
     private void OnEnable() => UpdateUI();
 
+    // Bindet die UI-Felder der aktuell aktiven Top Bar (z.B. nach einem
+    // Skin-Bar-Swap) und rendert den aktuellen Stand neu.
+    public void BindUI(TextMeshProUGUI score, TextMeshProUGUI best)
+    {
+        if (score != null) scoreText        = score;
+        if (best  != null) personalBestText = best;
+        UpdateUI();
+    }
+
     public void AddPoints(int amount)
     {
         score += amount;

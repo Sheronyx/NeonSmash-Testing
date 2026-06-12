@@ -51,6 +51,16 @@ public class LivesManager : MonoBehaviour
         UpdateHeartFills();
     }
 
+    // Bindet die Herz-Images der aktuell aktiven Top Bar (z.B. nach einem
+    // Skin-Bar-Swap) und aktualisiert die Füllstände.
+    public void BindHearts(Image l1, Image l2, Image l3)
+    {
+        if (l1 != null) lifePoint1 = l1;
+        if (l2 != null) lifePoint2 = l2;
+        if (l3 != null) lifePoint3 = l3;
+        UpdateHeartFills();
+    }
+
     // Gibt true zurück wenn noch Leben übrig, false bei GameOver
     // damage = 0 → nutzt damagePerMiss aus Inspector; sonst direkt übergeben
     public bool LoseLife(Vector3 vfxPosition, float damage = 0f)

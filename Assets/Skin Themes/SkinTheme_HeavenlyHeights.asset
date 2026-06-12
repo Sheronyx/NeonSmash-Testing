@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d1a3137d94eb494abd3fd955ab16ed1, type: 3}
+  m_Name: SkinTheme_HeavenlyHeights
+  m_EditorClassIdentifier: Assembly-CSharp::SkinTheme
+  tapPointPrefab: {fileID: 7080553594425325570, guid: a938294a2d6f54bc0a20afa3446a2367, type: 3}
+  swipePointPrefab: {fileID: 1588161493249182017, guid: c983fdf9ce5b74c08a641fef154f506a, type: 3}
+  slashTrailPrefab: {fileID: 6593613985249772415, guid: e46b636b09e2f41cc8fc64d9870162d8, type: 3}
+  beamProjectilePrefab: {fileID: 6237600531714503956, guid: 9b5be42d13dac4c609753fb61e92877e, type: 3}
+  gravityPointPrefab: {fileID: 1509820272943899219, guid: 6a0913112842542e6855e6dfad2cdbe1, type: 3}
+  fountainPointPrefab: {fileID: 827511740509734178, guid: 456ebed7cc0b7493896762c6f4df6989, type: 3}
+  portalVisualPrefab: {fileID: 7276178633102180516, guid: 3dd7bffb80c5043edadceab6bc10fac9, type: 3}
+  backgroundPrefab: {fileID: 5151463687638930050, guid: 409411f8ada7e42fc934d2c83e7790c5, type: 3}
+  topBarPrefab: {fileID: 2954196190696871323, guid: 53687ad7ff4b545388ac0c79b1d36e5d, type: 3}
+  overridePortalColor: 0
+  portalParticleColor: {r: 0, g: 1, b: 0, a: 1}
+  portalVoronoiColor: {r: 0, g: 1, b: 0, a: 1}
+  overrideTopBarColor: 0
+  topBarColor: {r: 0, g: 1, b: 0, a: 1}

@@ -9,6 +9,9 @@ public class GravityModeSystem : MonoBehaviour
     [SerializeField] private MixedPointSpawner spawner;
     [SerializeField] private GameObject gravityTapPrefab;
 
+    GameObject ActiveGravityPrefab =>
+        SkinManager.Instance?.ActiveTheme?.gravityPointPrefab ?? gravityTapPrefab;
+
     [Header("Settings")]
     [SerializeField] private int elementCount = 30;
     [SerializeField] private float spawnInterval = 2f;
@@ -96,7 +99,7 @@ public void Activate()
     );
     worldPos.z = 0f;
 
-    GameObject obj = Instantiate(gravityTapPrefab, worldPos, Quaternion.identity);
+    GameObject obj = Instantiate(ActiveGravityPrefab, worldPos, Quaternion.identity);
 
     var gp = obj.GetComponent<GravityPoint>();
     if (gp != null)

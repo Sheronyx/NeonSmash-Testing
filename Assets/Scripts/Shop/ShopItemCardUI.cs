@@ -82,9 +82,11 @@ public class ShopItemCardUI : MonoBehaviour
         bool owned    = ShopInventory.IsOwned(_item.itemId);
         bool equipped = owned && ShopInventory.GetEquipped(_item.type) == _item.itemId;
 
+        bool hasPreview = _item.soundTheme != null && _item.soundTheme.previewClip != null;
+
         if (ownedBadge     != null) ownedBadge.SetActive(owned);
         if (coinIcon       != null) coinIcon.SetActive(!owned && _item.coinPrice > 0);
-        if (previewOverlay != null) previewOverlay.SetActive(_item.type == ShopItemType.Sound);
+        if (previewOverlay != null) previewOverlay.SetActive(hasPreview);
 
         if (actionButton != null)
         {

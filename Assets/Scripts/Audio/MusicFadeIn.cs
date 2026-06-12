@@ -11,6 +11,19 @@ public class MusicManager : MonoBehaviour
     public AudioSource menuSource;   // Menü-Musik
     public AudioSource gameSource;   // Spiel-Musik
 
+    // Pro Sound-Skin gesetzte Basis-Lautstärke (Fade-Ziel statt fix 1.0).
+    // Gleicht lauter/leiser gemasterte Tracks an. 1 = unverändert.
+    private float menuBaseVolume = 1f;
+    private float gameBaseVolume = 1f;
+
+    // Vollausschlag-Ziel der jeweiligen Source (für Fades).
+    private float BaseVolumeFor(AudioSource src)
+    {
+        if (src == gameSource) return gameBaseVolume;
+        if (src == menuSource) return menuBaseVolume;
+        return 1f;
+    }
+
     [Header("Fades")]
     [Tooltip("Dauer für Crossfades zwischen Menü- und Spielmusik.")]
     public float fadeDuration = 1.5f;
@@ -93,12 +106,12 @@ public class MusicManager : MonoBehaviour
         if (inGameContext)
         {
             PrepareAndPlayFromStart(gameSource); // Spiel läuft -> Game-Track ab 0:00
-            if (gameSource != null) FadeTo(gameSource, 1f);
+            if (gameSource != null) FadeTo(gameSource, gameBaseVolume);
         }
         else
         {
             PrepareAndPlayFromStart(menuSource); // Menü -> Menü-Track ab 0:00
-            if (menuSource != null) FadeTo(menuSource, 1f);
+            if (menuSource != null) FadeTo(menuSource, menuBaseVolume);
         }
     }
 
@@ -211,13 +224,14 @@ public class MusicManager : MonoBehaviour
         float time = 0f;
         float fromStart = from != null ? from.volume : 0f;
         float toStart   = to   != null ? to.volume   : 0f;
+        float toTarget  = BaseVolumeFor(to);
 
         while (time < fadeDuration)
         {
             time += Time.unscaledDeltaTime;
             float t = time / fadeDuration;
             if (from != null) from.volume = Mathf.Lerp(fromStart, 0f, t);
-            if (to   != null) to.volume   = Mathf.Lerp(toStart,   1f, t);
+            if (to   != null) to.volume   = Mathf.Lerp(toStart,   toTarget, t);
             yield return null;
         }
 
@@ -233,7 +247,7 @@ public class MusicManager : MonoBehaviour
                 from.Pause(); // CPU sparen
             }
         }
-        if (to != null) to.volume = 1f;
+        if (to != null) to.volume = toTarget;
     }
 
     private void FadeTo(AudioSource source, float target)
@@ -354,6 +368,22 @@ public void IncreaseGameMusicSpeed(float? customStep = null)
         if (menuSource != null && !menuSource.isPlaying) menuSource.UnPause();
     }
 
+    // ===== Öffentliche API: Pro-Skin Basis-Lautstärke =====
+    public void SetMenuBaseVolume(float v)
+    {
+        menuBaseVolume = Mathf.Clamp01(v);
+        // Wenn Menü gerade aktiv läuft, sofort angleichen (nicht erst beim nächsten Fade).
+        if (!inGameContext && menuSource != null && menuSource.isPlaying)
+            menuSource.volume = menuBaseVolume;
+    }
+
+    public void SetGameBaseVolume(float v)
+    {
+        gameBaseVolume = Mathf.Clamp01(v);
+        if (inGameContext && gameSource != null && gameSource.isPlaying)
+            gameSource.volume = gameBaseVolume;
+    }
+
     // ===== Öffentliche API: Sound-Theme wechseln =====
     public void ApplyMenuClip(AudioClip clip)
     {
@@ -371,7 +401,7 @@ public void IncreaseGameMusicSpeed(float? customStep = null)
     public void RestartMenuMusicFromZeroNow()
     {
         PrepareAndPlayFromStart(menuSource);
-        FadeTo(menuSource, 1f);
+        FadeTo(menuSource, menuBaseVolume);
         StopAndReset(gameSource);
     }
 
@@ -380,7 +410,7 @@ public void IncreaseGameMusicSpeed(float? customStep = null)
     {
         // Startet Game-Track sauber neu und sorgt dafür, dass Menü-Track stumm/auf Anfang ist
         PrepareAndPlayFromStart(gameSource);
-        FadeTo(gameSource, 1f);
+        FadeTo(gameSource, gameBaseVolume);
         StopAndReset(menuSource);
     }
 }

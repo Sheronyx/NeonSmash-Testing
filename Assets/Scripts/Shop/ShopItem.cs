@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public enum ShopItemType { Skin, Sound, Currency }
+public enum ShopItemType { Skin, Sound, Currency, Bundle }
 
 [CreateAssetMenu(fileName = "ShopItem", menuName = "NeonSmash/Shop Item")]
 public class ShopItem : ScriptableObject

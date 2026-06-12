@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-// Färbt die Neon-Linien der UI Top Bar laut aktivem Skin um.
-// Auf das Top-Bar-Objekt legen und die Neon-Line Graphics zuweisen.
+// Färbt die Neon-Linien der UI Top Bar laut aktivem Skin um (Farb-Override).
+// Für kompletten Top-Bar-Tausch (eigenes Objekt) stattdessen SkinObjectSwap nutzen.
 public class TopBarSkinApplier : MonoBehaviour
 {
     [Tooltip("Alle Neon-Linien-Grafiken der Top Bar (Image / RawImage).")]

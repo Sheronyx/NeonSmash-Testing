@@ -16,6 +16,9 @@ public class FountainModeSystem : MonoBehaviour
     [SerializeField] private GameObject fountainPointPrefab;
     [SerializeField] private Transform portal;
 
+    GameObject ActiveFountainPrefab =>
+        SkinManager.Instance?.ActiveTheme?.fountainPointPrefab ?? fountainPointPrefab;
+
     [Header("Spawn Settings")]
     [SerializeField] private float shootForceY = 6f;
     [SerializeField] private float shootForceX = 6f;
@@ -76,7 +79,7 @@ public class FountainModeSystem : MonoBehaviour
 
         Vector3 pos = portal.position;
 
-        var go = Instantiate(fountainPointPrefab, pos, Quaternion.identity);
+        var go = Instantiate(ActiveFountainPrefab, pos, Quaternion.identity);
         var point = go.GetComponent<FountainPoint>();
 
         if (TutorialManager.Instance != null)

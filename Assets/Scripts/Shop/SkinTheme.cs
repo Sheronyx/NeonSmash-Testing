@@ -16,6 +16,16 @@ public class SkinTheme : ScriptableObject
     [Tooltip("Ersetzt das Standard Beam-Projectile (PortalSpawnBeam, vfx_NeonProjectile). Null = Default.")]
     public GameObject beamProjectilePrefab;
 
+    [Tooltip("Ersetzt das Gravity-Point-Prefab. Null = Default.")]
+    public GameObject gravityPointPrefab;
+
+    [Tooltip("Ersetzt das Fountain-Point-Prefab. Null = Default.")]
+    public GameObject fountainPointPrefab;
+
+    // Szenen-Objekte (Portal-Plattform, Background, Top Bar) werden NICHT hier
+    // referenziert, sondern per Enable/Disable über SkinObjectSwap /
+    // PortalSkinApplier in der Szene geschaltet (theme-Matching auf dieses Asset).
+
     [Header("Portal-Farbe (Normal-Modus)")]
     [Tooltip("Wenn aktiv, werden Particles + Voronoi des Portals im Normal-Modus umgefärbt.")]
     public bool overridePortalColor;
