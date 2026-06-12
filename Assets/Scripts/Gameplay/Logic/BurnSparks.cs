@@ -15,11 +15,7 @@ public class BurnSparks : MonoBehaviour
     {
         if (isQuadMode)
         {
-            if (topBottomEmitter != null)
-            {
-                Debug.Log("[BurnSparks] Quad Mode aktiviert");
-            }
-            else
+            if (topBottomEmitter == null)
             {
                 Debug.LogWarning("[BurnSparks] Quad Mode, aber kein Emitter zugewiesen!");
             }
@@ -62,14 +58,12 @@ public class BurnSparks : MonoBehaviour
 
     public void StartBurn(float duration)
     {
-        Debug.Log($"[BurnSparks] StartBurn: {duration}s, QuadMode={isQuadMode}");
         if (burnRoutine != null) StopCoroutine(burnRoutine);
         burnRoutine = StartCoroutine(Co_Burn(duration));
     }
 
     private IEnumerator Co_Burn(float duration)
     {
-        Debug.Log($"[BurnSparks] Co_Burn started, duration={duration}s");
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -89,7 +83,6 @@ public class BurnSparks : MonoBehaviour
             yield return null;
         }
 
-        Debug.Log("[BurnSparks] Burn beendet");
         burnRoutine = null;
     }
 
@@ -152,8 +145,6 @@ public class BurnSparks : MonoBehaviour
             // Vertikal: Oben und Unten
             topBottomEmitter.localPosition = new Vector3(0, distance, 0);
             bottomTopEmitter.localPosition = new Vector3(0, -distance, 0);
-
-            Debug.Log($"[BurnSparks Vertical] Top Y={distance:F2}, Bottom Y={-distance:F2}");
         }
     }
 }

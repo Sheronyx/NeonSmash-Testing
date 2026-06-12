@@ -118,7 +118,7 @@ VFXRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 8
   m_MaskInteraction: 0
 --- !u!58 &9013113540762397234
 CircleCollider2D:
@@ -169,10 +169,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FountainModeActivationPoint
   spawner: {fileID: 0}
-  lifetime: 3
-  flySpeed: 0.6
+  pulseFreq: 1.5
+  flyInDuration: 0.7
+  bloomDuration: 1.1
+  flyOutDuration: 0.6
+  flyCurveStrength: 2.5
   delayBeforeFountainMode: 0.8
+  slashClipVolume: 8
   slashVFXPrefab: {fileID: 8254434928154273988, guid: 7a6acddec76ab4e47b6b0ce90d0661fa, type: 3}
   orbFlyClip: {fileID: 8300000, guid: b4a3bf6d4163b4c93b826712ea73fa70, type: 3}
   slashClip: {fileID: 8300000, guid: fd5740cd2b74e0e4aa71ebb48774f557, type: 3}
-  slashClipVolume: 8

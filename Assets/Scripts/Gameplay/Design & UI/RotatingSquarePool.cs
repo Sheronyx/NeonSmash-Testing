@@ -43,7 +43,23 @@ public class RotatingSquarePool : MonoBehaviour
             squarePool.Enqueue(square.transform);
         }
 
+        PrewarmScreen();
+
         nextSpawnTime = Time.time + spawnRateSeconds;
+    }
+
+    // Verteilt Quadrate sofort über die ganze Bildschirmbreite, damit der
+    // Schirm ab Spielstart bedeckt ist (statt erst nacheinander reinzulaufen).
+    private void PrewarmScreen()
+    {
+        // Natürlicher Abstand zwischen zwei Spawns im laufenden Betrieb
+        float spacing = scrollSpeed * spawnRateSeconds;
+        if (spacing <= 0.01f) spacing = 1f;
+
+        for (float x = spawnRightX; x > despawnLeftX && squarePool.Count > 0; x -= spacing)
+        {
+            SpawnSquare(x);
+        }
     }
 
     private void Update()
@@ -101,19 +117,19 @@ public class RotatingSquarePool : MonoBehaviour
         // Spawn
         if (Time.time >= nextSpawnTime && squarePool.Count > 0)
         {
-            SpawnSquare();
+            SpawnSquare(spawnRightX);
             nextSpawnTime = Time.time + spawnRateSeconds;
         }
     }
 
-    private void SpawnSquare()
+    private void SpawnSquare(float spawnX)
     {
         Transform square = squarePool.Dequeue();
         square.gameObject.SetActive(true);
         activeSquares.Add(square);
 
         float randomY = Random.Range(randomYMin, randomYMax);
-        square.position = new Vector3(spawnRightX, randomY, 0);
+        square.position = new Vector3(spawnX, randomY, 0);
 
         float randomScale = Random.Range(randomScaleMin, randomScaleMax);
         square.localScale = Vector3.one * randomScale;

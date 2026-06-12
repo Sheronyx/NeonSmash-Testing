@@ -67,7 +67,7 @@ public class SlashTrail : MonoBehaviour
             }
             else
             {
-                prefabToUse = trailPrefab;
+                prefabToUse = SkinManager.Instance?.ActiveTheme?.slashTrailPrefab ?? trailPrefab;
             }
 
             if (prefabToUse != null)

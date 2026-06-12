@@ -71,8 +71,6 @@ public class LineFuse : MonoBehaviour
             Vector3 bottom = new Vector3(0, -distance, 0);
             lr.SetPosition(0, top);
             lr.SetPosition(1, bottom);
-
-            Debug.Log($"[LineFuse] Linienenden: Top={top}, Bottom={bottom}");
         }
     }
 }

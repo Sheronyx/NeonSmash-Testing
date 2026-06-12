@@ -22,7 +22,6 @@ public class GravityPoint : BasePoint
 
     private Vector3 initialScale;
     private bool isDestroyed = false;
-    private bool isBeingSucked = false;
 
     // Velocity tracking
     private Vector3 previousPosition;
@@ -57,13 +56,20 @@ public class GravityPoint : BasePoint
     {
         if (portalTransform == null)
         {
-            CheckDestroy();
-            return;
+            var portal = FindFirstObjectByType<ArcanePortalFlash>();
+            if (portal != null)
+            {
+                portalTransform = portal.transform;
+            }
+            else
+            {
+                CheckDestroy();
+                return;
+            }
         }
 
         // 🔄 Rotation
-        float currentRotation = isBeingSucked ? rotationSpeed * 2.5f : rotationSpeed;
-        transform.Rotate(Vector3.forward * currentRotation * Time.deltaTime);
+        transform.Rotate(Vector3.forward * rotationSpeed * Time.deltaTime);
 
         // 👉 Distanz berechnen
         Vector3 portalTarget = GetPortalTarget();
@@ -127,41 +133,14 @@ public class GravityPoint : BasePoint
 
     private Vector3 GetPortalTarget()
     {
-        return portalTransform.position + Vector3.up * portalYOffset;
+        // Z auf die Ebene des Punktes setzen, sonst verfälscht der Z-Abstand
+        // (Portal steht bei Z=100) die Distanz und der Sog aktiviert nie.
+        Vector3 target = portalTransform.position + Vector3.up * portalYOffset;
+        target.z = transform.position.z;
+        return target;
     }
 
-    private void HandleSuckMovement()
-    {
-        if (portalTransform == null) return;
-
-        Vector3 portalTarget = GetPortalTarget();
-        float distance = Vector3.Distance(transform.position, portalTarget);
-
-        float t = Mathf.Clamp01(1f - (distance / suckStartDistance));
-        float eased = t * t;
-
-        Vector3 dir = (portalTarget - transform.position).normalized;
-        float speed = Mathf.Lerp(1f, maxSuckForce, eased);
-
-        transform.position += dir * speed * Time.deltaTime;
-
-        float scaleFactor = Mathf.Lerp(1f, minScaleBeforeDestroy, eased);
-        transform.localScale = initialScale * scaleFactor;
-
-        if (sr != null)
-        {
-            Color c = sr.color;
-            c.a = Mathf.Lerp(1f, 0f, eased);
-            sr.color = c;
-        }
-
-        if (trail != null)
-        {
-            trail.time = Mathf.Lerp(0.6f, 0.1f, eased);
-        }
-    }
-
-    private void CheckDestroy()
+private void CheckDestroy()
     {
         if (isDestroyed) return;
 

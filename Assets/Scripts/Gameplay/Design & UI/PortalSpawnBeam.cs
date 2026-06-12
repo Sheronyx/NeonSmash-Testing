@@ -11,6 +11,9 @@ public class PortalSpawnBeam : MonoBehaviour
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform portalOrigin;
 
+    GameObject ActiveProjectilePrefab =>
+        SkinManager.Instance?.ActiveTheme?.beamProjectilePrefab ?? projectilePrefab;
+
     public void SpawnWithBeam(GameObject prefab, Vector3 targetPosition, System.Action onPointCreated = null)
     {
         StartCoroutine(Co_SpawnProjectile(prefab, targetPosition, onPointCreated));
@@ -22,7 +25,7 @@ public class PortalSpawnBeam : MonoBehaviour
         start.z  = 0f;
         target.z = 0f;
 
-        GameObject projectile = Instantiate(projectilePrefab, start, Quaternion.identity);
+        GameObject projectile = Instantiate(ActiveProjectilePrefab, start, Quaternion.identity);
 
         while (projectile != null && Vector3.Distance(projectile.transform.position, target) > 0.05f)
         {

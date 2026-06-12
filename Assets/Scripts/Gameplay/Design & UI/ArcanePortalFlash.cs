@@ -22,9 +22,23 @@ public class ArcanePortalFlash : MonoBehaviour
     {
         if (vfx != null)
         {
+            ApplySkinColors();
+
             baseNormal = vfx.GetVector4("Color Particles Normal");
             baseBlue   = vfx.GetVector4("Color Particles Blue");
         }
+    }
+
+    // Färbt Particles + Voronoi des Normal-Modus laut aktivem Skin um.
+    // Muss VOR dem Cachen von baseNormal laufen, damit der Flash korrekt
+    // zur Skin-Farbe zurücklerpt.
+    private void ApplySkinColors()
+    {
+        var theme = SkinManager.Instance?.ActiveTheme;
+        if (theme == null || !theme.overridePortalColor) return;
+
+        vfx.SetVector4("Color Particles Normal", theme.portalParticleColor);
+        vfx.SetVector4("Color Portal Normal",    theme.portalVoronoiColor);
     }
 
     private void OnEnable()

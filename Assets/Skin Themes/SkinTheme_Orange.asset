@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d1a3137d94eb494abd3fd955ab16ed1, type: 3}
+  m_Name: SkinTheme_Orange
+  m_EditorClassIdentifier: Assembly-CSharp::SkinTheme
+  tapPointPrefab: {fileID: 7634417711000780290, guid: 3b552f23e8be04965a32b844ccaf57f8, type: 3}
+  swipePointPrefab: {fileID: 723352877289022949, guid: 041a688f7984d48df8f5160b6789b562, type: 3}
+  slashTrailPrefab: {fileID: 6593613985249772415, guid: 7fe11cc2974ac4a72b6696fdb0eb15d9, type: 3}
+  beamProjectilePrefab: {fileID: 6237600531714503956, guid: f1b454657587d4e82b3e6d5b8c38691a, type: 3}
+  overridePortalColor: 1
+  portalParticleColor: {r: 26.867928, g: 8.7727785, b: 2.9540648, a: 1}
+  portalVoronoiColor: {r: 29.508846, g: 4.216323, b: 0, a: 1}
+  overrideTopBarColor: 1
+  topBarColor: {r: 8.609493, g: 2.288031, b: 0, a: 1}
