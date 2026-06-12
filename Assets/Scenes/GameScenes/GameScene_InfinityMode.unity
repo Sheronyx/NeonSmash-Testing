@@ -753,7 +753,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5151463687638930050, guid: 409411f8ada7e42fc934d2c83e7790c5, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9093674301827521467, guid: 409411f8ada7e42fc934d2c83e7790c5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2017,7 +2017,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 27
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 10
   m_TargetDisplay: 0
 --- !u!224 &1008593550
 RectTransform:
@@ -8519,7 +8519,7 @@ GameObject:
   - component: {fileID: 1807616414}
   - component: {fileID: 1807616413}
   m_Layer: 0
-  m_Name: Skins
+  m_Name: Backgrounds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8537,24 +8537,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2cdfb1849f5ba41fba3e21cbbda42103, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkinObjectSwap
-  defaultObject: {fileID: 0}
+  defaultObject: {fileID: 1806655490}
   skinObjects:
   - theme: {fileID: 11400000, guid: f5b2e3d4e6bd147e5934b0c59a7a68ef, type: 2}
     obj: {fileID: 1063883596}
-  - theme: {fileID: 11400000, guid: f5b2e3d4e6bd147e5934b0c59a7a68ef, type: 2}
-    obj: {fileID: 183901545}
-  - theme: {fileID: 11400000, guid: e207989e703d240ccb207a4ea6be3045, type: 2}
-    obj: {fileID: 5792667915265058983}
-  - theme: {fileID: 11400000, guid: e207989e703d240ccb207a4ea6be3045, type: 2}
-    obj: {fileID: 1806655490}
-  - theme: {fileID: 11400000, guid: 1062ac48f4387457797b0154c041b997, type: 2}
-    obj: {fileID: 5792667915265058983}
-  - theme: {fileID: 11400000, guid: 1062ac48f4387457797b0154c041b997, type: 2}
-    obj: {fileID: 1806655490}
-  - theme: {fileID: 11400000, guid: 259c77356cd1f4d04b15e5d80ae0894d, type: 2}
-    obj: {fileID: 5792667915265058983}
-  - theme: {fileID: 11400000, guid: 259c77356cd1f4d04b15e5d80ae0894d, type: 2}
-    obj: {fileID: 1806655490}
 --- !u!4 &1807616414
 Transform:
   m_ObjectHideFlags: 0
@@ -13693,6 +13679,7 @@ GameObject:
   - component: {fileID: 1967027722}
   - component: {fileID: 1967027721}
   - component: {fileID: 1967027720}
+  - component: {fileID: 1967027724}
   m_Layer: 5
   m_Name: Canvas Top Bar
   m_TagString: Untagged
@@ -13784,6 +13771,22 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1967027724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967027719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cdfb1849f5ba41fba3e21cbbda42103, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkinObjectSwap
+  defaultObject: {fileID: 5792667915265058983}
+  skinObjects:
+  - theme: {fileID: 11400000, guid: f5b2e3d4e6bd147e5934b0c59a7a68ef, type: 2}
+    obj: {fileID: 183901545}
 --- !u!1001 &2004575652
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15323,7 +15326,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4913506108386117321, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
