@@ -46,7 +46,23 @@ public class CloudPool : MonoBehaviour
             cloudPool.Enqueue(cloud.transform);
         }
 
+        PrewarmScreen();
+
         nextSpawnTime = Time.time + spawnRateSeconds;
+    }
+
+    // Verteilt Wolken sofort über die ganze Bildschirmbreite, damit der Schirm
+    // ab Spielstart bedeckt ist (statt erst nacheinander reinzuziehen).
+    private void PrewarmScreen()
+    {
+        // Natürlicher Abstand zwischen zwei Spawns im laufenden Betrieb
+        float spacing = scrollSpeed * spawnRateSeconds;
+        if (spacing <= 0.01f) spacing = 1f;
+
+        for (float x = spawnRightX; x > despawnLeftX && cloudPool.Count > 0; x -= spacing)
+        {
+            SpawnCloud(x);
+        }
     }
 
     private void Update()
@@ -69,19 +85,19 @@ public class CloudPool : MonoBehaviour
         // Neue Wolke spawnen
         if (Time.time >= nextSpawnTime && cloudPool.Count > 0)
         {
-            SpawnCloud();
+            SpawnCloud(spawnRightX);
             nextSpawnTime = Time.time + spawnRateSeconds;
         }
     }
 
-    private void SpawnCloud()
+    private void SpawnCloud(float spawnX)
     {
         Transform cloud = cloudPool.Dequeue();
         cloud.gameObject.SetActive(true);
 
         // Zufällige Position
         float randomY = Random.Range(randomYMin, randomYMax);
-        cloud.position = new Vector3(spawnRightX, randomY, 0);
+        cloud.position = new Vector3(spawnX, randomY, 0);
 
         // Zufällige Größe
         float randomScale = Random.Range(randomScaleMin, randomScaleMax);
