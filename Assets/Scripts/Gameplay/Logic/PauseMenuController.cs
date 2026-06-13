@@ -9,6 +9,16 @@ public class PauseMenuController : MonoBehaviour
     [Header("Tutorial Canvases (werden beim Pausieren versteckt)")]
     [SerializeField] private Canvas[] tutorialCanvases;
 
+    // Setzt das aktive Pause-Panel (Skin-Variante). Buttons der jeweiligen
+    // Variante werden im Inspector auf diesen Controller verdrahtet. Das Panel
+    // bleibt versteckt, bis pausiert wird.
+    public void SetActivePanel(GameObject panel)
+    {
+        if (panel == null) return;
+        pauseMenuUI = panel;
+        pauseMenuUI.SetActive(false);
+    }
+
     public void ShowPauseMenu()
     {
         if (MultiplayerManager.IsMultiplayerGame) return;

@@ -35,6 +35,31 @@ public class GameUIManager : MonoBehaviour
             pauseButton.SetActive(false);
     }
 
+    // Bindet die UI der aktiven Skin-Variante (Game Over Banner + Result Panel
+    // + Buttons). Wird vom GameOverSkinBinder beim Start aufgerufen, damit nach
+    // einem Bundle-Swap die richtige (aktive) Variante gesteuert wird.
+    public void BindResultUI(
+        CanvasGroup banner, TextMeshProUGUI bannerText,
+        CanvasGroup result, TextMeshProUGUI headline, TextMeshProUGUI scoreTMP,
+        Button restart, Button back)
+    {
+        gameOverBanner    = banner;
+        gameOverTextTMP   = bannerText;
+        resultPanel       = result;
+        resultHeadlineTMP = headline;
+        resultScoreTMP    = scoreTMP;
+
+        // Buttons neu verdrahten (alte Listener entfernen, neue setzen)
+        if (restartButton != null)    restartButton.onClick.RemoveListener(RestartGame);
+        if (backToMenuButton != null) backToMenuButton.onClick.RemoveListener(BackToMenu);
+
+        restartButton    = restart;
+        backToMenuButton = back;
+
+        if (restartButton != null)    restartButton.onClick.AddListener(RestartGame);
+        if (backToMenuButton != null) backToMenuButton.onClick.AddListener(BackToMenu);
+    }
+
     public void ShowGameOver(int score)
     {
         StartCoroutine(Co_ShowGameOver(score));

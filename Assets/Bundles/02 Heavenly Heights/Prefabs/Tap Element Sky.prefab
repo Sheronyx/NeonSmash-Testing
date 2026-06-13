@@ -480,9 +480,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3770304074c014e47b64a93755402e8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IdleFloat
-  amplitude: 0.06
+  amplitude: 0.12
   period: 2
   spawnDelay: 0.25
+  easeInDuration: 0.4
 --- !u!114 &8537019152700703083
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -497,6 +498,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WingFlutter
   wingLeft: {fileID: 29582189642228839}
   wingRight: {fileID: 1069640273815070614}
-  flutterSpeed: 0.8
+  flutterSpeed: 0.6
   flutterAngle: 15
   phaseOffset: 0

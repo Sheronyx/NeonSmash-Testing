@@ -4,17 +4,38 @@ using UnityEngine.SceneManagement;
 public class GameStartCoordinator : MonoBehaviour
 {
     [Header("References (optional, auto-find if empty)")]
-    [SerializeField] private CountdownUI countdownUI;      // dein Countdown-Overlay
+    [SerializeField] private CountdownUI countdownUI;      // Default Countdown-Overlay
     [SerializeField] private MixedPointSpawner spawner;   // <- starker Typ!
     [SerializeField] private MonoBehaviour playerInput;     // z.B. PlayerInputHandler
+
+    [Header("Skin-Varianten (Countdown pro Bundle)")]
+    [SerializeField] private CountdownSkin[] skinCountdowns;
+
+    [System.Serializable]
+    public class CountdownSkin
+    {
+        public SkinTheme  theme;
+        public CountdownUI countdownUI;
+    }
 
     [Header("Options")]
     [SerializeField] private bool blockTimeScale = false;   // wenn true, Time.timeScale=0 während Countdown
 
     void Awake()
     {
-if (!countdownUI) 
+if (!countdownUI)
     countdownUI = FindFirstObjectByType<CountdownUI>(FindObjectsInactive.Include);
+
+        // Aktive Skin-Variante wählen (überschreibt das Default-Countdown).
+        // Die nicht gewählten CountdownUI deaktivieren sich selbst in ihrem
+        // Awake und werden nie gestartet.
+        var active = SkinManager.Instance != null ? SkinManager.Instance.ActiveTheme : null;
+        if (active != null && skinCountdowns != null)
+        {
+            foreach (var v in skinCountdowns)
+                if (v != null && v.theme == active && v.countdownUI != null)
+                    countdownUI = v.countdownUI;
+        }
 
 if (!spawner)     
     spawner = FindFirstObjectByType<MixedPointSpawner>(FindObjectsInactive.Include);

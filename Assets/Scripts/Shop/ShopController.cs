@@ -45,7 +45,7 @@ public class ShopController : MonoBehaviour
     [SerializeField] float popInDuration  = 0.28f;
     [SerializeField] float popOutDuration = 0.2f;
 
-    ShopItemType _activeTab = ShopItemType.Skin;
+    ShopItemType _activeTab = ShopItemType.Bundle;
     bool         _open;
 
     void Awake()
@@ -93,7 +93,7 @@ public class ShopController : MonoBehaviour
         _open = true;
         RefreshCoinDisplay(CoinManager.Balance);
         RefreshDailyBanner();
-        SwitchTab(ShopItemType.Skin);
+        SwitchTab(ShopItemType.Bundle);
         DimOverlay.Instance?.Show();
         StartCoroutine(Co_Open());
     }

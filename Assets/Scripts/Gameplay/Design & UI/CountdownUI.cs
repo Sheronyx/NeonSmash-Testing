@@ -23,7 +23,10 @@ public class CountdownUI : MonoBehaviour
             countdownText.text = string.Empty;
             countdownText.transform.localScale = baseScale;
         }
-        gameObject.SetActive(false);
+        // Kein SetActive(false) hier: Bei inaktiven Skin-Varianten würde Awake
+        // erst beim Start aktivieren und sich sofort wieder deaktivieren → die
+        // Coroutine könnte nicht starten. Stattdessen Objekt im Editor inaktiv
+        // lassen; Co_Countdown deaktiviert es am Ende selbst.
     }
 
     public void StartCountdown()
