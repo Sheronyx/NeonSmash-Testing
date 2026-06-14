@@ -320,12 +320,12 @@ GameObject:
   m_Component:
   - component: {fileID: 1830998353439660073}
   - component: {fileID: 5931042853847857262}
-  - component: {fileID: 7105103714442965893}
   - component: {fileID: 2857948865320095434}
   - component: {fileID: 7365673541464118294}
   - component: {fileID: 8537019152700703083}
+  - component: {fileID: 886248192492675918}
   m_Layer: 0
-  m_Name: Tap Element Sky
+  m_Name: Fake Tap Element Sky
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -408,20 +408,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &7105103714442965893
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7080553594425325570}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 22b9c315e9ff88d4e862184938fc4c9f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TapPoint
-  explodeVFXPrefab: {fileID: 7636390409669451756, guid: 01bd759c2b28f42f795b86988d06a9e0, type: 3}
-  spawner: {fileID: 0}
 --- !u!61 &2857948865320095434
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -501,3 +487,16 @@ MonoBehaviour:
   flutterSpeed: 0.6
   flutterAngle: 15
   phaseOffset: 0
+--- !u!114 &886248192492675918
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7080553594425325570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4eec1dbbeb1f42cdb84f4fbec07ea48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FakePoint
+  puffEffect: {fileID: 701927466264595467, guid: d21bb07ce7b574a758e136161cadb522, type: 3}

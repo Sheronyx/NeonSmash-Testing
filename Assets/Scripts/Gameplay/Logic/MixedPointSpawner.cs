@@ -66,6 +66,14 @@ public class MixedPointSpawner : MonoBehaviour
     public GameObject normalPointPrefab;
     public GameObject swipePointPrefab;
 
+    [Header("Fake Point (Ablenkung)")]
+    [Tooltip("Fake-Element-Prefab (FakePoint). Spawnt mit Chance parallel zu Tap-Points.")]
+    public GameObject fakePointPrefab;
+    [Range(0f, 1f)]
+    [Tooltip("Wahrscheinlichkeit, dass bei einem Tap-Point zusätzlich ein Fake spawnt.")]
+    public float fakeSpawnChance = 0.1f;
+    private GameObject currentFake;
+
     GameObject ActiveNormalPrefab =>
         SkinManager.Instance?.ActiveTheme?.tapPointPrefab ?? normalPointPrefab;
     GameObject ActiveSwipePrefab =>
@@ -352,11 +360,70 @@ public class MixedPointSpawner : MonoBehaviour
     }
 
 
+    // ─── Fake Point ────────────────────────────────────────────────────────────
+
+    // Spawnt mit fakeSpawnChance ein Fake-Element parallel zum echten Tap-Point.
+    // Nur wenn noch kein Fake existiert und eine Position ohne Overlap gefunden wird.
+    private void TrySpawnFake(GameObject realPoint, float lifetime)
+    {
+        if (fakePointPrefab == null) return;
+        if (currentFake != null) return;                 // schon ein Fake da
+        if (Random.value > fakeSpawnChance) return;      // Chance verfehlt
+
+        if (!TryFindFakePosition(realPoint, out Vector3 worldPos)) return;
+
+        currentFake = Instantiate(fakePointPrefab, worldPos, Quaternion.identity);
+
+        var fp = currentFake.GetComponent<FakePoint>();
+        if (fp != null) fp.Activate(lifetime);
+    }
+
+    // Räumt das aktuelle Fake (wenn das Original getappt/geräumt wurde).
+    private void DismissCurrentFake()
+    {
+        if (currentFake == null) return;
+        var fp = currentFake.GetComponent<FakePoint>();
+        if (fp != null) fp.Dismiss();
+        else Destroy(currentFake);
+        currentFake = null;
+    }
+
+    // Sucht eine Position im erlaubten Spawn-Bereich, die weit genug vom echten
+    // Point entfernt ist (kein optisches Überlappen).
+    private bool TryFindFakePosition(GameObject realPoint, out Vector3 worldPos)
+    {
+        worldPos = Vector3.zero;
+
+        Rect allowedScreen   = GetAllowedSpawnRect();
+        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
+
+        float   fakeHalfPx = GetHalfSizePixels(fakePointPrefab);
+        Vector2 realVP     = mainCamera.WorldToViewportPoint(realPoint.transform.position);
+        float   realHalfPx = GetHalfSizePixels(realPoint);
+
+        for (int i = 0; i < 40; i++)
+        {
+            Vector2 vp = new Vector2(
+                Random.Range(allowedViewport.xMin, allowedViewport.xMax),
+                Random.Range(allowedViewport.yMin, allowedViewport.yMax)
+            );
+
+            if (IsFarEnoughFromOrb(vp, realVP, fakeHalfPx, realHalfPx))
+            {
+                worldPos = ViewportToWorldOnZ0(vp);
+                return true;
+            }
+        }
+
+        return false; // keine überlappungsfreie Position → diesmal kein Fake
+    }
+
     // ─── CreatePoint & PointCleared ───────────────────────────────────────────
 
     public void CreatePoint(GameObject prefab, Vector3 worldPos)
     {
         StopPointTimer();
+        DismissCurrentFake();  // Altes Fake räumen (deckt auch Original-Timeout ab)
 
         var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
 
@@ -396,6 +463,9 @@ public class MixedPointSpawner : MonoBehaviour
 
             var pulse = newPoint.GetComponent<PointPulse>();
             if (pulse) pulse.StartPulsing();
+
+            // Fake-Element parallel zum echten Tap-Point (10% Chance, max 1, kein Overlap)
+            if (tap != null) TrySpawnFake(newPoint, dynamicTime);
         }
         else if (!IsTutorialMode)
         {
@@ -470,6 +540,8 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (running && !gameOver && point != null && point == currentPoint)
         {
+            DismissCurrentFake();  // Original abgelaufen → Fake gleichzeitig verpuffen
+
             if (LivesManager.Instance != null)
             {
                 Vector3 pointPos = point.transform.position;
@@ -781,6 +853,8 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void HandlePointHit(GameObject point)
     {
+        DismissCurrentFake();  // Original getappt → Fake lautlos entfernen
+
         ScoreManager.Instance?.AddPointsFromHit();
         ComboManager.Instance?.RegisterHit();
 

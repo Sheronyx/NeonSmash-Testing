@@ -223,6 +223,17 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
+        // ⚪ Fake Points — nie per Swipe treffbar, verpuffen nur (Ablenkung)
+        if (!fromSwipe)
+        {
+            var fakePoint = col.GetComponent<FakePoint>();
+            if (fakePoint != null)
+            {
+                fakePoint.TryTap();
+                return;
+            }
+        }
+
         // 🔵 Normale Tap Points — nie per Swipe treffbar
         if (!fromSwipe)
         {
