@@ -234,6 +234,17 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
+        // ⚡ Thunder Points — nie per Swipe treffbar, Antippen kostet ein Leben
+        if (!fromSwipe)
+        {
+            var thunderPoint = col.GetComponent<ThunderPoint>();
+            if (thunderPoint != null)
+            {
+                thunderPoint.TryTap();
+                return;
+            }
+        }
+
         // 🔵 Normale Tap Points — nie per Swipe treffbar
         if (!fromSwipe)
         {

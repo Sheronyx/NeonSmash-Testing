@@ -74,6 +74,13 @@ public class MixedPointSpawner : MonoBehaviour
     public float fakeSpawnChance = 0.1f;
     private GameObject currentFake;
 
+    [Header("Thunder Point (Falle)")]
+    [Tooltip("Donnerschock-Prefab (ThunderPoint). Ersetzt mit Chance ein normales Element.")]
+    public GameObject thunderPointPrefab;
+    [Range(0f, 1f)]
+    [Tooltip("Wahrscheinlichkeit, dass ein Donnerschock anstelle des normalen Elements spawnt.")]
+    public float thunderSpawnChance = 0.1f;
+
     GameObject ActiveNormalPrefab =>
         SkinManager.Instance?.ActiveTheme?.tapPointPrefab ?? normalPointPrefab;
     GameObject ActiveSwipePrefab =>
@@ -256,6 +263,19 @@ public class MixedPointSpawner : MonoBehaviour
 
         Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
 
+        // Donnerschock: ersetzt das normale Element (kein Fake, kein PortalBeam)
+        if (thunderPointPrefab != null && Random.value < thunderSpawnChance)
+        {
+            var thunder = Instantiate(thunderPointPrefab, worldPos, Quaternion.identity);
+            float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+            var tp = thunder.GetComponent<ThunderPoint>();
+            if (tp != null) tp.Activate(dynamicTime);
+
+            // Spawner-Timer damit der nächste Point nach Timeout kommt
+            timeoutRoutine = StartCoroutine(Co_ThunderTimeout(thunder, dynamicTime));
+            return;
+        }
+
         if (portalBeam != null)
         {
             portalBeam.SpawnWithBeam(prefabToSpawn, worldPos);
@@ -264,6 +284,30 @@ public class MixedPointSpawner : MonoBehaviour
         {
             CreatePoint(prefabToSpawn, worldPos);
         }
+    }
+
+    // Wartet bis der Donnerschock abgelaufen ist, dann nächsten Point spawnen.
+    private IEnumerator Co_ThunderTimeout(GameObject thunder, float seconds)
+    {
+        float t = 0f;
+        while (t < seconds)
+        {
+            if (thunder == null)
+            {
+                // Angetippt → LoseLife-Animation abwarten, dann nächsten Point
+                float wait = LivesManager.Instance != null
+                    ? LivesManager.Instance.TotalLoseDuration : 0.5f;
+                yield return new WaitForSeconds(wait);
+                if (running && !gameOver) SpawnNextPoint();
+                yield break;
+            }
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        // Zeit abgelaufen → nächsten Point spawnen (ThunderPoint.OnTimeout + Shrink laufen separat)
+        if (running && !gameOver)
+            SpawnNextPoint();
     }
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
