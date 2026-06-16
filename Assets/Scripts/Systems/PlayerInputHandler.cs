@@ -99,11 +99,17 @@ public class PlayerInputHandler : MonoBehaviour
             // 👉 SWIPE
             if (delta.magnitude >= swipeThresholdPixels)
             {
-                var swipePoint = spawner != null ? spawner.CurrentSwipePoint : null;
-
-                if (swipePoint != null)
+                if (PeekABooSystem.IsActive)
                 {
-                    swipePoint.TryStrikeScreen(touchStartPos, touchEndPos, cam);
+                    // Peek-a-boo: mehrere Swipe-Elemente möglich → alle prüfen
+                    foreach (var sp in FindObjectsByType<SwipePoint>(FindObjectsSortMode.None))
+                        sp.TryStrikeScreen(touchStartPos, touchEndPos, cam);
+                }
+                else
+                {
+                    var swipePoint = spawner != null ? spawner.CurrentSwipePoint : null;
+                    if (swipePoint != null)
+                        swipePoint.TryStrikeScreen(touchStartPos, touchEndPos, cam);
                 }
             }
             else
@@ -201,6 +207,17 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     private void ProcessHit(Collider2D col, bool fromSwipe = false)
     {
+        // ☁️ Peek-a-boo Elemente — Klick löst beide gekoppelten Elemente aus
+        if (!fromSwipe)
+        {
+            var peek = col.GetComponent<PeekElement>();
+            if (peek != null)
+            {
+                peek.OnHit();
+                return;
+            }
+        }
+
         // 🔴 Gravity Points — nie per Swipe treffbar
         if (!fromSwipe)
         {

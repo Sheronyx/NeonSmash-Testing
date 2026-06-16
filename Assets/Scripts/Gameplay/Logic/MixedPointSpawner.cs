@@ -81,10 +81,22 @@ public class MixedPointSpawner : MonoBehaviour
     [Tooltip("Wahrscheinlichkeit, dass ein Donnerschock anstelle des normalen Elements spawnt.")]
     public float thunderSpawnChance = 0.1f;
 
+    [Header("Peek-a-boo (Wolken-Sequenz)")]
+    [SerializeField] private PeekABooSystem peekABooSystem;
+    [Range(0f, 1f)]
+    [Tooltip("Wahrscheinlichkeit, dass anstelle eines normalen Elements die Peek-a-boo-Sequenz startet.")]
+    public float peekABooChance = 0.05f;
+
     GameObject ActiveNormalPrefab =>
         SkinManager.Instance?.ActiveTheme?.tapPointPrefab ?? normalPointPrefab;
     GameObject ActiveSwipePrefab =>
         SkinManager.Instance?.ActiveTheme?.swipePointPrefab ?? swipePointPrefab;
+
+    // Für PeekABooSystem: geskinnte/aktuelle Element-Prefabs
+    public GameObject PeekTapPrefab     => ActiveNormalPrefab;
+    public GameObject PeekSwipePrefab   => ActiveSwipePrefab;
+    public GameObject PeekThunderPrefab => thunderPointPrefab;
+    public GameObject PeekFakePrefab    => fakePointPrefab;
     public Camera mainCamera;
 
     [Header("Start/Timing")]
@@ -97,6 +109,10 @@ public class MixedPointSpawner : MonoBehaviour
     public UnityEvent onGameOver;
 
     [SerializeField] private LevelUp levelUp;
+
+    // Aktuelle Reaktionszeit (dynamisch pro Level) — z.B. für Peek-a-boo.
+    public float CurrentReactionTime =>
+        levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
 
     [Header("Spawn-Verteilung (zufällig mit Grenzen)")]
     [Range(0f, 1f)] public float swipeChance = 0.33f;
@@ -262,6 +278,13 @@ public class MixedPointSpawner : MonoBehaviour
             Debug.LogWarning("[Spawner] Kein gültiger Spawn gefunden → fallback Mitte");
 
         Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+
+        // Peek-a-boo: übernimmt komplett (kein normales Element, kein Thunder/Fake)
+        if (peekABooSystem != null && !PeekABooSystem.IsActive && Random.value < peekABooChance)
+        {
+            peekABooSystem.StartPeekABoo();
+            return;
+        }
 
         // Donnerschock: ersetzt das normale Element (kein Fake, kein PortalBeam)
         if (thunderPointPrefab != null && Random.value < thunderSpawnChance)
@@ -905,6 +928,12 @@ public class MixedPointSpawner : MonoBehaviour
         var basePoint = point.GetComponent<BasePoint>();
         if (basePoint != null) basePoint.SendMessage("SpawnExplosion");
         PointCleared(point);
+    }
+
+    // Vom PeekABooSystem: registriert das Swipe-Peek-Element für den Swipe-Input.
+    public void SetPeekSwipePoint(SwipePoint sp)
+    {
+        CurrentSwipePoint = sp;
     }
 
     public void ResetCurrentPointTimer()

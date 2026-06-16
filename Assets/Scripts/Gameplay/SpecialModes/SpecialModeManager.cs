@@ -22,6 +22,7 @@ public class SpecialModeManager : MonoBehaviour
 public void StartMode(SpecialMode mode)
 {
     if (currentMode != SpecialMode.None) return;
+    if (PeekABooSystem.IsActive) return;   // Während Peek-a-boo kein Special Mode
 
     currentMode = mode;
 

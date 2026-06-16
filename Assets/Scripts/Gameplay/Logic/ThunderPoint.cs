@@ -81,6 +81,9 @@ public class ThunderPoint : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // Öffentlich für Peek-a-boo: ignorierter Shock verschwindet per Timeout-Animation.
+    public void Vanish() => OnTimeout();
+
     // Zeit abgelaufen → schrumpft auf 0, dann kleiner Effekt, kein Schaden.
     private void OnTimeout()
     {
