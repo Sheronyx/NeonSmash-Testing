@@ -22,8 +22,27 @@ public class FountainModeSystem : MonoBehaviour
     [Header("Spawn Settings")]
     [SerializeField] private float shootForceY = 6f;
     [SerializeField] private float shootForceX = 6f;
+    [Tooltip("Zufalls-Streuung der Boden-Höhe (Y). Größer = unterschiedlichere Wurfhöhen/Kurven.")]
+    [SerializeField] private float shootForceYVariance = 2f;
     [SerializeField] private float spawnInterval = 1.2f;
     [SerializeField] private int totalPoints = 20;
+
+    [Header("Seiten-Schuss (links/rechts rein)")]
+    [Tooltip("Wahrscheinlichkeit, dass von der Seite statt von unten geschossen wird.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float sideSpawnChance = 0.5f;
+    [Tooltip("Horizontale Schussstärke beim Seiten-Schuss (Richtung Bildschirmmitte).")]
+    [SerializeField] private float sideShootForceX = 8f;
+    [Tooltip("Vertikale Schussstärke beim Seiten-Schuss (meist kleiner als von unten).")]
+    [SerializeField] private float sideShootForceY = 4.5f;
+    [Tooltip("Viewport-Höhe (0..1), auf der die Seiten-Elemente reinkommen.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float sideSpawnHeight = 0.25f;
+    [Tooltip("Zufalls-Streuung der Seiten-Einstiegshöhe (Viewport).")]
+    [Range(0f, 0.5f)]
+    [SerializeField] private float sideSpawnHeightVariance = 0.15f;
+    [Tooltip("Zufalls-Streuung der Seiten-Velocity (Wucht/Kurve).")]
+    [SerializeField] private float sideForceVariance = 1.5f;
 
     [Header("Level Scaling")]
     [SerializeField] private LevelUp levelUp;
@@ -77,19 +96,45 @@ public class FountainModeSystem : MonoBehaviour
             return;
         }
 
-        Vector3 pos = portal.position;
+        Vector3 pos;
+        Vector3 velocity;
+
+        if (Random.value < sideSpawnChance)
+        {
+            // Seiten-Schuss: von links nach rechts-oben oder von rechts nach links-oben
+            bool fromLeft = Random.value < 0.5f;
+            Camera cam = Camera.main;
+            float camZ = cam != null ? Mathf.Abs(cam.transform.position.z) : 10f;
+            float vx = fromLeft ? -0.05f : 1.05f;   // knapp außerhalb des Bildschirms
+            float vy = Mathf.Clamp01(sideSpawnHeight + Random.Range(-sideSpawnHeightVariance, sideSpawnHeightVariance));
+            pos = cam != null
+                ? cam.ViewportToWorldPoint(new Vector3(vx, vy, camZ))
+                : portal.position;
+            pos.z = 0f;
+
+            float dirX = fromLeft ? sideShootForceX : -sideShootForceX;
+            velocity = new Vector3(
+                dirX + Random.Range(-sideForceVariance, sideForceVariance),
+                sideShootForceY + Random.Range(-sideForceVariance, sideForceVariance),
+                0f
+            );
+        }
+        else
+        {
+            // Klassischer Schuss von unten (Portal)
+            pos = portal.position;
+            velocity = new Vector3(
+                Random.Range(-shootForceX, shootForceX),
+                shootForceY + Random.Range(-shootForceYVariance, shootForceYVariance),
+                0f
+            );
+        }
 
         var go = Instantiate(ActiveFountainPrefab, pos, Quaternion.identity);
         var point = go.GetComponent<FountainPoint>();
 
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnElementSpawnedShowOverlay(TutorialPointType.FountainPoint, pos);
-
-        Vector3 velocity = new Vector3(
-            Random.Range(-shootForceX, shootForceX),
-            shootForceY,
-            0f
-        );
 
         point.Init(this, velocity);
 

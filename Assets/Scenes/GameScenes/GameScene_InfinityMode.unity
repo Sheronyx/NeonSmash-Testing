@@ -2403,6 +2403,11 @@ MonoBehaviour:
   shootForceX: 1.4
   spawnInterval: 1
   totalPoints: 25
+  sideSpawnChance: 0.5
+  sideShootForceX: 5
+  sideShootForceY: 9
+  sideSpawnHeight: 0.25
+  sideForceVariance: 1.5
   levelUp: {fileID: 250744643}
   minSpawnInterval: 0.15
   spawnIntervalDecreasePerLevel: 0.05
