@@ -22,6 +22,15 @@ public class SkinTheme : ScriptableObject
     [Tooltip("Ersetzt das Fountain-Point-Prefab. Null = Default.")]
     public GameObject fountainPointPrefab;
 
+    [Tooltip("Ersetzt das Fake-Element-Prefab. Null = Default.")]
+    public GameObject fakePointPrefab;
+
+    [Tooltip("Ersetzt das Shock-/Thunder-Element-Prefab. Null = Default.")]
+    public GameObject thunderPointPrefab;
+
+    [Tooltip("Ersetzt das Peek-a-boo-Wolken-Prefab. Null = Default.")]
+    public GameObject peekCloudPrefab;
+
     // Szenen-Objekte (Portal-Plattform, Background, Top Bar) werden NICHT hier
     // referenziert, sondern per Enable/Disable über SkinObjectSwap /
     // PortalSkinApplier in der Szene geschaltet (theme-Matching auf dieses Asset).

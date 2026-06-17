@@ -37,8 +37,17 @@ public class PeekABooSystem : MonoBehaviour
     [SerializeField] private float bobAmplitude = 0.15f;
     [SerializeField] private float bobPeriod = 2f;
 
+    [Header("Wolke Squash & Stretch (beim Rausschießen)")]
+    [Tooltip("Wie stark die Wolke vor dem Rausschießen zusammengepresst wird (z.B. 0.8).")]
+    [SerializeField] private float cloudSquash = 0.8f;
+    [Tooltip("Wie weit die Wolke beim Lösen über die Normalgröße schnellt (z.B. 1.15).")]
+    [SerializeField] private float cloudOvershoot = 1.15f;
+    [Tooltip("Dauer jeder Phase (Pressen / Lösen / Beruhigen).")]
+    [SerializeField] private float cloudPunchTime = 0.12f;
+
     private Transform cloud;
     private Vector3 cloudBase;
+    private Vector3 cloudBaseScale = Vector3.one;
     private bool bobbing;
     private float bobStartTime;
 
@@ -65,7 +74,10 @@ public class PeekABooSystem : MonoBehaviour
         Vector3 offRight = ToWorld(cam, 1.3f,  0.5f, camZ);
         Vector3 offLeft  = ToWorld(cam, -0.3f, 0.5f, camZ);
 
-        cloud = Instantiate(cloudPrefab, offRight, Quaternion.identity).transform;
+        // Geskinntes Wolken-Prefab (Skin-Override) oder Default
+        GameObject cloudToUse = SkinManager.Instance?.ActiveTheme?.peekCloudPrefab ?? cloudPrefab;
+        cloud = Instantiate(cloudToUse, offRight, Quaternion.identity).transform;
+        cloudBaseScale = cloud.localScale;
         cloudBase = offRight;
         bobStartTime = Time.time;
         bobbing = true;
@@ -122,6 +134,11 @@ public class PeekABooSystem : MonoBehaviour
         for (int i = 0; i < count; i++)
             if (elems[i] != null) elems[i].SetGroup(elems);
 
+        // Squash: Wolke vor dem Rausschießen zusammenpressen (Ausholen)
+        yield return CloudScaleTo(cloudBaseScale * cloudSquash, cloudPunchTime);
+
+        // Lösen (Overshoot → Normalgröße) parallel zum Rausschießen der Elemente
+        StartCoroutine(Co_CloudRelease());
         yield return SlideGroup(elems, offsets, slideDuration);
         yield return HoldGroup(elems, offsets, hold);
 
@@ -205,6 +222,27 @@ public class PeekABooSystem : MonoBehaviour
             yield return null;
         }
         cloudBase = to;
+    }
+
+    // Lösen: Wolke schnellt über die Normalgröße (Overshoot) und beruhigt sich.
+    private IEnumerator Co_CloudRelease()
+    {
+        yield return CloudScaleTo(cloudBaseScale * cloudOvershoot, cloudPunchTime);
+        yield return CloudScaleTo(cloudBaseScale, cloudPunchTime);
+    }
+
+    private IEnumerator CloudScaleTo(Vector3 target, float dur)
+    {
+        if (cloud == null) yield break;
+        Vector3 from = cloud.localScale;
+        float e = 0f;
+        while (e < dur && cloud != null)
+        {
+            e += Time.deltaTime;
+            cloud.localScale = Vector3.Lerp(from, target, Mathf.SmoothStep(0f, 1f, e / dur));
+            yield return null;
+        }
+        if (cloud != null) cloud.localScale = target;
     }
 
     // Alle Elemente gleichzeitig von Offset 0 zu ihren Offsets (relativ zur Wolke).

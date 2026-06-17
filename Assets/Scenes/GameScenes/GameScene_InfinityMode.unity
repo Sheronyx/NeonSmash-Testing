@@ -499,9 +499,9 @@ MonoBehaviour:
   extraPaddingPixels: 12
   normalPointPrefab: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
   swipePointPrefab: {fileID: 723352877289022949, guid: 39c180ab8a9244feba9b34ed6799ae1e, type: 3}
-  fakePointPrefab: {fileID: 7080553594425325570, guid: 1fb26cfdffd564f09998af6d5adbeeb1, type: 3}
+  fakePointPrefab: {fileID: 7634417711000780290, guid: 37444548a828f4baf99a6238e13cc95d, type: 3}
   fakeSpawnChance: 0
-  thunderPointPrefab: {fileID: 6656955221069036649, guid: f764a5de8ae74429598b4a9604c076f9, type: 3}
+  thunderPointPrefab: {fileID: 7032938748382792654, guid: b64f768a4b1fa4b4e84b730ce566bfcc, type: 3}
   thunderSpawnChance: 0.15
   peekABooSystem: {fileID: 697214894}
   peekABooChance: 0.1
@@ -2448,7 +2448,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PeekABooSystem
   spawner: {fileID: 190732374}
-  cloudPrefab: {fileID: 3338983093656688545, guid: 96b7e4cf731c04e9d91ae014619914bd, type: 3}
+  cloudPrefab: {fileID: 4189086199399442073, guid: 9b5148faf15904830b19d623f025790a, type: 3}
   roundCount: 15
   slideDuration: 0.2
   gapBetween: 1
@@ -2460,6 +2460,9 @@ MonoBehaviour:
   flyOutDuration: 0.6
   bobAmplitude: 0.15
   bobPeriod: 2
+  cloudSquash: 0.8
+  cloudOvershoot: 1.15
+  cloudPunchTime: 0.12
 --- !u!1 &703702144
 GameObject:
   m_ObjectHideFlags: 0

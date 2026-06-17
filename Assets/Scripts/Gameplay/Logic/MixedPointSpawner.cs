@@ -91,12 +91,16 @@ public class MixedPointSpawner : MonoBehaviour
         SkinManager.Instance?.ActiveTheme?.tapPointPrefab ?? normalPointPrefab;
     GameObject ActiveSwipePrefab =>
         SkinManager.Instance?.ActiveTheme?.swipePointPrefab ?? swipePointPrefab;
+    GameObject ActiveFakePrefab =>
+        SkinManager.Instance?.ActiveTheme?.fakePointPrefab ?? fakePointPrefab;
+    GameObject ActiveThunderPrefab =>
+        SkinManager.Instance?.ActiveTheme?.thunderPointPrefab ?? thunderPointPrefab;
 
     // Für PeekABooSystem: geskinnte/aktuelle Element-Prefabs
     public GameObject PeekTapPrefab     => ActiveNormalPrefab;
     public GameObject PeekSwipePrefab   => ActiveSwipePrefab;
-    public GameObject PeekThunderPrefab => thunderPointPrefab;
-    public GameObject PeekFakePrefab    => fakePointPrefab;
+    public GameObject PeekThunderPrefab => ActiveThunderPrefab;
+    public GameObject PeekFakePrefab    => ActiveFakePrefab;
     public Camera mainCamera;
 
     [Header("Start/Timing")]
@@ -287,9 +291,9 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         // Donnerschock: ersetzt das normale Element (kein Fake, kein PortalBeam)
-        if (thunderPointPrefab != null && Random.value < thunderSpawnChance)
+        if (ActiveThunderPrefab != null && Random.value < thunderSpawnChance)
         {
-            var thunder = Instantiate(thunderPointPrefab, worldPos, Quaternion.identity);
+            var thunder = Instantiate(ActiveThunderPrefab, worldPos, Quaternion.identity);
             float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
             var tp = thunder.GetComponent<ThunderPoint>();
             if (tp != null) tp.Activate(dynamicTime);
@@ -433,13 +437,13 @@ public class MixedPointSpawner : MonoBehaviour
     // Nur wenn noch kein Fake existiert und eine Position ohne Overlap gefunden wird.
     private void TrySpawnFake(GameObject realPoint, float lifetime)
     {
-        if (fakePointPrefab == null) return;
+        if (ActiveFakePrefab == null) return;
         if (currentFake != null) return;                 // schon ein Fake da
         if (Random.value > fakeSpawnChance) return;      // Chance verfehlt
 
         if (!TryFindFakePosition(realPoint, out Vector3 worldPos)) return;
 
-        currentFake = Instantiate(fakePointPrefab, worldPos, Quaternion.identity);
+        currentFake = Instantiate(ActiveFakePrefab, worldPos, Quaternion.identity);
 
         var fp = currentFake.GetComponent<FakePoint>();
         if (fp != null) fp.Activate(lifetime);
@@ -464,7 +468,7 @@ public class MixedPointSpawner : MonoBehaviour
         Rect allowedScreen   = GetAllowedSpawnRect();
         Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
 
-        float   fakeHalfPx = GetHalfSizePixels(fakePointPrefab);
+        float   fakeHalfPx = GetHalfSizePixels(ActiveFakePrefab);
         Vector2 realVP     = mainCamera.WorldToViewportPoint(realPoint.transform.position);
         float   realHalfPx = GetHalfSizePixels(realPoint);
 
