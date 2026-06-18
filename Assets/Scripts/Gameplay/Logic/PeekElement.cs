@@ -18,7 +18,11 @@ public class PeekElement : MonoBehaviour
     {
         Type = type;
 
-        DisableIfPresent<SpawnPulse>();
+        // SpawnPulse abbrechen (kein Aufpoppen im Peek-a-boo) — nur disable reicht
+        // nicht, da die Pop-Coroutine in OnEnable schon läuft.
+        var sp = GetComponent<SpawnPulse>();
+        if (sp != null) sp.Cancel();
+
         DisableIfPresent<IdleFloat>();
 
         foreach (var cs in GetComponentsInChildren<CountdownSquare>(true)) cs.StartCountdown(holdDuration);

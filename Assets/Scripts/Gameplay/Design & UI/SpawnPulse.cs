@@ -41,6 +41,16 @@ public class SpawnPulse : MonoBehaviour
         Play();
     }
 
+    // Bricht den Pop ab und setzt sofort auf Endzustand (volle Größe, sichtbar).
+    // Wird z.B. im Peek-a-boo genutzt, wo kein Aufpoppen gewünscht ist.
+    public void Cancel()
+    {
+        StopAllCoroutines();
+        if (visualRoot != null) visualRoot.localScale = originalScale;
+        if (doFade) SetAlphaInstant(1f);
+        enabled = false;
+    }
+
     public void Play()
     {
         if (!visualRoot) return;

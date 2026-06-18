@@ -24,7 +24,6 @@ public class FountainModeSystem : MonoBehaviour
     [SerializeField] private float shootForceX = 6f;
     [Tooltip("Zufalls-Streuung der Boden-Höhe (Y). Größer = unterschiedlichere Wurfhöhen/Kurven.")]
     [SerializeField] private float shootForceYVariance = 2f;
-    [SerializeField] private float spawnInterval = 1.2f;
     [SerializeField] private int totalPoints = 20;
 
     [Header("Seiten-Schuss (links/rechts rein)")]
@@ -44,10 +43,12 @@ public class FountainModeSystem : MonoBehaviour
     [Tooltip("Zufalls-Streuung der Seiten-Velocity (Wucht/Kurve).")]
     [SerializeField] private float sideForceVariance = 1.5f;
 
-    [Header("Level Scaling")]
+    [Header("Spawn-Intervall pro Intensität (1–8)")]
     [SerializeField] private LevelUp levelUp;
-    [SerializeField] private float minSpawnInterval = 0.15f;
-    [SerializeField] private float spawnIntervalDecreasePerLevel = 0.05f;
+    [Tooltip("Sekunden zwischen Fountain-Spawns je Intensitätsstufe. Index 0 = Intensität 1, Index 7 = Intensität 8.")]
+    [SerializeField] private float[] spawnIntervalPerIntensity = { 1.2f, 1.05f, 0.9f, 0.75f, 0.6f, 0.5f, 0.4f, 0.3f };
+    [Tooltip("Fallback, falls die Liste leer ist oder LevelUp fehlt.")]
+    [SerializeField] private float fallbackSpawnInterval = 1.2f;
 
     private int activePoints = 0;
     private int spawnedPoints = 0;
@@ -143,8 +144,12 @@ public class FountainModeSystem : MonoBehaviour
 
     private float GetCurrentSpawnInterval()
     {
-        int level = levelUp != null ? levelUp.CurrentLevel : 1;
-        return Mathf.Max(minSpawnInterval, spawnInterval - (level - 1) * spawnIntervalDecreasePerLevel);
+        if (spawnIntervalPerIntensity == null || spawnIntervalPerIntensity.Length == 0)
+            return fallbackSpawnInterval;
+
+        int level = levelUp != null ? levelUp.CurrentLevel : 1;     // Intensität 1–8
+        int idx = Mathf.Clamp(level - 1, 0, spawnIntervalPerIntensity.Length - 1);
+        return spawnIntervalPerIntensity[idx];
     }
 
     public void OnPointFinished(bool hit)

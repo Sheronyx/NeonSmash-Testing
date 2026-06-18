@@ -324,6 +324,7 @@ GameObject:
   - component: {fileID: 2857948865320095434}
   - component: {fileID: 7365673541464118294}
   - component: {fileID: 8537019152700703083}
+  - component: {fileID: -7749117448513049111}
   m_Layer: 0
   m_Name: Tap Element Heavenly Heights
   m_TagString: Untagged
@@ -341,7 +342,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.61193, y: -1.01173, z: 0}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
+  m_LocalScale: {x: 0.24, y: 0.24, z: 0.24}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 29582189642228839}
@@ -480,8 +481,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3770304074c014e47b64a93755402e8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IdleFloat
-  amplitude: 0.12
-  period: 2
+  amplitude: 0.2
+  period: 3
   spawnDelay: 0
   easeInDuration: 0.4
 --- !u!114 &8537019152700703083
@@ -501,3 +502,69 @@ MonoBehaviour:
   flutterSpeed: 0.6
   flutterAngle: 15
   phaseOffset: 0
+--- !u!114 &-7749117448513049111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7080553594425325570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eccfe48c0ba9a4c259991f7fb445ded3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnPulse
+  visualRoot: {fileID: 1830998353439660073}
+  duration: 0.18
+  startScale: 0.5
+  overshootScale: 1.6
+  easeIn:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  easeOut:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  doFade: 1
+  fadeDuration: 0.14

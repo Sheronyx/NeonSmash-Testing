@@ -54,7 +54,17 @@ public class PeekABooSystem : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        // Statische Flag sicher zurücksetzen — falls eine vorherige Runde mitten in
+        // der Peek-Sequenz per Szenenwechsel abgebrochen wurde (sonst bleibt sie
+        // true und blockt Special Modes in der nächsten Runde).
+        IsActive = false;
         if (spawner == null) spawner = FindFirstObjectByType<MixedPointSpawner>();
+    }
+
+    private void OnDestroy()
+    {
+        // Bei Szenenwechsel/Abbruch nicht mit gesetzter Flag zurücklassen.
+        if (Instance == this) IsActive = false;
     }
 
     public void StartPeekABoo()
