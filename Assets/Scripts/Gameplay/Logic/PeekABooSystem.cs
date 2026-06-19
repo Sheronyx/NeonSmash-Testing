@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 // Peek-a-boo-Modus: Eine Wolke fliegt (auf-/abschwebend) in die Mitte. Pro Runde
@@ -37,6 +38,12 @@ public class PeekABooSystem : MonoBehaviour
     [SerializeField] private float bobAmplitude = 0.15f;
     [SerializeField] private float bobPeriod = 2f;
 
+    [Header("Ein-/Ausflug Default (Viewport: 0..1, außerhalb = off-screen)")]
+    [Tooltip("Default-Flugweg (z.B. Wolke): von rechts rein. Pro Skin via SkinTheme überschreibbar.")]
+    [SerializeField] private Vector2 entryViewport = new Vector2(1.3f, 0.5f);
+    [Tooltip("Default-Flugweg: nach links raus. Pro Skin via SkinTheme überschreibbar.")]
+    [SerializeField] private Vector2 exitViewport = new Vector2(-0.3f, 0.5f);
+
     [Header("Wolke Squash & Stretch (beim Rausschießen)")]
     [Tooltip("Wie stark die Wolke vor dem Rausschießen zusammengepresst wird (z.B. 0.8).")]
     [SerializeField] private float cloudSquash = 0.8f;
@@ -44,6 +51,14 @@ public class PeekABooSystem : MonoBehaviour
     [SerializeField] private float cloudOvershoot = 1.15f;
     [Tooltip("Dauer jeder Phase (Pressen / Lösen / Beruhigen).")]
     [SerializeField] private float cloudPunchTime = 0.12f;
+
+    [Header("Element-Scale (klein in der Mitte → groß an Endposition)")]
+    [Tooltip("Startgröße beim Spawn in der Mitte (Bruchteil der Vollgröße).")]
+    [SerializeField] private float peekSpawnScale = 0.3f;
+    [Tooltip("Überschwung des Pops an der Endposition (1 = kein Pop).")]
+    [SerializeField] private float peekPopOvershoot = 1.4f;
+    [Tooltip("Dauer des End-Pops.")]
+    [SerializeField] private float peekPopDuration = 0.18f;
 
     private Transform cloud;
     private Vector3 cloudBase;
@@ -80,20 +95,33 @@ public class PeekABooSystem : MonoBehaviour
 
         Camera cam = Camera.main;
         float camZ = Mathf.Abs(cam.transform.position.z);
-        Vector3 center   = ToWorld(cam, 0.5f,  0.5f, camZ);
-        Vector3 offRight = ToWorld(cam, 1.3f,  0.5f, camZ);
-        Vector3 offLeft  = ToWorld(cam, -0.3f, 0.5f, camZ);
+
+        // Flugweg: pro Skin überschreibbar (z.B. Papagei von oben), sonst Default-Seitenflug.
+        var theme = SkinManager.Instance?.ActiveTheme;
+        Vector2 entryVp = (theme != null && theme.overridePeekFlightPath) ? theme.peekEntryViewport : entryViewport;
+        Vector2 exitVp  = (theme != null && theme.overridePeekFlightPath) ? theme.peekExitViewport  : exitViewport;
+
+        Vector3 center = ToWorld(cam, 0.5f, 0.5f, camZ);
+        Vector3 entry  = ToWorld(cam, entryVp.x, entryVp.y, camZ);
+        Vector3 exit   = ToWorld(cam, exitVp.x,  exitVp.y,  camZ);
 
         // Geskinntes Wolken-Prefab (Skin-Override) oder Default
-        GameObject cloudToUse = SkinManager.Instance?.ActiveTheme?.peekCloudPrefab ?? cloudPrefab;
-        cloud = Instantiate(cloudToUse, offRight, Quaternion.identity).transform;
+        GameObject cloudToUse = theme?.peekCloudPrefab ?? cloudPrefab;
+        cloud = Instantiate(cloudToUse, entry, Quaternion.identity).transform;
         cloudBaseScale = cloud.localScale;
-        cloudBase = offRight;
+        cloudBase = entry;
         bobStartTime = Time.time;
         bobbing = true;
 
-        yield return MoveBase(offRight, center, flyInDuration);
+        // Flügelschlag-Boost (falls Peek-Element flügelt, z.B. Papagei): schneller beim Reinflug.
+        var wingFlap = cloud.GetComponentInChildren<WingFlap>();
+        wingFlap?.SetBoost(true);
+
+        yield return MoveBase(entry, center, flyInDuration);
         cloudBase = center;
+
+        // In der Mitte angekommen → weich auf normale Schlagfrequenz runter (Schweben).
+        wingFlap?.SetBoost(false);
 
         for (int i = 0; i < roundCount; i++)
         {
@@ -109,7 +137,10 @@ public class PeekABooSystem : MonoBehaviour
             if (gapBetween > 0f) yield return new WaitForSeconds(gapBetween);
         }
 
-        yield return MoveBase(center, offLeft, flyOutDuration);
+        // Vor dem Rausfliegen wieder boosten (kräftiger Abflug).
+        wingFlap?.SetBoost(true);
+
+        yield return MoveBase(center, exit, flyOutDuration);
 
         Cleanup();
         spawner.PauseSpawning(false);
@@ -150,38 +181,40 @@ public class PeekABooSystem : MonoBehaviour
         // Lösen (Overshoot → Normalgröße) parallel zum Rausschießen der Elemente
         StartCoroutine(Co_CloudRelease());
         yield return SlideGroup(elems, offsets, slideDuration);
+
+        // An der Endposition: voller Pop (Overshoot → Normalgröße)
+        for (int i = 0; i < count; i++)
+            if (elems[i] != null) elems[i].PlayPeekPop(peekPopOvershoot, peekPopDuration);
+
         yield return HoldGroup(elems, offsets, hold);
 
         for (int i = 0; i < count; i++)
             if (elems[i] != null) elems[i].ResolveTimeout();
     }
 
-    // Positionen (Offsets zur Wolkenmitte) je nach Punktestand:
-    //  < scoreForThree → 2: oben, unten
-    //  ≥ scoreForThree → 3: rechts oben, links oben, unten
-    //  ≥ scoreForFour  → 4: rechts oben, links oben, links unten, rechts unten
+    // Positionen je nach Punktestand — immer DIAGONAL (Ecken), Auswahl zufällig:
+    //  < scoreForThree → 2 zufällige Ecken
+    //  ≥ scoreForThree → 3 zufällige Ecken
+    //  ≥ scoreForFour  → alle vier Ecken (Reihenfolge egal)
     private Vector3[] OffsetsForScore(int score)
     {
         float x = peekOffsetX, y = peekOffset;
 
-        if (score >= scoreForFour)
-            return new[]
-            {
-                new Vector3( x,  y, 0f), new Vector3(-x,  y, 0f),
-                new Vector3(-x, -y, 0f), new Vector3( x, -y, 0f),
-            };
-
-        if (score >= scoreForThree)
-            return new[]
-            {
-                new Vector3( x,  y, 0f), new Vector3(-x,  y, 0f),
-                new Vector3( 0f, -y, 0f),
-            };
-
-        return new[]
+        var corners = new List<Vector3>
         {
-            new Vector3(0f,  y, 0f), new Vector3(0f, -y, 0f),
+            new Vector3( x,  y, 0f), new Vector3(-x,  y, 0f),
+            new Vector3(-x, -y, 0f), new Vector3( x, -y, 0f),
         };
+
+        // Fisher-Yates: zufällig mischen → bei 2/3 Elementen zufällige Ecken
+        for (int i = corners.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (corners[i], corners[j]) = (corners[j], corners[i]);
+        }
+
+        int count = score >= scoreForFour ? 4 : (score >= scoreForThree ? 3 : 2);
+        return corners.GetRange(0, count).ToArray();
     }
 
     private PeekElement Spawn(PeekType type, float holdDuration)
@@ -193,6 +226,7 @@ public class PeekABooSystem : MonoBehaviour
 
         var peek = go.AddComponent<PeekElement>();
         peek.Init(type, holdDuration);
+        peek.InitPeekScale(peekSpawnScale);   // klein in der Mitte starten
 
         return peek;
     }
@@ -263,12 +297,21 @@ public class PeekABooSystem : MonoBehaviour
         {
             e += Time.deltaTime;
             float k = Mathf.SmoothStep(0f, 1f, e / dur);
+            float scale = Mathf.Lerp(peekSpawnScale, 1f, k);   // klein → voll während des Rausschießens
             for (int i = 0; i < elems.Length; i++)
-                if (elems[i] != null) elems[i].transform.position = cloud.position + Vector3.Lerp(Vector3.zero, offs[i], k);
+                if (elems[i] != null)
+                {
+                    elems[i].transform.position = cloud.position + Vector3.Lerp(Vector3.zero, offs[i], k);
+                    elems[i].SetScaleFraction(scale);
+                }
             yield return null;
         }
         for (int i = 0; i < elems.Length; i++)
-            if (elems[i] != null) elems[i].transform.position = cloud.position + offs[i];
+            if (elems[i] != null)
+            {
+                elems[i].transform.position = cloud.position + offs[i];
+                elems[i].SetScaleFraction(1f);
+            }
     }
 
     // Alle am Offset halten, folgen der bobbenden Wolke. Bricht früh ab, sobald

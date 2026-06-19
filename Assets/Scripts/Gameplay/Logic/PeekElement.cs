@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public enum PeekType { Tap, Shock, Fake }
@@ -32,6 +33,46 @@ public class PeekElement : MonoBehaviour
     }
 
     public void SetGroup(PeekElement[] g) => group = g;
+
+    // --- Scale-Animation (klein in der Mitte → groß an Endposition → Pop) ---
+    private Vector3 fullScale = Vector3.one;
+
+    // Merkt sich die Vollgröße (Prefab-Scale) und startet klein.
+    public void InitPeekScale(float startFraction)
+    {
+        fullScale = transform.localScale;
+        transform.localScale = fullScale * startFraction;
+    }
+
+    // Wird während des Rausschießens aufgerufen (0..1 der Vollgröße).
+    public void SetScaleFraction(float f) => transform.localScale = fullScale * f;
+
+    // Pop an der Endposition: Vollgröße → Overshoot → Vollgröße.
+    public void PlayPeekPop(float overshoot, float duration)
+    {
+        if (!gameObject.activeInHierarchy) return;
+        StartCoroutine(Co_Pop(overshoot, duration));
+    }
+
+    private IEnumerator Co_Pop(float overshoot, float duration)
+    {
+        float half = duration * 0.5f;
+        float t = 0f;
+        while (t < half)
+        {
+            t += Time.deltaTime;
+            transform.localScale = Vector3.Lerp(fullScale, fullScale * overshoot, Mathf.SmoothStep(0f, 1f, t / half));
+            yield return null;
+        }
+        t = 0f;
+        while (t < half)
+        {
+            t += Time.deltaTime;
+            transform.localScale = Vector3.Lerp(fullScale * overshoot, fullScale, Mathf.SmoothStep(0f, 1f, t / half));
+            yield return null;
+        }
+        transform.localScale = fullScale;
+    }
 
     // Vom Input (Tap): klickt man eines, lösen alle aus.
     //  - Geklicktes Element + alle Fakes → positiver Effekt (Hit)

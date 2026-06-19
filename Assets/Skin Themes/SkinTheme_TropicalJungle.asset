@@ -20,7 +20,10 @@ MonoBehaviour:
   fountainPointPrefab: {fileID: 4244668591810579317, guid: 6903148ff101e425a8871ac5db376397, type: 3}
   fakePointPrefab: {fileID: 446514900172689509, guid: 512b3d01d097240cf98eb6579c92f8ce, type: 3}
   thunderPointPrefab: {fileID: 7198999487321779595, guid: 145ce77b5314441db90f0778f4a2b32e, type: 3}
-  peekCloudPrefab: {fileID: 3338983093656688545, guid: 96b7e4cf731c04e9d91ae014619914bd, type: 3}
+  peekCloudPrefab: {fileID: 9127540393066902581, guid: d1fd2be6878294da9b1b653eacfca42a, type: 3}
+  overridePeekFlightPath: 1
+  peekEntryViewport: {x: 0.6, y: 1.3}
+  peekExitViewport: {x: 0.4, y: 1.3}
   overridePortalColor: 0
   portalParticleColor: {r: 0, g: 1, b: 0, a: 1}
   portalVoronoiColor: {r: 0, g: 1, b: 0, a: 1}

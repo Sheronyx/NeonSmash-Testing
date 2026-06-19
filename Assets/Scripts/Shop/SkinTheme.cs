@@ -31,6 +31,14 @@ public class SkinTheme : ScriptableObject
     [Tooltip("Ersetzt das Peek-a-boo-Wolken-Prefab. Null = Default.")]
     public GameObject peekCloudPrefab;
 
+    [Header("Peek-a-boo Ein-/Ausflug (optional)")]
+    [Tooltip("Wenn aktiv, kommt das Peek-Element auf einem eigenen Flugweg rein/raus (z.B. Papagei von oben). Aus = Default-Seitenflug.")]
+    public bool overridePeekFlightPath;
+    [Tooltip("Viewport-Punkt, wo es reinkommt. (0.5, 1.3) = von oben mittig.")]
+    public Vector2 peekEntryViewport = new Vector2(0.5f, 1.3f);
+    [Tooltip("Viewport-Punkt, wohin es rausfliegt. (0.5, 1.3) = oben mittig.")]
+    public Vector2 peekExitViewport = new Vector2(0.5f, 1.3f);
+
     // Szenen-Objekte (Portal-Plattform, Background, Top Bar) werden NICHT hier
     // referenziert, sondern per Enable/Disable über SkinObjectSwap /
     // PortalSkinApplier in der Szene geschaltet (theme-Matching auf dieses Asset).

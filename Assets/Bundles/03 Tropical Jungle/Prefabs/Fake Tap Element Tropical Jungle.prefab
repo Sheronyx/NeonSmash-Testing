@@ -36,6 +36,7 @@ Transform:
   m_Children:
   - {fileID: 3359553570545821115}
   - {fileID: 1425195108028287308}
+  - {fileID: 3497512352081280583}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &4667813073734279751
@@ -171,7 +172,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4eec1dbbeb1f42cdb84f4fbec07ea48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FakePoint
-  puffEffect: {fileID: 4726605647906610404, guid: af7b65ab91d1847cdaf78c0aad51869e, type: 3}
+  puffEffect: {fileID: 4726605647906610404, guid: 7fb821fdc10914edeaa7d4ac3e603bf7, type: 3}
 --- !u!114 &6381448123327002210
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -366,6 +367,68 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1001 &4091764373213246490
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1626443011910452745}
+    m_Modifications:
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 594887401883997821, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+      propertyPath: m_Name
+      value: CFXR3 Shield Feathers A (Lit)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+--- !u!4 &3497512352081280583 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 594887401883634269, guid: cb35a9676eeda43e2a8d02473e97d72d, type: 3}
+  m_PrefabInstance: {fileID: 4091764373213246490}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5907740395996419736
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -465,6 +528,10 @@ PrefabInstance:
     - target: {fileID: 4772634663576830964, guid: e1385af346f4e624eb313ec1ea4fcd7e, type: 3}
       propertyPath: m_Name
       value: CFXR3 Shield Leaves A (Lit)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4772634663576830964, guid: e1385af346f4e624eb313ec1ea4fcd7e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8018385630816773117, guid: e1385af346f4e624eb313ec1ea4fcd7e, type: 3}
       propertyPath: prewarm
