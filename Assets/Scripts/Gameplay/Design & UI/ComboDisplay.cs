@@ -29,8 +29,16 @@ public class ComboDisplay : MonoBehaviour
         SpecialModeManager.OnModeStarted += HandleModeChanged;
         SpecialModeManager.OnModeEnded   += HandleModeChanged;
 
-        // Flamme startet aus (auch wenn am Prefab "Play On Awake" aktiv ist)
-        if (maxFire != null) maxFire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        if (maxFire != null)
+        {
+            // CFXR zerstört/deaktiviert das GameObject von selbst, sobald keine Partikel mehr
+            // "leben". Da wir die Flamme bewusst stoppen, würde sie sonst aus der Szene fliegen.
+            var cfxr = maxFire.GetComponent<CartoonFX.CFXR_Effect>();
+            if (cfxr != null) cfxr.clearBehavior = CartoonFX.CFXR_Effect.ClearBehavior.None;
+
+            // Flamme startet aus (auch wenn am Prefab "Play On Awake" aktiv ist)
+            maxFire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
 
         RefreshCurrent();
     }

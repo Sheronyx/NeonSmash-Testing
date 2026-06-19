@@ -230,7 +230,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &6891144759012953543
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1599,6 +1599,7 @@ MonoBehaviour:
   punchDuration: 0.12
   maxPulseScale: 1.18
   maxPulseSpeed: 6
+  maxFire: {fileID: 7463259434621152851}
 --- !u!1001 &3515137960428219057
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1725,5 +1726,10 @@ PrefabInstance:
 --- !u!4 &7463259434621152848 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6294508013172393185, guid: 043176b6a68be2b43b073aaaa4782c7d, type: 3}
+  m_PrefabInstance: {fileID: 3515137960428219057}
+  m_PrefabAsset: {fileID: 0}
+--- !u!198 &7463259434621152851 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 6294508013172393186, guid: 043176b6a68be2b43b073aaaa4782c7d, type: 3}
   m_PrefabInstance: {fileID: 3515137960428219057}
   m_PrefabAsset: {fileID: 0}
