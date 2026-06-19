@@ -10,13 +10,28 @@ public class ComboDisplay : MonoBehaviour
     [SerializeField] private float punchScale    = 1.25f;
     [SerializeField] private float punchDuration = 0.12f;
 
+    [Header("Max Multiplier Pulse")]
+    [Tooltip("Dauerhaftes Pulsieren, wenn der Multiplier am Limit ist (x10.0 normal / x20.0 Special).")]
+    [SerializeField] private float maxPulseScale = 1.18f;
+    [SerializeField] private float maxPulseSpeed = 4f;
+
+    [Header("Max Multiplier Fire")]
+    [Tooltip("Flamme (CFXR Fire), die am Limit spielt und beim Verlust der Max-Combo wieder erlischt.")]
+    [SerializeField] private ParticleSystem maxFire;
+
     private Coroutine _punch;
+    private Coroutine _pulse;
+    private bool      _atMax;
 
     private void OnEnable()
     {
         ComboManager.OnComboChanged    += HandleComboChanged;
         SpecialModeManager.OnModeStarted += HandleModeChanged;
         SpecialModeManager.OnModeEnded   += HandleModeChanged;
+
+        // Flamme startet aus (auch wenn am Prefab "Play On Awake" aktiv ist)
+        if (maxFire != null) maxFire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
         RefreshCurrent();
     }
 
@@ -25,18 +40,24 @@ public class ComboDisplay : MonoBehaviour
         ComboManager.OnComboChanged    -= HandleComboChanged;
         SpecialModeManager.OnModeStarted -= HandleModeChanged;
         SpecialModeManager.OnModeEnded   -= HandleModeChanged;
+
+        if (_pulse != null) { StopCoroutine(_pulse); _pulse = null; }
+        if (_punch != null) { StopCoroutine(_punch); _punch = null; }
+        _atMax = false;
+        if (multiplierText != null) multiplierText.rectTransform.localScale = Vector3.one;
+        if (maxFire != null) maxFire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
     private void HandleComboChanged(int combo)
     {
         Refresh(combo);
-        if (combo > 1) Punch();
+        if (combo > 1 && !_atMax) Punch();
     }
 
     private void HandleModeChanged(SpecialMode _)
     {
         RefreshCurrent();
-        Punch();
+        if (!_atMax) Punch();
     }
 
     private void RefreshCurrent()
@@ -51,6 +72,43 @@ public class ComboDisplay : MonoBehaviour
         bool special  = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
         int totalMult = comboMult * (special ? 2 : 1);
         multiplierText.text = "x" + $"{totalMult}.0";
+
+        // Limit erreicht (x10.0 normal bzw. x20.0 Special) → dauerhaftes Pulsieren
+        SetMaxPulse(comboMult >= 10);
+    }
+
+    private void SetMaxPulse(bool on)
+    {
+        if (on == _atMax) return;
+        _atMax = on;
+
+        if (on)
+        {
+            if (_punch != null) { StopCoroutine(_punch); _punch = null; }
+            if (_pulse == null) _pulse = StartCoroutine(Co_Pulse());
+            if (maxFire != null) maxFire.Play(true);
+        }
+        else
+        {
+            if (_pulse != null) { StopCoroutine(_pulse); _pulse = null; }
+            if (multiplierText != null) multiplierText.rectTransform.localScale = Vector3.one;
+            // StopEmitting → bestehende Flammen brennen aus statt hart abzuschneiden
+            if (maxFire != null) maxFire.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
+    }
+
+    private IEnumerator Co_Pulse()
+    {
+        if (multiplierText == null) yield break;
+        var rt = multiplierText.rectTransform;
+        float t = 0f;
+        while (true)
+        {
+            t += Time.deltaTime * maxPulseSpeed;
+            float k = (Mathf.Sin(t) + 1f) * 0.5f;          // 0..1
+            rt.localScale = Vector3.one * Mathf.Lerp(1f, maxPulseScale, k);
+            yield return null;
+        }
     }
 
     private void Punch()
