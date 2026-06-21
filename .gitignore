@@ -127,3 +127,8 @@ InitTestScene*.unity*
 
 # Cloud Code scripts contain embedded credentials
 CloudCode/
+
+# Aktive iOS-Firebase-Config: wird vom FirebaseConfigSwitcher-Preprocessor pro Build
+# aus FirebaseConfigs/ erzeugt (dev/prod). Quell-Dateien in FirebaseConfigs/ bleiben versioniert.
+Assets/GoogleService-Info.plist
+Assets/GoogleService-Info.plist.meta

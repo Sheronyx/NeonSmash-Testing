@@ -10,7 +10,20 @@ public class UgsBootstrap : MonoBehaviour
     public static UgsBootstrap Instance { get; private set; }
 
     [Header("UGS Init")]
-    [SerializeField] string environmentName = "production";
+    // Umgebung wird über das Scripting-Define NEONSMASH_PROD gesteuert — NICHT im Inspector,
+    // damit Testscores niemals versehentlich in die Produktions-Leaderboards gelangen können.
+    //   ohne Define → "development" (Editor + alle Test-/Internal-Builds)
+    //   mit Define  → "production"  (NUR echte Store-Release-Builds)
+    // Im Unity Cloud Dashboard muss eine "development"-Umgebung mit denselben
+    // Leaderboards (infinity_highscore, multiplayer_rank) existieren.
+    // production NUR in einem echten Build mit Define — der Editor bleibt IMMER development,
+    // selbst wenn NEONSMASH_PROD versehentlich global gesetzt ist.
+#if NEONSMASH_PROD && !UNITY_EDITOR
+    public const string EnvironmentName = "production";
+#else
+    public const string EnvironmentName = "development";
+#endif
+
     [SerializeField, Tooltip("Timeout für anonymes Sign-In (ms)")] int signInTimeoutMs = 1800;
     [SerializeField, Tooltip("Verzögerung für Plattform-Login (s)")] float platformDeferSeconds = 1.5f;
 
@@ -58,13 +71,16 @@ public class UgsBootstrap : MonoBehaviour
         {
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
-                var opts = new InitializationOptions().SetEnvironmentName(environmentName);
+                var opts = new InitializationOptions().SetEnvironmentName(EnvironmentName);
 #if UNITY_EDITOR
                 if (ParrelSync.ClonesManager.IsClone())
                     opts.SetProfile("clone");
 #endif
                 await UnityServices.InitializeAsync(opts);
-                Debug.Log("[UGS] Initialized (" + environmentName + ")");
+                Debug.Log("[UGS] Initialized (" + EnvironmentName + ")");
+#if !NEONSMASH_PROD
+                Debug.LogWarning("[UGS] DEVELOPMENT-Umgebung aktiv — Scores landen NICHT in den Produktions-Leaderboards. Für Release das Scripting-Define NEONSMASH_PROD setzen.");
+#endif
             }
 
             // 1) Lagfreies anonymes Sign-In

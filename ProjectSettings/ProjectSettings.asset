@@ -879,7 +879,7 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
     Android: APP_UI_EDITOR_ONLY;SENTIS_ANALYTICS_ENABLED
-    iPhone: APP_UI_EDITOR_ONLY;SENTIS_ANALYTICS_ENABLED;NEON_ANALYTICS_TEST
+    iPhone: APP_UI_EDITOR_ONLY;SENTIS_ANALYTICS_ENABLED
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
@@ -956,7 +956,8 @@ PlayerSettings:
   XboxOneOverrideIdentityName: 
   XboxOneOverrideIdentityPublisher: 
   vrEditorSettings: {}
-  cloudServicesEnabled: {}
+  cloudServicesEnabled:
+    Purchasing: 0
   luminIcon:
     m_Name: 
     m_ModelFolderPath: 
