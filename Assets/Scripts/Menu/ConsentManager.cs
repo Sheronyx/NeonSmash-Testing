@@ -8,30 +8,13 @@ public class ConsentManager : MonoBehaviour
     [Tooltip("Canvas mit Impressumsinformationen.")]
     public GameObject impressumCanvas;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-    [Header("Dev")]
-    [Tooltip("Erzwingt das Consent-Panel in Editor/Dev-Builds, ohne PlayerPrefs zu löschen.")]
-    [SerializeField] bool forceConsentPanelInDev = false;
-#endif
-
-    private void Start()
-    {
-        bool consentGiven = PlayerPrefs.GetInt("consent_given", 0) == 1;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (forceConsentPanelInDev)
-        {
-            consentGiven = false;
-            Debug.Log("[Consent] Dev-Flag aktiv → Consent erzwingen.");
-        }
-#endif
-
-        if (!consentGiven)
-            if (consentCanvas) consentCanvas.SetActive(true);
-    }
+    // Das frühere Custom-Consent-Panel wird NICHT mehr automatisch beim Start gezeigt.
+    // Die GDPR-/Ads-Einwilligung übernimmt komplett Google UMP (siehe AdManager).
+    // Impressum/Datenschutz erscheinen nur noch auf Klick (OnImpressumCanvas / OnManageConsent).
 
     public void OnConsentGiven()
     {
+        // Beibehalten für evtl. noch vorhandene alte Buttons — schließt nur das Panel.
         PlayerPrefs.SetInt("consent_given", 1);
         PlayerPrefs.Save();
         if (consentCanvas) consentCanvas.SetActive(false);
@@ -73,5 +56,10 @@ public class ConsentManager : MonoBehaviour
         Application.OpenURL("https://sheronyx.com/privacy");
     }
 
-
+    // Öffnet das UMP-Datenschutz-Formular, damit Nutzer ihre Einwilligung jederzeit
+    // ändern/widerrufen können (GDPR-Pflicht). An einen „Einwilligung verwalten"-Button hängen.
+    public void OnManageConsent()
+    {
+        AdManager.Instance?.ShowPrivacyOptions();
+    }
 }

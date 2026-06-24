@@ -80,6 +80,15 @@ public class GameUIManager : MonoBehaviour
             yield return Fade(gameOverBanner, 1, 0, 0.25f);
         }
 
+        // Interstitial (jedes 3. Game Over) im Gap zwischen Banner und Score-Panel.
+        // Wartet, bis die Anzeige geschlossen ist, dann erscheint das Ergebnis.
+        if (AdManager.Instance != null)
+        {
+            bool adClosed = false;
+            AdManager.Instance.MaybeShowInterstitial(() => adClosed = true);
+            yield return new WaitUntil(() => adClosed);
+        }
+
         if (resultPanel != null)
         {
             resultHeadlineTMP.text = text;
@@ -142,7 +151,6 @@ public class GameUIManager : MonoBehaviour
         MusicManager.ForceRestartGameMusicNextLoad = true;
 
         string current = SceneManager.GetActiveScene().name;
-
         if (SceneFader.Instance != null)
             SceneFader.Instance.LoadScene(current);
     }
