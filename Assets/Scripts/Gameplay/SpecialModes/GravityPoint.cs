@@ -20,6 +20,14 @@ public class GravityPoint : BasePoint
     [SerializeField] private float maxColliderOffset  = 1.2f;  // Offset bei hoher Geschwindigkeit
     [SerializeField] private float maxOffsetSpeed     = 15f;   // ab welcher Speed der Max-Offset gilt
 
+    [Header("Shocker / Fake")]
+    [Tooltip("Shocker: NICHT tappen! Tappen = Strafe (Leben), Durchlassen = sicher.")]
+    [SerializeField] private bool isShocker = false;
+    public bool IsShocker => isShocker;
+    [Tooltip("Fake: sieht echt aus, ist aber Köder. Tappen = nur verpuffen (kein Punkt, KEINE Strafe), Durchlassen = sicher.")]
+    [SerializeField] private bool isFake = false;
+    public bool IsFake => isFake;
+
     private Vector3 initialScale;
     private bool isDestroyed = false;
 
@@ -149,7 +157,8 @@ private void CheckDestroy()
         if (cam != null && cam.WorldToViewportPoint(transform.position).y < -0.1f)
         {
             isDestroyed = true;
-            if (gravitySystem != null) gravitySystem.OnPointDestroyed(false, transform.position);
+            // Shocker durchgelassen = richtig (kein Schaden); normaler Punkt = Miss
+            if (!isShocker && !isFake && gravitySystem != null) gravitySystem.OnPointDestroyed(false, transform.position);
             Destroy(gameObject);
             return;
         }
@@ -162,7 +171,7 @@ private void CheckDestroy()
         if (distance < 0.15f || (sr != null && sr.color.a < 0.05f))
         {
             isDestroyed = true;
-            if (gravitySystem != null) gravitySystem.OnPointDestroyed(false, transform.position);
+            if (!isShocker && !isFake && gravitySystem != null) gravitySystem.OnPointDestroyed(false, transform.position);
             Destroy(gameObject);
         }
     }
@@ -170,8 +179,22 @@ private void CheckDestroy()
     public void TryTap()
     {
         if (isDestroyed) return;
-
         isDestroyed = true;
+
+        if (isFake)
+        {
+            // Fake getappt = kein Punkt, KEINE Strafe (nur verpufft / Zeitverlust)
+            SpawnExplosion();
+            Destroy(gameObject);
+            return;
+        }
+        if (isShocker)
+        {
+            // Shocker getappt = Fehler → Strafe (wie der normale Shocker)
+            ApplyShockerPenalty(transform.position);
+            Destroy(gameObject);
+            return;
+        }
 
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnActionPerformed(TutorialPointType.GravityPoint);
@@ -181,6 +204,29 @@ private void CheckDestroy()
 
         if (gravitySystem != null) gravitySystem.OnPointDestroyed(true);
 
+        Destroy(gameObject);
+    }
+
+    void ApplyShockerPenalty(Vector3 pos)
+    {
+        ComboManager.Instance?.RegisterMiss();
+        if (LivesManager.Instance != null)
+        {
+            bool stillAlive = LivesManager.Instance.LoseLife(pos);
+            if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+            if (!stillAlive)
+            {
+                var spawner = FindFirstObjectByType<MixedPointSpawner>();
+                spawner?.TriggerGameOverFromGravity();
+            }
+        }
+    }
+
+    /// <summary>Phasenende: Shocker sicher verpuffen lassen (kein Schaden, kein Punkt).</summary>
+    public void DissolveNoPenalty()
+    {
+        if (isDestroyed) return;
+        isDestroyed = true;
         Destroy(gameObject);
     }
 

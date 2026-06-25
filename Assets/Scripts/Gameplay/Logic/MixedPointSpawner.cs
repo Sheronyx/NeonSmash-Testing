@@ -116,7 +116,11 @@ public class MixedPointSpawner : MonoBehaviour
 
     // Aktuelle Reaktionszeit (dynamisch pro Level) — z.B. für Peek-a-boo.
     public float CurrentReactionTime =>
-        levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+        PhaseManager.Instance != null ? PhaseManager.Instance.CurrentReactionTime
+        : levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+
+    // Vom PhaseManager gesteuert: in Play-Phasen kein zufälliges Activation-Orb-Spawning.
+    [HideInInspector] public bool allowRandomActivationOrbs = true;
 
     [Header("Spawn-Verteilung (zufällig mit Grenzen)")]
     [Range(0f, 1f)] public float swipeChance = 0.33f;
@@ -177,8 +181,7 @@ public class MixedPointSpawner : MonoBehaviour
         running = true;
         gameOver = false;
         spawnPausedForBanner = false;
-
-        levelUp?.StartTimer();
+        // Reaktionszeit/Phasen kommen jetzt vom PhaseManager (LevelUp wird nicht mehr getriggert).
 
         // Ersten Orb erst nach initialOrbDelay erlauben
         activationOrbOnCooldown = true;
@@ -198,14 +201,24 @@ public class MixedPointSpawner : MonoBehaviour
         StopPointTimer();
     }
 
+    /// <summary>Vom PhaseManager: Spawning für den Phasen-Banner kurz anhalten / fortsetzen.</summary>
+    public void SetBannerPause(bool paused)
+    {
+        spawnPausedForBanner = paused;
+        // Beim Fortsetzen das Spawning wieder anstoßen, falls gerade kein Punkt aktiv ist.
+        if (!paused && running && currentPoint == null)
+            SpawnNextPoint();
+    }
+
     public void SpawnNextPoint()
     {
         if (IsTutorialMode) return;
 
         if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
 
-        // Activation Orb kommt allein (kein normaler Tap-/SwipePoint daneben)
-        if (IsInfinityMode && TrySpawnActivationOrb()) return;
+        // Activation Orb kommt allein (kein normaler Tap-/SwipePoint daneben).
+        // Im Phasen-System steuert der PhaseManager die Orbs → kein zufälliges Spawnen.
+        if (IsInfinityMode && allowRandomActivationOrbs && TrySpawnActivationOrb()) return;
 
         bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
         bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
@@ -294,7 +307,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (ActiveThunderPrefab != null && Random.value < thunderSpawnChance)
         {
             var thunder = Instantiate(ActiveThunderPrefab, worldPos, Quaternion.identity);
-            float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+            float dynamicTime = CurrentReactionTime;
             var tp = thunder.GetComponent<ThunderPoint>();
             if (tp != null) tp.Activate(dynamicTime);
 
@@ -511,7 +524,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (IsInfinityMode && !IsTutorialMode)
         {
-            float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+            float dynamicTime = CurrentReactionTime;
             timeoutRoutine = StartCoroutine(Co_PointTimeout(newPoint, dynamicTime, useUnscaledTime));
             if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s (Intensität={(levelUp != null ? levelUp.CurrentLevel : 0)})");
 
@@ -665,6 +678,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
+        PhaseManager.Instance?.StopRun();
         ComboManager.Instance?.ResetCombo();
 
         if (MultiplayerManager.IsMultiplayerGame)
@@ -947,9 +961,60 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (IsInfinityMode)
         {
-            float dynamicTime = levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+            float dynamicTime = CurrentReactionTime;
             timeoutRoutine = StartCoroutine(Co_PointTimeout(currentPoint, dynamicTime, useUnscaledTime));
         }
+    }
+
+    /// <summary>
+    /// Phasenende: alle noch aktiven Elemente POSITIV auflösen — als hätte der Spieler sie korrekt
+    /// bedient. Tap/Swipe/Gravity = Erfolg (Punkte + Combo); Shocker = Zeit auslaufen lassen;
+    /// Fake = ignorieren. Voraussetzung: Spawning ist pausiert (SetBannerPause(true)) → kein Nachspawn.
+    /// </summary>
+    public void PositiveClearAll()
+    {
+        // Fake: positiv = ignorieren (lautlos entfernen, kein Schaden)
+        foreach (var f in FindObjectsByType<FakePoint>(FindObjectsSortMode.None))
+            f.Dismiss();
+
+        // Shocker: positiv = Zeit auslaufen lassen (sicheres Verpuffen)
+        foreach (var s in FindObjectsByType<ThunderPoint>(FindObjectsSortMode.None))
+            s.Vanish();
+
+        // Tap & Swipe: als Erfolg auflösen (Punkte + Combo)
+        foreach (var sp in FindObjectsByType<SwipePoint>(FindObjectsSortMode.None))
+            HandlePointHit(sp.gameObject);
+        foreach (var tp in FindObjectsByType<TapPoint>(FindObjectsSortMode.None))
+            HandlePointHit(tp.gameObject);
+
+        // Gravity & Fountain: normale = Erfolg (Punkte+Combo); Shocker/Fake = sicher verpuffen (nicht tappen!)
+        foreach (var gp in FindObjectsByType<GravityPoint>(FindObjectsSortMode.None))
+        {
+            if (gp.IsShocker || gp.IsFake) gp.DissolveNoPenalty(); else gp.TryTap();
+        }
+        foreach (var fp2 in FindObjectsByType<FountainPoint>(FindObjectsSortMode.None))
+        {
+            if (fp2.IsShocker || fp2.IsFake) fp2.DissolveNoPenalty(); else fp2.TryTap();
+        }
+
+        currentPoint = null;
+        CurrentSwipePoint = null;
+    }
+
+    /// <summary>True, solange noch irgendein spielbares Element in der Szene ist (currentPoint oder
+    /// frei fliegende Tap/Swipe/Gravity/Fountain/Fake/Thunder/Peek-Elemente). Genutzt vom PhaseManager,
+    /// um am Phasenende die Restelemente natürlich auslaufen zu lassen, bevor es weitergeht.</summary>
+    public bool HasActiveGameplayPoints()
+    {
+        if (currentPoint != null || CurrentSwipePoint != null) return true;
+        if (FindFirstObjectByType<TapPoint>()      != null) return true;
+        if (FindFirstObjectByType<SwipePoint>()    != null) return true;
+        if (FindFirstObjectByType<GravityPoint>()  != null) return true;
+        if (FindFirstObjectByType<FountainPoint>() != null) return true;
+        if (FindFirstObjectByType<FakePoint>()     != null) return true;
+        if (FindFirstObjectByType<ThunderPoint>()  != null) return true;
+        if (FindFirstObjectByType<PeekElement>()   != null) return true;
+        return false;
     }
 
     public void ClearAllGameplayPoints()
@@ -975,6 +1040,24 @@ public class MixedPointSpawner : MonoBehaviour
     public void ClearActivationPoint()
     {
         currentActivationPoint = null;
+    }
+
+    /// <summary>Vom PhaseManager: den Activation-Orb des gewählten Modus spawnen. Der Orb spielt
+    /// seine Animation selbst ab und ruft am Ende StartMode(mode) auf.</summary>
+    public void SpawnActivationOrb(SpecialMode mode)
+    {
+        GameObject prefab = mode == SpecialMode.Fountain
+            ? fountainModeActivationPointPrefab
+            : gravityModeActivationPointPrefab;
+        if (prefab == null) { Debug.LogWarning($"[Spawner] Kein Activation-Orb-Prefab für {mode}."); return; }
+
+        Vector3 pos = ViewportToWorldOnZ0(new Vector2(0.5f, 0.5f));
+        var orb = Instantiate(prefab, pos, Quaternion.identity);
+
+        var g = orb.GetComponent<GravityModeActivationPoint>();  if (g != null) g.spawner = this;
+        var f = orb.GetComponent<FountainModeActivationPoint>(); if (f != null) f.spawner = this;
+
+        currentActivationPoint = orb;
     }
 
     public bool IsLevelUpActive()

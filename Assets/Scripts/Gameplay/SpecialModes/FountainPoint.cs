@@ -6,6 +6,14 @@ public class FountainPoint : BasePoint
     [SerializeField] private float gravity = -15f;
     [SerializeField] private float lifetimeAfterLanding = 1f;
 
+    [Header("Shocker / Fake")]
+    [Tooltip("Shocker: NICHT tappen! Tappen = Strafe (Leben), Durchlassen = sicher.")]
+    [SerializeField] private bool isShocker = false;
+    public bool IsShocker => isShocker;
+    [Tooltip("Fake: sieht echt aus, ist aber Köder. Tappen = nur verpuffen (kein Punkt, KEINE Strafe), Durchlassen = sicher.")]
+    [SerializeField] private bool isFake = false;
+    public bool IsFake => isFake;
+
     private Vector3 velocity;
     private bool hasLanded = false;
     private bool isDestroyed = false;
@@ -36,29 +44,46 @@ public class FountainPoint : BasePoint
     private void DestroyAfterFall()
     {
         if (isDestroyed) return;
-
         isDestroyed = true;
 
-        if (LivesManager.Instance != null)
+        // Shocker/Fake durchgelassen (gelandet) = richtig, kein Schaden.
+        if (!isShocker && !isFake)
         {
-            bool stillAlive = LivesManager.Instance.LoseLife(transform.position);
-            if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
-            if (!stillAlive)
+            if (LivesManager.Instance != null)
             {
-                var spawner = FindFirstObjectByType<MixedPointSpawner>();
-                if (spawner != null) spawner.TriggerGameOverFromGravity();
+                bool stillAlive = LivesManager.Instance.LoseLife(transform.position);
+                if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+                if (!stillAlive)
+                {
+                    var spawner = FindFirstObjectByType<MixedPointSpawner>();
+                    if (spawner != null) spawner.TriggerGameOverFromGravity();
+                }
             }
+            if (system != null) system.OnPointFinished(false); // ❌ kein Punkt
         }
 
-        if (system != null) system.OnPointFinished(false); // ❌ kein Punkt
         Destroy(gameObject);
     }
 
     public void TryTap()
     {
         if (isDestroyed) return;
-
         isDestroyed = true;
+
+        if (isFake)
+        {
+            // Fake getappt = kein Punkt, KEINE Strafe (nur verpufft)
+            SpawnExplosion();
+            Destroy(gameObject);
+            return;
+        }
+        if (isShocker)
+        {
+            // Shocker getappt = Fehler → Strafe
+            ApplyShockerPenalty(transform.position);
+            Destroy(gameObject);
+            return;
+        }
 
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnActionPerformed(TutorialPointType.FountainPoint);
@@ -68,6 +93,29 @@ public class FountainPoint : BasePoint
 
         if (system != null) system.OnPointFinished(true); // ✅ Punkt
 
+        Destroy(gameObject);
+    }
+
+    void ApplyShockerPenalty(Vector3 pos)
+    {
+        ComboManager.Instance?.RegisterMiss();
+        if (LivesManager.Instance != null)
+        {
+            bool stillAlive = LivesManager.Instance.LoseLife(pos);
+            if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+            if (!stillAlive)
+            {
+                var spawner = FindFirstObjectByType<MixedPointSpawner>();
+                spawner?.TriggerGameOverFromGravity();
+            }
+        }
+    }
+
+    /// <summary>Phasenende: Shocker sicher verpuffen lassen (kein Schaden, kein Punkt).</summary>
+    public void DissolveNoPenalty()
+    {
+        if (isDestroyed) return;
+        isDestroyed = true;
         Destroy(gameObject);
     }
 }

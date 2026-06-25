@@ -5735,7 +5735,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.a
-      value: 0.61960787
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.b
@@ -5755,19 +5755,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key0.a
-      value: 0.34117648
+      value: 0.5686275
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key0.b
-      value: 0.74509805
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key0.g
-      value: 0.8392157
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key0.r
-      value: 0.93333334
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
+      propertyPath: ColorModule.gradient.maxGradient.key1.r
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: startDelay.maxCurve.m_Curve.Array.data[0].value
@@ -5779,7 +5791,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3198845025025993992, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: m_SortingOrder
-      value: 8
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 7886003945772957545, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: m_LocalScale.x

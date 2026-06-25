@@ -14,6 +14,10 @@ public class FountainModeSystem : MonoBehaviour
     }
 
     [SerializeField] private GameObject fountainPointPrefab;
+    [Tooltip("Bewegtes Shocker-Element (FountainPoint-Prefab mit isShocker=true). Über thunderChance eingestreut.")]
+    [SerializeField] private GameObject fountainShockerPrefab;
+    [Tooltip("Bewegtes Fake-Element (FountainPoint-Prefab mit isFake=true). Über fakeChance eingestreut.")]
+    [SerializeField] private GameObject fountainFakePrefab;
     [SerializeField] private Transform portal;
 
     GameObject ActiveFountainPrefab =>
@@ -24,7 +28,6 @@ public class FountainModeSystem : MonoBehaviour
     [SerializeField] private float shootForceX = 6f;
     [Tooltip("Zufalls-Streuung der Boden-Höhe (Y). Größer = unterschiedlichere Wurfhöhen/Kurven.")]
     [SerializeField] private float shootForceYVariance = 2f;
-    [SerializeField] private int totalPoints = 20;
 
     [Header("Seiten-Schuss (links/rechts rein)")]
     [Tooltip("Wahrscheinlichkeit, dass von der Seite statt von unten geschossen wird.")]
@@ -43,55 +46,66 @@ public class FountainModeSystem : MonoBehaviour
     [Tooltip("Zufalls-Streuung der Seiten-Velocity (Wucht/Kurve).")]
     [SerializeField] private float sideForceVariance = 1.5f;
 
-    [Header("Spawn-Intervall pro Intensität (1–8)")]
-    [SerializeField] private LevelUp levelUp;
-    [Tooltip("Sekunden zwischen Fountain-Spawns je Intensitätsstufe. Index 0 = Intensität 1, Index 7 = Intensität 8.")]
-    [SerializeField] private float[] spawnIntervalPerIntensity = { 1.2f, 1.05f, 0.9f, 0.75f, 0.6f, 0.5f, 0.4f, 0.3f };
-    [Tooltip("Fallback, falls die Liste leer ist oder LevelUp fehlt.")]
+    [Header("Spawn-Intervall (folgt dem PhaseManager-Curve)")]
+    [Tooltip("Spawn-Abstand = Reaktionszeit des PhaseManagers × Faktor → folgt dem Intensitäts-Curve.")]
+    [SerializeField] private float spawnIntervalFactor = 1f;
+    [Tooltip("Fallback-Spawn-Abstand (s), falls kein PhaseManager vorhanden ist.")]
     [SerializeField] private float fallbackSpawnInterval = 1.2f;
 
-    private int activePoints = 0;
-    private int spawnedPoints = 0;
+    private bool isActive = false;
+    private bool spawnLoopActive = false;
+    public bool IsActive => isActive;
 
     private MixedPointSpawner spawner;
 
     public void Activate()
     {
+        if (isActive) return;
+
         NeonAnalytics.LogSpecialModeTriggered("fountain");
         AchievementManager.OnSpecialModeTriggered("fountain");
         MissionManager.OnSpecialModeTriggered();
 
-        spawnedPoints = 0;
-        activePoints = 0;
+        isActive = true;
+        spawnLoopActive = true;
 
         spawner = FindFirstObjectByType<MixedPointSpawner>();
-
         if (spawner != null)
         {
             spawner.PauseSpawning(true);
-
-            // 🔥 WICHTIG – wie bei Gravity
-            spawner.ClearAllGameplayPoints();
+            spawner.ClearAllGameplayPoints();   // wie bei Gravity
         }
 
         OnFountainModeStarted?.Invoke();
         StartCoroutine(SpawnRoutine());
     }
 
+    // Dauerbasiert: spawnt im Intervall, bis der PhaseManager StopSpawning()/StopMode() ruft.
     private IEnumerator SpawnRoutine()
     {
-        while (spawnedPoints < totalPoints)
+        while (spawnLoopActive)
         {
-            SpawnPoint();
-            spawnedPoints++;
+            // Pro Tick EIN Element: Shocker / Fake / normal (nicht-überlappende Chancen).
+            float r       = Random.value;
+            float thunder = spawner != null ? spawner.thunderSpawnChance : 0f;
+            float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
+
+            if (fountainShockerPrefab != null && r < thunder)
+                SpawnPoint(fountainShockerPrefab);
+            else if (fountainFakePrefab != null && r < thunder + fake)
+                SpawnPoint(fountainFakePrefab);
+            else
+                SpawnPoint(ActiveFountainPrefab);
 
             yield return new WaitForSeconds(GetCurrentSpawnInterval());
         }
     }
 
-    private void SpawnPoint()
+    private void SpawnPoint() => SpawnPoint(ActiveFountainPrefab);
+
+    private void SpawnPoint(GameObject prefab)
     {
-        if (portal == null || fountainPointPrefab == null)
+        if (portal == null || prefab == null)
         {
             Debug.LogError("❌ FountainModeSystem: Missing references!");
             return;
@@ -131,26 +145,20 @@ public class FountainModeSystem : MonoBehaviour
             );
         }
 
-        var go = Instantiate(ActiveFountainPrefab, pos, Quaternion.identity);
+        var go = Instantiate(prefab, pos, Quaternion.identity);
         var point = go.GetComponent<FountainPoint>();
 
-        if (TutorialManager.Instance != null)
+        if (prefab == ActiveFountainPrefab && TutorialManager.Instance != null)
             TutorialManager.Instance.OnElementSpawnedShowOverlay(TutorialPointType.FountainPoint, pos);
 
         point.Init(this, velocity);
-
-        activePoints++;
     }
 
-    private float GetCurrentSpawnInterval()
-    {
-        if (spawnIntervalPerIntensity == null || spawnIntervalPerIntensity.Length == 0)
-            return fallbackSpawnInterval;
-
-        int level = levelUp != null ? levelUp.CurrentLevel : 1;     // Intensität 1–8
-        int idx = Mathf.Clamp(level - 1, 0, spawnIntervalPerIntensity.Length - 1);
-        return spawnIntervalPerIntensity[idx];
-    }
+    // Spawn-Abstand folgt der Intensität des PhaseManagers (wie die Reaktionszeit der Spielphasen).
+    private float GetCurrentSpawnInterval() =>
+        PhaseManager.Instance != null
+            ? PhaseManager.Instance.CurrentReactionTime * spawnIntervalFactor
+            : fallbackSpawnInterval;
 
     public void OnPointFinished(bool hit)
     {
@@ -158,41 +166,37 @@ public class FountainModeSystem : MonoBehaviour
             SpecialModeManager.RegisterSpecialHit();
         else
             SpecialModeManager.RegisterSpecialMiss();
-
-        activePoints--;
-
-        CheckEnd();
     }
 
-    private void CheckEnd()
+    /// <summary>Vom PhaseManager am Phasenende: Spawn-Loop stoppen + Modus beenden.
+    /// Restliche Fountain-Punkte räumt der PhaseManager positiv (PositiveClearAll → TryTap).</summary>
+    public void StopMode()
     {
-        if (spawnedPoints >= totalPoints && activePoints <= 0)
-        {
-            EndMode();
-        }
+        if (!isActive) return;
+        Debug.Log("💧 Fountain Mode END (StopMode)");
+
+        isActive = false;
+        spawnLoopActive = false;
+        StopAllCoroutines();
+        OnFountainModeEnded?.Invoke();
+        SpecialModeManager.Instance.EndCurrentMode();
+    }
+
+    /// <summary>Phasenende, Schritt 1: nur den Spawn-Loop stoppen. Mode bleibt aktiv
+    /// (Portal/Scoring/Input), damit die Restelemente normal zu Ende gespielt werden können.
+    /// Der PhaseManager ruft danach StopMode(), wenn alle Elemente ausgelaufen sind.</summary>
+    public void StopSpawning()
+    {
+        spawnLoopActive = false;
     }
 
     public void ForceStop()
     {
         StopAllCoroutines();
-        spawnedPoints = totalPoints; // verhindert weiteres Spawnen
-        activePoints = 0;
+        isActive = false;
+        spawnLoopActive = false;
         foreach (var fp in FindObjectsByType<FountainPoint>(FindObjectsSortMode.None))
             Destroy(fp.gameObject);
         OnFountainModeEnded?.Invoke();
-    }
-
-    private void EndMode()
-    {
-        Debug.Log("💧 Fountain Mode END");
-
-        OnFountainModeEnded?.Invoke();
-        SpecialModeManager.Instance?.EndCurrentMode(); // Display aktualisiert sich VOR dem ersten neuen Point
-
-        if (spawner != null)
-        {
-            spawner.PauseSpawning(false);
-            spawner.SpawnNextPoint();
-        }
     }
 }
