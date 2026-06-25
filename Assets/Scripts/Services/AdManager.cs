@@ -16,9 +16,9 @@ public class AdManager : MonoBehaviour
     public static bool IsInitialized { get; private set; }
 
     // ----- Tuning -----
-    public const int   RewardedCoinAmount         = 50;   // Coins pro Free-Coins-Video
-    const int          InterstitialEveryNGameOvers = 3;   // jedes N-te Game Over
-    const float        InterstitialMinIntervalSec  = 60f; // Mindestabstand zwischen Interstitials
+    public const int   RewardedCoinAmount          = 50;   // Coins pro Free-Coins-Video
+    const int          InterstitialEveryNGameOvers = 3;    // jedes N-te Game Over
+    const float        InterstitialMinIntervalSec  = 60f;  // Mindestabstand zwischen Interstitials
 
     RewardedAd     _rewardedAd;
     InterstitialAd _interstitialAd;
@@ -30,7 +30,6 @@ public class AdManager : MonoBehaviour
     static void Bootstrap()
     {
         if (Instance != null) return;
-        Debug.Log("[Ads] Bootstrap → erstelle AdManager");
         var go = new GameObject("AdManager");
         go.AddComponent<AdManager>();
     }
@@ -44,54 +43,26 @@ public class AdManager : MonoBehaviour
 
     void Start()
     {
-        Debug.Log($"[Ads] Start ({AdConfig.EnvLabel}) — Consent/Init startet…");
-
 #if UNITY_EDITOR
         // Im Editor liefert UMP keine zuverlässigen Callbacks → direkt initialisieren.
         InitializeAds();
 #else
         GatherConsentThenInit();
-#if !NEONSMASH_PROD
-        StartCoroutine(InitFallback());   // nur Dev/Test: falls UMP nicht zurückkommt, trotzdem initialisieren
-#endif
 #endif
     }
 
     // ----------------------------------------------------------------- Consent (UMP)
     void GatherConsentThenInit()
     {
-        Debug.Log("[Ads] Hole UMP-Consent (ConsentInformation.Update)…");
         try
         {
             var request = new ConsentRequestParameters();
-
-#if !NEONSMASH_PROD
-            // Dev/Test: UMP-Formular erzwingen (EEA simulieren) + gespeicherte Einwilligung
-            // zurücksetzen, damit der Consent-Dialog beim Testen zuverlässig erscheint.
-            request.ConsentDebugSettings = new ConsentDebugSettings
+            ConsentInformation.Update(request, _ =>
             {
-                DebugGeography = DebugGeography.EEA,
-                TestDeviceHashedIds = new System.Collections.Generic.List<string>
-                {
-                    // ⚠️ Diese Hash-IDs ändern sich bei jedem Reinstall! Aktuelle ID steht im Log:
-                    //    "To get test ads on this device, set: …[ID]". Bei Bedarf hier ersetzen.
-                    "80bbb5dfb1665d319f1060f458a82dec",  // iOS (iPhone 15) — Stand 2026-06-22
-                    "714678B3ADDAC0476842625EE223415",   // Android (Samsung)
-                }
-            };
-            ConsentInformation.Reset();   // vorhandene Einwilligung verwerfen → Formular kommt wieder
-            Debug.Log("[Ads] (DEV) UMP-Debug: EEA erzwungen + Consent zurückgesetzt.");
-#endif
-
-            ConsentInformation.Update(request, updateError =>
-            {
-                Debug.Log("[Ads] Consent-Update zurück" +
-                          (updateError != null ? " (Fehler: " + updateError.Message + ")" : ""));
-
                 ConsentForm.LoadAndShowConsentFormIfRequired(formError =>
                 {
-                    Debug.Log("[Ads] Consent abgeschlossen" +
-                              (formError != null ? " (Fehler: " + formError.Message + ")" : ""));
+                    if (formError != null)
+                        Debug.LogWarning("[Ads] Consent-Form-Fehler: " + formError.Message);
                     InitializeAds();
                 });
             });
@@ -130,7 +101,7 @@ public class AdManager : MonoBehaviour
         }
     }
 
-    void InitializeAds(bool force = false)
+    void InitializeAds()
     {
         if (_initStarted) return;
 
@@ -138,20 +109,16 @@ public class AdManager : MonoBehaviour
         try { canRequest = ConsentInformation.CanRequestAds(); }
         catch { canRequest = true; }   // Editor-Fallback
 
-        if (!force && !canRequest)
+        if (!canRequest)
         {
-            // EEA ohne (noch) erteilte Einwilligung → keine Ads anfordern (compliance-korrekt).
-            Debug.Log("[Ads] CanRequestAds=false → noch keine Ads (Consent ausstehend/abgelehnt).");
+            // EEA ohne erteilte Einwilligung → keine Ads anfordern (compliance-korrekt).
+            Debug.Log("[Ads] CanRequestAds=false → keine Ads (Consent ausstehend/abgelehnt).");
             return;
         }
 
         _initStarted = true;
         // Ad-Events auf dem Unity-Mainthread → wir dürfen in Callbacks Unity/CoinManager anfassen.
         MobileAds.RaiseAdEventsOnUnityMainThread = true;
-        // (Keine TestDeviceIds nötig: wir nutzen im Dev ohnehin Googles Test-Ad-Units, die immer
-        //  Test-Ads liefern. Die Geräte-Hash-ID ändert sich zudem bei jedem Reinstall.)
-
-        Debug.Log($"[Ads] initialisiere MobileAds… (canRequest={canRequest}, force={force})");
 
         MobileAds.Initialize(_ =>
         {
@@ -161,20 +128,6 @@ public class AdManager : MonoBehaviour
             LoadInterstitial();
         });
     }
-
-#if !NEONSMASH_PROD
-    // Nur Dev/Test: wenn der UMP-Consent-Callback nicht zurückkommt, nach 5s trotzdem
-    // initialisieren, damit Test-Ads laufen. In Produktion (NEONSMASH_PROD) NICHT kompiliert.
-    System.Collections.IEnumerator InitFallback()
-    {
-        yield return new WaitForSecondsRealtime(5f);
-        if (!_initStarted)
-        {
-            Debug.LogWarning("[Ads] (DEV) UMP-Consent nach 5s nicht zurück → initialisiere trotzdem für den Test.");
-            InitializeAds(force: true);
-        }
-    }
-#endif
 
     // ----------------------------------------------------------------- Rewarded
     public bool IsRewardedReady => _rewardedAd != null && _rewardedAd.CanShowAd();
@@ -192,7 +145,6 @@ public class AdManager : MonoBehaviour
                 return;
             }
             _rewardedAd = ad;
-            Debug.Log("[Ads] Rewarded geladen, bereit.");
             ad.OnAdFullScreenContentClosed += LoadRewarded;          // nächstes vorladen
             ad.OnAdFullScreenContentFailed += _ => LoadRewarded();
         });
@@ -203,7 +155,6 @@ public class AdManager : MonoBehaviour
     {
         if (!IsRewardedReady)
         {
-            Debug.Log("[Ads] Rewarded noch nicht bereit.");
             onUnavailable?.Invoke();
             if (IsInitialized) LoadRewarded();
             return;
@@ -225,7 +176,6 @@ public class AdManager : MonoBehaviour
         _interstitialAd?.Destroy();
         _interstitialAd = null;
 
-        Debug.Log($"[Ads] Lade Interstitial: {AdConfig.InterstitialId}");
         InterstitialAd.Load(AdConfig.InterstitialId, new AdRequest(), (ad, error) =>
         {
             if (error != null || ad == null)
@@ -235,7 +185,6 @@ public class AdManager : MonoBehaviour
                 return;
             }
             _interstitialAd = ad;
-            Debug.Log("[Ads] Interstitial geladen, bereit.");
             ad.OnAdFullScreenContentClosed += LoadInterstitial;       // nächstes vorladen
             ad.OnAdFullScreenContentFailed += _ => LoadInterstitial();
         });
@@ -261,8 +210,6 @@ public class AdManager : MonoBehaviour
         bool cooled = Time.realtimeSinceStartup - _lastInterstitialTime >= InterstitialMinIntervalSec;
         bool ready  = _interstitialAd != null && _interstitialAd.CanShowAd();
 
-        Debug.Log($"[Ads] GameOver #{_gameOverCount} → due={due} cooled={cooled} ready={ready} init={IsInitialized}");
-
         if (!IsInitialized || !due || !cooled || !ready)
         {
             if (IsInitialized && _interstitialAd == null) LoadInterstitial();
@@ -271,7 +218,6 @@ public class AdManager : MonoBehaviour
         }
 
         _lastInterstitialTime = Time.realtimeSinceStartup;
-        Debug.Log("[Ads] Zeige Interstitial.");
 
         bool fired = false;
         void Done() { if (fired) return; fired = true; onClosed?.Invoke(); }
