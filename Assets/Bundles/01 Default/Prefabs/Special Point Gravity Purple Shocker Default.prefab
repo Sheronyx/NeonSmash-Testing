@@ -206,6 +206,7 @@ MonoBehaviour:
   maxColliderOffset: 1.2
   maxOffsetSpeed: 15
   isShocker: 1
+  isFake: 0
 --- !u!1 &4594527670132107308
 GameObject:
   m_ObjectHideFlags: 0
@@ -264,7 +265,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a8e86b292160145ae9aed189868f0d3a, type: 2}
+  - {fileID: 2100000, guid: 9630d6b1ea1a84a7f8f57551c11151da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -288,7 +289,7 @@ SpriteRenderer:
   m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ede7420ec463340909c992e67cfa4d6e, type: 3}
-  m_Color: {r: 0.80784315, g: 0.3254902, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.96862745, b: 0.6745098, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -456,7 +457,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a8e86b292160145ae9aed189868f0d3a, type: 2}
+  - {fileID: 2100000, guid: 9630d6b1ea1a84a7f8f57551c11151da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -480,7 +481,7 @@ SpriteRenderer:
   m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1088205902967396284, guid: b15d80d72d9e64e35baede90f26cd6ee, type: 3}
-  m_Color: {r: 0.80595773, g: 0.3254717, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.9649707, b: 0.6745098, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -701,7 +702,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.56949323, g: 0.0047169924, b: 1, a: 1}
+      key0: {r: 1, g: 0.96862745, b: 0.6745098, a: 1}
       key1: {r: 0, g: 0, b: 0, a: 0}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -751,6 +752,10 @@ PrefabInstance:
     - target: {fileID: 1209150209152046674, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
       propertyPath: m_Name
       value: Electro Shock Effect Looping (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1892591259854890736, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
+      propertyPath: m_SortingOrder
+      value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 3228881452471829860, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
       propertyPath: m_LocalScale.x
@@ -814,15 +819,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7968472199360432243, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
       propertyPath: InitialModule.startColor.maxColor.b
-      value: 0.7882353
+      value: 0.6745098
       objectReference: {fileID: 0}
     - target: {fileID: 7968472199360432243, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
       propertyPath: InitialModule.startColor.maxColor.g
-      value: 0.5505189
+      value: 0.96862745
       objectReference: {fileID: 0}
     - target: {fileID: 7968472199360432243, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
       propertyPath: InitialModule.startColor.maxColor.r
-      value: 0.36862746
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8258175887515491696, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
       propertyPath: looping

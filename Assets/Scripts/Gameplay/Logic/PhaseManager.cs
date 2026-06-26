@@ -63,20 +63,29 @@ public class PhaseManager : MonoBehaviour
     [Header("Banner")]
     [SerializeField] private float bannerDurationSec = 1.2f;
 
+    [Header("Zwischenphase nach Special Mode")]
+    [Tooltip("Gesamtdauer der Pause nach einer Special-Mode-Phase (wird hälftig auf beide Texte verteilt).")]
+    [SerializeField] private float interphaseDurationSec = 5f;
+    [Tooltip("Text in der ersten Hälfte. {0} = gerade abgeschlossene Phasennummer.")]
+    [SerializeField] private string clearedFormat = "Phase {0} cleared";
+    [Tooltip("Text in der zweiten Hälfte / Start-Banner. {0} = Phasennummer.")]
+    [SerializeField] private string startingFormat = "Phase {0}";
+
     [Header("Phasenende / Auslaufen")]
     [Tooltip("Max. Zeit (s), die auf das natürliche Auslaufen der Restelemente gewartet wird, " +
              "bevor zur Sicherheit hart geräumt wird.")]
     [SerializeField] private float maxDrainSec = 6f;
 
     [Header("Entscheidung")]
-    [Tooltip("Mindest-Wartezeit (s) NACH dem Auslaufen der Restelemente, bevor die Entscheidungs-UI erscheint.")]
-    [SerializeField] private float decisionPreDelaySec = 1f;
     [Tooltip("Wartezeit (realtime) fürs Ausblenden der Entscheidungs-UI, bevor der Orb kommt.")]
     [SerializeField] private float decisionFadeOutSec = 0.3f;
 
     // ----- Events für UI -----
     /// <summary>(phaseNumber 1-basiert, totalPhases)</summary>
     public static event Action<int, int> OnPhaseBanner;
+    /// <summary>Freitext-Banner mit Sichtbarkeits-Fenster in Sekunden (text, visibleSeconds).
+    /// Genutzt für die „Phase X cleared" / „Starting Phase X+1"-Zwischenphase.</summary>
+    public static event Action<string, float> OnPhaseTextBanner;
     /// <summary>Entscheidungs-UI einblenden (Special-Mode wählen).</summary>
     public static event Action OnDecisionRequested;
     /// <summary>Entscheidungs-UI ausblenden (Wahl getroffen).</summary>
@@ -148,17 +157,27 @@ public class PhaseManager : MonoBehaviour
             var def = phases[_phaseIndex];
             ResetCurveForPhaseStart();   // Curve auf Phasenanfang, bevor irgendetwas spawnt
 
+            // Entscheidungsphase: „Phase X cleared" → Decision-UI → „Starting Phase X+1".
             if (def.decisionBefore)
-                yield return Co_Decision(def);
+                yield return Co_DecisionInterphase(def, _phaseIndex, _phaseIndex + 1);
 
             if (def.kind == PhaseKind.Play)
             {
-                yield return Co_PhaseBanner(_phaseIndex + 1);   // Banner nur vor Spielphasen
+                // „Phase X"-Banner nur, wenn KEINE Special-Phase davor war — sonst hat die
+                // Zwischenphase („Starting Phase X") den Übergang schon angekündigt.
+                bool prevWasSpecial = _phaseIndex > 0 && phases[_phaseIndex - 1].kind == PhaseKind.Special;
+                if (!prevWasSpecial)
+                    yield return Co_PhaseBanner(_phaseIndex + 1);
                 yield return Co_PlayPhase(def);
             }
             else
             {
                 yield return Co_SpecialPhase(def);              // Special: Entscheidung + Orb sind der Übergang
+
+                // Nach jeder Special-Phase 5-s-Zwischenphase („Phase X cleared" / „Starting Phase X+1"),
+                // sofern noch eine Phase folgt (nach der letzten kommt der Win-Screen).
+                if (_phaseIndex + 1 < phases.Length)
+                    yield return Co_InterphaseBanner(_phaseIndex + 1, _phaseIndex + 2);
             }
         }
 
@@ -184,6 +203,7 @@ public class PhaseManager : MonoBehaviour
             Spawner.fakeSpawnChance    = def.fakeChance;
             Spawner.peekABooChance     = def.peekChance;
             if (!Spawner.IsRunning) Spawner.Begin();
+            else                    Spawner.SetBannerPause(false);   // ggf. von Vorphase/Zwischenphase pausiert → fortsetzen
         }
         yield return RunPhaseTimer();
         yield return Co_EndPhaseDrain();
@@ -239,16 +259,9 @@ public class PhaseManager : MonoBehaviour
             if (_chosenMode == SpecialMode.Gravity)       GravityModeSystem.Instance?.StopSpawning();
             else if (_chosenMode == SpecialMode.Fountain) FountainModeSystem.Instance?.StopSpawning();
         }
-        Spawner.SetBannerPause(true);   // normaler Spawner: kein Nachspawn
 
-        // 2) Warten, bis der Spieler alle übrigen Elemente normal beendet hat
-        //    (Treffer, Timeout oder vom Bildschirm gelaufen). Guard als Sicherheitsnetz.
-        float guard = 0f;
-        while (Spawner.HasActiveGameplayPoints() && guard < maxDrainSec)
-        {
-            guard += Time.deltaTime;
-            yield return null;
-        }
+        // 2) Auslaufen lassen (Spieler beendet Restelemente normal), dann Sicherheitsnetz-Clear.
+        yield return Co_DrainGameplay();
 
         // 3) Jetzt den Special Mode wirklich beenden (Portal/Scoring waren bis hier aktiv).
         if (special)
@@ -257,10 +270,34 @@ public class PhaseManager : MonoBehaviour
             else if (_chosenMode == SpecialMode.Fountain) FountainModeSystem.Instance?.StopMode();
             else                                          SpecialModeManager.Instance.EndCurrentMode();
         }
+    }
 
-        // 4) Sicherheitsnetz: falls der Guard zuschlug, Rest sauber + positiv räumen.
+    /// <summary>Pausiert das Nachspawnen und wartet, bis KEIN spielbares Element mehr da ist
+    /// (der Spieler beendet die Restelemente normal). Greift der Sicherheits-Cap, wird hart positiv
+    /// geräumt. Garantiert: danach ist die Szene leer (wichtig, bevor ein „… cleared"-Banner kommt).</summary>
+    IEnumerator Co_DrainGameplay()
+    {
+        if (Spawner == null) yield break;
+
+        Spawner.SetBannerPause(true);   // kein Nachspawn
+
+        // Cap gegen 0/nicht-gesetzt absichern (neu hinzugefügtes SerializeField kann in einer
+        // bestehenden Szene als 0 serialisiert sein → würde sofort hart räumen statt auslaufen).
+        float cap = maxDrainSec > 0f ? maxDrainSec : 6f;
+        float guard = 0f;
+        while (Spawner.HasActiveGameplayPoints() && guard < cap)
+        {
+            guard += Time.deltaTime;
+            yield return null;
+        }
+
+        // Sicherheitsnetz: falls noch etwas hängt (Cap erreicht), positiv räumen + 1 Frame,
+        // damit die Destroy()-Aufrufe wirklich greifen, bevor es weitergeht.
         if (Spawner.HasActiveGameplayPoints())
+        {
             Spawner.PositiveClearAll();
+            yield return null;
+        }
     }
 
     /// <summary>Bei Game Over aufrufen → stoppt den Phasen-Ablauf.</summary>
@@ -272,6 +309,35 @@ public class PhaseManager : MonoBehaviour
     }
 
     // ----------------------------------------------------------------- Entscheidung
+    // Wickelt die Entscheidung in die Zwischenphasen-Banner:
+    //   „Phase X cleared" (Vorphase) → Decision-UI (Wahl) → „Starting Phase X+1" (Special-Phase).
+    IEnumerator Co_DecisionInterphase(PhaseDef def, int clearedPhase, int nextPhase)
+    {
+        // Garantie: erst zeigen, wenn wirklich kein Element mehr da ist (sonst „cleared" trotz Restelement).
+        yield return Co_DrainGameplay();
+
+        float half = InterphaseHalf;
+
+        // 1) „Phase X cleared" (ersetzt die frühere reine Wartezeit vor der UI).
+        if (clearedPhase >= 1)
+        {
+            OnPhaseTextBanner?.Invoke(ClearedText(clearedPhase), half);
+            yield return new WaitForSecondsRealtime(half);
+        }
+
+        // 2) Entscheidungs-UI: Wahl treffen.
+        yield return Co_Decision(def);
+
+        // 3) „Starting Phase X+1".
+        OnPhaseTextBanner?.Invoke(StartingText(nextPhase), half);
+        yield return new WaitForSecondsRealtime(half);
+    }
+
+    // Sichere Werte, falls die SerializeFields in einer bestehenden Szene als 0/leer serialisiert wurden.
+    float InterphaseHalf => Mathf.Max(0.1f, (interphaseDurationSec > 0f ? interphaseDurationSec : 5f) * 0.5f);
+    string ClearedText(int n)  => string.Format(string.IsNullOrEmpty(clearedFormat)  ? "Phase {0} cleared"   : clearedFormat,  n);
+    string StartingText(int n) => string.Format(string.IsNullOrEmpty(startingFormat) ? "Phase {0}" : startingFormat, n);
+
     IEnumerator Co_Decision(PhaseDef def)
     {
         // Keine Entscheidungs-UI in der Szene? → vorläufig automatisch abwechselnd wählen (Test).
@@ -280,11 +346,6 @@ public class PhaseManager : MonoBehaviour
             _chosenMode = (_chosenMode == SpecialMode.Gravity) ? SpecialMode.Fountain : SpecialMode.Gravity;
             yield break;
         }
-
-        // Mindest-Wartezeit, nachdem das letzte Element der Vorphase ausgelaufen ist,
-        // bevor die Entscheidungs-UI erscheint (ruhiger Übergang).
-        if (decisionPreDelaySec > 0f)
-            yield return new WaitForSecondsRealtime(decisionPreDelaySec);
 
         // KEIN Time.timeScale=0: Das Gameplay ist während der Entscheidung ohnehin im Leerlauf
         // (Phase geräumt, Spawning pausiert, kein Timer, kein Special Mode). So bleibt das Spiel
@@ -300,12 +361,30 @@ public class PhaseManager : MonoBehaviour
     }
 
     // ----------------------------------------------------------------- Banner
+    // Erster Banner (nur vor P1): „Starting Phase 1" — gleiche Schreibweise wie die Zwischenphasen.
     IEnumerator Co_PhaseBanner(int phaseNumber)
     {
         if (Spawner != null) Spawner.SetBannerPause(true);
-        OnPhaseBanner?.Invoke(phaseNumber, phases.Length);
-        yield return new WaitForSeconds(bannerDurationSec);
+        OnPhaseTextBanner?.Invoke(StartingText(phaseNumber), bannerDurationSec);
+        yield return new WaitForSecondsRealtime(bannerDurationSec);
         if (Spawner != null) Spawner.SetBannerPause(false);
+    }
+
+    // 5-s-Zwischenphase nach einer Special-Mode-Phase:
+    //   erste Hälfte „Phase X cleared", zweite Hälfte „Starting Phase X+1" (je rein/raus faden).
+    // Spawning bleibt pausiert (vom Drain her) — die nächste Spielphase setzt es selbst fort.
+    IEnumerator Co_InterphaseBanner(int clearedPhase, int nextPhase)
+    {
+        // Garantie: erst zeigen, wenn wirklich kein Element mehr da ist.
+        yield return Co_DrainGameplay();
+
+        float half = InterphaseHalf;
+
+        OnPhaseTextBanner?.Invoke(ClearedText(clearedPhase), half);
+        yield return new WaitForSecondsRealtime(half);
+
+        OnPhaseTextBanner?.Invoke(StartingText(nextPhase), half);
+        yield return new WaitForSecondsRealtime(half);
     }
 
     // ----------------------------------------------------------------- Timer + Curve

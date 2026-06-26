@@ -647,6 +647,8 @@ public class MixedPointSpawner : MonoBehaviour
                     SpawnNextPoint();
                     yield break;
                 }
+                float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
+                yield return new WaitForSecondsRealtime(delay);
             }
             GameOver();
         }
@@ -731,6 +733,13 @@ public class MixedPointSpawner : MonoBehaviour
     public void TriggerGameOverFromGravity()
     {
         _gameOverCause = "gravity";
+        StartCoroutine(Co_DelayedGameOver());
+    }
+
+    private IEnumerator Co_DelayedGameOver()
+    {
+        float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
+        yield return new WaitForSecondsRealtime(delay);
         GameOver();
     }
 

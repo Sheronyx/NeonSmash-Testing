@@ -18,6 +18,10 @@ public class LivesManager : MonoBehaviour
     [SerializeField] private GameObject timeoutVFXPrefab;
     [SerializeField] private float vfxDuration = 0.8f;
 
+    [Header("Life Lost Animation (Pause)")]
+    [SerializeField] private GameObject lifeLostAnimationPrefab;
+    [SerializeField] private float lifeLostAnimDuration = 1.0f;
+
     [Header("Pop Animation")]
     [SerializeField] private float popScale = 1.4f;
     [SerializeField] private float popDuration = 0.15f;
@@ -32,8 +36,11 @@ public class LivesManager : MonoBehaviour
     private float health = 3f;
     private const float maxHealth = 3f;
 
+    public static bool IsLifeLostAnimating { get; private set; }
+
     public bool HasLivesLeft => health > 0f;
     public float TotalLoseDuration => vfxDuration + popDuration * 2f;
+    public float TotalGameOverAnimDuration => vfxDuration + lifeLostAnimDuration;
 
     private void Awake()
     {
@@ -48,11 +55,11 @@ public class LivesManager : MonoBehaviour
     public void ResetLives()
     {
         health = maxHealth;
+        IsLifeLostAnimating = false;
+        Time.timeScale = 1f;
         UpdateHeartFills();
     }
 
-    // Bindet die Herz-Images der aktuell aktiven Top Bar (z.B. nach einem
-    // Skin-Bar-Swap) und aktualisiert die Füllstände.
     public void BindHearts(Image l1, Image l2, Image l3)
     {
         if (l1 != null) lifePoint1 = l1;
@@ -61,27 +68,27 @@ public class LivesManager : MonoBehaviour
         UpdateHeartFills();
     }
 
-    // Gibt true zurück wenn noch Leben übrig, false bei GameOver
     // damage = 0 → nutzt damagePerMiss aus Inspector; sonst direkt übergeben
     public bool LoseLife(Vector3 vfxPosition, float damage = 0f)
     {
-        if (TutorialManager.IsTutorialActive) return true; // kein Schaden im Tutorial
+        if (TutorialManager.IsTutorialActive) return true;
         if (health <= 0f) return false;
+        if (IsLifeLostAnimating) return health > 0f;
 
         float actualDamage = damage > 0f ? damage : damagePerMiss;
 
-        // Betroffenes Herz VOR dem Abziehen bestimmen
         Image affectedHeart;
         if (health > 2f)      affectedHeart = lifePoint3;
         else if (health > 1f) affectedHeart = lifePoint2;
         else                   affectedHeart = lifePoint1;
 
         health = Mathf.Max(0f, health - actualDamage);
-        UpdateHeartFills();
 
         AudioManager.Instance?.PlaySfx(loseLifeClip, loseLifeVolume);
 
         bool stillAlive = health > 0f;
+        IsLifeLostAnimating = true;
+        Time.timeScale = 0f;
         StartCoroutine(VFXThenPop(vfxPosition, affectedHeart));
         return stillAlive;
     }
@@ -98,11 +105,28 @@ public class LivesManager : MonoBehaviour
         if (timeoutVFXPrefab != null)
         {
             var vfx = Instantiate(timeoutVFXPrefab, vfxPosition, Quaternion.identity);
-            Destroy(vfx, vfxDuration);
+            yield return new WaitForSecondsRealtime(vfxDuration);
+            Destroy(vfx);
         }
 
+        if (lifeLostAnimationPrefab != null)
+        {
+            var instance = Instantiate(lifeLostAnimationPrefab, Vector3.zero, Quaternion.identity);
+            foreach (var ps in instance.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = ps.main;
+                main.useUnscaledTime = true;
+            }
+            var rootPs = instance.GetComponent<ParticleSystem>();
+            if (rootPs != null) rootPs.Play(true);
+            yield return new WaitForSecondsRealtime(lifeLostAnimDuration);
+            Destroy(instance);
+        }
+
+        Time.timeScale = 1f;
+        IsLifeLostAnimating = false;
+        UpdateHeartFills();
         StartCoroutine(PopHeart(heart));
-        yield break;
     }
 
     private IEnumerator PopHeart(Image img)
@@ -113,7 +137,6 @@ public class LivesManager : MonoBehaviour
         Vector3 originalScale = rt.localScale;
         Vector3 bigScale = originalScale * popScale;
 
-        // Pop up
         float t = 0f;
         while (t < popDuration)
         {
@@ -122,7 +145,6 @@ public class LivesManager : MonoBehaviour
             yield return null;
         }
 
-        // Pop down
         t = 0f;
         while (t < popDuration)
         {

@@ -112,7 +112,7 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.0039215684, g: 0.14071022, b: 1, a: 1}
+      key0: {r: 1, g: 1, b: 1, a: 1}
       key1: {r: 0, g: 0, b: 0, a: 0}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -448,7 +448,7 @@ MonoBehaviour:
   gravity: -15
   lifetimeAfterLanding: 0
   isShocker: 0
-  isFake: 0
+  isFake: 1
 --- !u!1 &4230476312809574213
 GameObject:
   m_ObjectHideFlags: 0
@@ -507,7 +507,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 693c000fd4c544b43baaff2772d1b5ef, type: 2}
+  - {fileID: 2100000, guid: afec739ec03274c328d950656616c734, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -531,7 +531,7 @@ SpriteRenderer:
   m_SortingOrder: 8
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1088205902967396284, guid: b15d80d72d9e64e35baede90f26cd6ee, type: 3}
-  m_Color: {r: 0.32549024, g: 0.3855626, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -598,7 +598,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 693c000fd4c544b43baaff2772d1b5ef, type: 2}
+  - {fileID: 2100000, guid: afec739ec03274c328d950656616c734, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -622,7 +622,7 @@ SpriteRenderer:
   m_SortingOrder: 8
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ede7420ec463340909c992e67cfa4d6e, type: 3}
-  m_Color: {r: 0.3254902, g: 0.38431373, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -764,11 +764,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.g
-      value: 0.2028302
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.r
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ClampVelocityModule.magnitude.scalar
@@ -792,11 +792,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key0.g
-      value: 0.07855177
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key0.r
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.a
@@ -808,11 +808,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.g
-      value: 0.07855177
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.r
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: startDelay.maxCurve.m_Curve.Array.data[0].value

@@ -44,6 +44,7 @@ public class PlayerInputHandler : MonoBehaviour
         controls.Player.TouchPress.started += ctx =>
         {
             if (PauseMenuController.IsPaused) return;
+            if (LivesManager.IsLifeLostAnimating) return;
 
             isTouching = true;
             trailStarted = false;
@@ -57,6 +58,7 @@ public class PlayerInputHandler : MonoBehaviour
         controls.Player.TouchPosition.performed += ctx =>
         {
             if (PauseMenuController.IsPaused) return;
+            if (LivesManager.IsLifeLostAnimating) return;
             if (!isTouching) return;
 
             Vector2 newPos = ctx.ReadValue<Vector2>();
@@ -85,6 +87,7 @@ public class PlayerInputHandler : MonoBehaviour
         controls.Player.TouchPress.canceled += ctx =>
         {
             if (PauseMenuController.IsPaused) return;
+            if (LivesManager.IsLifeLostAnimating) return;
 
             if (trailStarted)
                 slashTrail?.End();

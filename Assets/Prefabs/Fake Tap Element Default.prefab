@@ -223,7 +223,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 1, g: 0.5019608, b: 0.76862746, a: 1}
+      maxColor: {r: 1, g: 1, b: 1, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -4782,7 +4782,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 01d00ef5195a54fc0992a3b165bd08f9, type: 2}
+  - {fileID: 2100000, guid: afec739ec03274c328d950656616c734, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4894,7 +4894,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 1ceecbce7c5b64d23a923f908cae6e23, type: 2}
+  - {fileID: 2100000, guid: afec739ec03274c328d950656616c734, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4918,7 +4918,7 @@ SpriteRenderer:
   m_SortingOrder: 6
   m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: ede7420ec463340909c992e67cfa4d6e, type: 3}
-  m_Color: {r: 1, g: 0.5, b: 0.7678571, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -4988,7 +4988,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 01d00ef5195a54fc0992a3b165bd08f9, type: 2}
+  - {fileID: 2100000, guid: afec739ec03274c328d950656616c734, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5034,8 +5034,8 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 0.5019608, b: 0.76862746, a: 1}
-      key1: {r: 1, g: 0.5019608, b: 0.76862746, a: 1}
+      key0: {r: 1, g: 1, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
@@ -5087,7 +5087,7 @@ MonoBehaviour:
   radius: 0.85
   segments: 120
   lineWidth: 0.06
-  fuseColor: {r: 1, g: 0.5019608, b: 0.76862746, a: 1}
+  fuseColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &3445201416840381109
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5739,11 +5739,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.b
-      value: 0.79021853
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.g
-      value: 0.2028302
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 701927466264595467, guid: 92d5531caf68b4ab196d184820842feb, type: 3}
       propertyPath: InitialModule.startColor.maxColor.r

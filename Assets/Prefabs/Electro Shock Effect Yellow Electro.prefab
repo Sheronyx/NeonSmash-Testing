@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1892591259854890736}
   - component: {fileID: 1256033727234158149}
   m_Layer: 0
-  m_Name: Electro Shock Effect Blue
+  m_Name: Electro Shock Effect Yellow Electro
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -224,8 +224,8 @@ ParticleSystem:
     startColor:
       serializedVersion: 2
       minMaxState: 2
-      minColor: {r: 0.44313726, g: 0.59783316, b: 0.9019608, a: 0.6}
-      maxColor: {r: 0.44313726, g: 0.6309658, b: 0.9019608, a: 1}
+      minColor: {r: 0.9019608, g: 0.72156864, b: 0.44313726, a: 0.6}
+      maxColor: {r: 0.9019608, g: 0.72156864, b: 0.44313726, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -4875,7 +4875,7 @@ ParticleSystemRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 9
   m_MaskInteraction: 0
   m_RenderMode: 1
   m_MeshDistribution: 0
@@ -5249,7 +5249,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0.36862746, g: 0.55262506, b: 0.7882353, a: 1}
+      maxColor: {r: 0.9019608, g: 0.72156864, b: 0.44313726, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}

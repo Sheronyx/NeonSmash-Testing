@@ -25,21 +25,39 @@ public class PhaseBannerUI : MonoBehaviour
         if (group != null) group.alpha = 0f;
     }
 
-    void OnEnable()  => PhaseManager.OnPhaseBanner += Show;
-    void OnDisable() => PhaseManager.OnPhaseBanner -= Show;
+    void OnEnable()
+    {
+        PhaseManager.OnPhaseBanner     += Show;
+        PhaseManager.OnPhaseTextBanner += ShowText;
+    }
+    void OnDisable()
+    {
+        PhaseManager.OnPhaseBanner     -= Show;
+        PhaseManager.OnPhaseTextBanner -= ShowText;
+    }
 
     void Show(int phaseNumber, int totalPhases)
     {
         if (label != null) label.text = string.Format(textFormat, phaseNumber, totalPhases);
         if (_routine != null) StopCoroutine(_routine);
-        _routine = StartCoroutine(Co_Banner());
+        _routine = StartCoroutine(Co_Banner(holdDuration));
     }
 
-    IEnumerator Co_Banner()
+    // Freitext-Banner: faded rein/raus innerhalb von visibleSeconds (für die Zwischenphase).
+    void ShowText(string text, float visibleSeconds)
+    {
+        if (label != null) label.text = text;
+        if (_routine != null) StopCoroutine(_routine);
+        // Hold = Fenster minus Ein-/Ausblendzeit (mind. 0).
+        float hold = Mathf.Max(0f, visibleSeconds - 2f * fadeDuration);
+        _routine = StartCoroutine(Co_Banner(hold));
+    }
+
+    IEnumerator Co_Banner(float hold)
     {
         if (group == null) yield break;
         yield return Fade(0f, 1f);
-        yield return new WaitForSeconds(holdDuration);
+        yield return new WaitForSecondsRealtime(hold);
         yield return Fade(1f, 0f);
         _routine = null;
     }
