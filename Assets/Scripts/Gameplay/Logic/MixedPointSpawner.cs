@@ -338,6 +338,7 @@ public class MixedPointSpawner : MonoBehaviour
                 float wait = LivesManager.Instance != null
                     ? LivesManager.Instance.TotalGameOverAnimDuration : 1.8f;
                 yield return new WaitForSecondsRealtime(wait);
+                yield return null; // Extra frame: RunPhaseTimer (yield return null, FIFO-prior) setzt SetBannerPause zuerst
                 if (running && !gameOver) SpawnNextPoint();
                 yield break;
             }
@@ -642,9 +643,13 @@ public class MixedPointSpawner : MonoBehaviour
                 if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
                 if (stillAlive)
                 {
-                    // Warten bis VFX + Herz-Animation fertig, dann nächsten Point spawnen
+                    // Warten bis VFX + Herz-Animation fertig, dann nächsten Point spawnen.
+                    // Extra yield return null: WaitForSecondsRealtime feuert vor Update, aber
+                    // RunPhaseTimer setzt SetBannerPause(true) nach Update (yield return null).
+                    // Der Extra-Frame stellt sicher, dass RunPhaseTimer zuerst läuft (FIFO-Queue).
                     yield return new WaitForSecondsRealtime(LivesManager.Instance.TotalGameOverAnimDuration);
-                    SpawnNextPoint();
+                    yield return null;
+                    if (running && !gameOver) SpawnNextPoint();
                     yield break;
                 }
                 float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;

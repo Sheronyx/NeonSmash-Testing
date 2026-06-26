@@ -405,6 +405,8 @@ public class PhaseManager : MonoBehaviour
             CurrentReactionTime = ComputeReactionTime(_phaseElapsed);
             yield return null;
         }
+        // Sofort Spawn stoppen, sobald die Phase endet — kein Fenster für Nachelemente.
+        if (Spawner != null) Spawner.SetBannerPause(true);
     }
 
     float ComputeReactionTime(float elapsed)

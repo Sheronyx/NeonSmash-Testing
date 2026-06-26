@@ -3854,9 +3854,9 @@ MonoBehaviour:
   gravityTapPrefab: {fileID: 4156307227592253209, guid: a4b82a7a1a5154f708f5d836b0236cad, type: 3}
   gravityShockerPrefab: {fileID: 1731421441570030842, guid: bda9972bf73ac43b9a51f06e2c66f45e, type: 3}
   gravityFakePrefab: {fileID: 4836988372410819453, guid: 405aea2c1c2ad449abc652424454925e, type: 3}
-  spawnIntervalFactor: 0.4
+  spawnIntervalFactor: 0.5
   spawnInterval: 0.5
-  maxExtraSpeed: 2.4
+  maxExtraSpeed: 2.2
 --- !u!114 &697214887
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9502,10 +9502,10 @@ MonoBehaviour:
   reactionCurve:
   - duration: 5
     reactionTime: 2
-  - duration: 10
-    reactionTime: 1
-  - duration: 5
-    reactionTime: 1.6
+  - duration: 8
+    reactionTime: 1.5
+  - duration: 7
+    reactionTime: 1.1
   - duration: 10
     reactionTime: 0.8
   perPhaseSpeedup: 0
@@ -11450,6 +11450,8 @@ MonoBehaviour:
   vfxDuration: 0.8
   lifeLostAnimationPrefab: {fileID: 8039588646630717138, guid: a536848f72b1946ebacdfab14ed543bc, type: 3}
   lifeLostAnimDuration: 1.5
+  rampUpStartScale: 0.4
+  rampUpDuration: 2
   popScale: 1.4
   popDuration: 0.15
   loseLifeClip: {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
