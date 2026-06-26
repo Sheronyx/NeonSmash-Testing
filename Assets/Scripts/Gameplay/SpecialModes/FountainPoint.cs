@@ -98,7 +98,6 @@ public class FountainPoint : BasePoint
 
     void ApplyShockerPenalty(Vector3 pos)
     {
-        ComboManager.Instance?.RegisterMiss();
         if (LivesManager.Instance != null)
         {
             bool stillAlive = LivesManager.Instance.LoseLife(pos);

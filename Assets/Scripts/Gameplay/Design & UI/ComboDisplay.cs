@@ -25,9 +25,7 @@ public class ComboDisplay : MonoBehaviour
 
     private void OnEnable()
     {
-        ComboManager.OnComboChanged    += HandleComboChanged;
-        SpecialModeManager.OnModeStarted += HandleModeChanged;
-        SpecialModeManager.OnModeEnded   += HandleModeChanged;
+        ComboManager.OnComboChanged += HandleComboChanged;
 
         if (maxFire != null)
         {
@@ -40,14 +38,12 @@ public class ComboDisplay : MonoBehaviour
             maxFire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        RefreshCurrent();
+        Refresh(ComboManager.Instance != null ? ComboManager.Instance.ComboCount : 0);
     }
 
     private void OnDisable()
     {
-        ComboManager.OnComboChanged    -= HandleComboChanged;
-        SpecialModeManager.OnModeStarted -= HandleModeChanged;
-        SpecialModeManager.OnModeEnded   -= HandleModeChanged;
+        ComboManager.OnComboChanged -= HandleComboChanged;
 
         if (_pulse != null) { StopCoroutine(_pulse); _pulse = null; }
         if (_punch != null) { StopCoroutine(_punch); _punch = null; }
@@ -56,33 +52,18 @@ public class ComboDisplay : MonoBehaviour
         if (maxFire != null) maxFire.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
-    private void HandleComboChanged(int combo)
+    private void HandleComboChanged(int streak)
     {
-        Refresh(combo);
-        if (combo > 1 && !_atMax) Punch();
+        Refresh(streak);
+        if (streak > 0 && !_atMax) Punch();
     }
 
-    private void HandleModeChanged(SpecialMode _)
-    {
-        RefreshCurrent();
-        if (!_atMax) Punch();
-    }
-
-    private void RefreshCurrent()
-    {
-        Refresh(ComboManager.Instance != null ? ComboManager.Instance.ComboCount : 0);
-    }
-
-    private void Refresh(int combo)
+    private void Refresh(int streak)
     {
         if (multiplierText == null) return;
-        int comboMult = Mathf.Min(combo + 1, 10); // identisch mit ComboManager.Multiplier
-        bool special  = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
-        int totalMult = comboMult * (special ? 2 : 1);
-        multiplierText.text = "x" + $"{totalMult}.0";
-
-        // Limit erreicht (x10.0 normal bzw. x20.0 Special) → dauerhaftes Pulsieren
-        SetMaxPulse(comboMult >= 10);
+        bool comboActive = streak >= 5;
+        multiplierText.text = comboActive ? "x5.0" : "x1.0";
+        SetMaxPulse(comboActive);
     }
 
     private void SetMaxPulse(bool on)

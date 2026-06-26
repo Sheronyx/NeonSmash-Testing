@@ -82,7 +82,7 @@ public class ScoreManager : MonoBehaviour
 
     public void PunchScore()
     {
-        if (scoreText == null) return;
+        if (scoreText == null || this == null) return;
         if (punchRoutine != null) StopCoroutine(punchRoutine);
         punchRoutine = StartCoroutine(Co_Punch());
     }

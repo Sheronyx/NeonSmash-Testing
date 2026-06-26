@@ -105,7 +105,7 @@ public class PeekElement : MonoBehaviour
         {
             case PeekType.Tap:
                 ScoreManager.Instance?.AddPointsFromHit();
-                ComboManager.Instance?.RegisterHit();
+                // Peek-Elemente haben keine Farbe → neutraler Treffer, kein Kombo-Aufbau
                 AudioManager.Instance?.PlayNormalPoint();
                 SendMessage("SpawnExplosion", SendMessageOptions.DontRequireReceiver);
                 Destroy(gameObject);

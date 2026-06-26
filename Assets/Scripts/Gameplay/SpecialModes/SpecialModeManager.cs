@@ -52,11 +52,11 @@ public void StartMode(SpecialMode mode)
     public static void RegisterSpecialHit()
     {
         ScoreManager.Instance?.AddPointsFromHit();
-        ComboManager.Instance?.RegisterHit();
+        // Special-Mode-Elemente haben keine Farbe → neutraler Treffer, kein Kombo-Aufbau
     }
 
     public static void RegisterSpecialMiss()
     {
-        ComboManager.Instance?.RegisterMiss();
+        // Special-Mode-Elemente brechen das Farb-Kombo nicht (getrennte Systeme)
     }
 }

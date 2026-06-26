@@ -3,6 +3,8 @@ using UnityEngine.VFX;
 
 public abstract class BasePoint : MonoBehaviour
 {
+    public PointColor Color { get; set; }
+
     [Header("VFX")]
     [SerializeField] protected VisualEffect explodeVFXPrefab;
 

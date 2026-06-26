@@ -59,7 +59,7 @@ public class SlashTrail : MonoBehaviour
             {
                 prefabToUse = fountainTrailPrefab;
             }
-            else if (ComboManager.Instance != null && ComboManager.Instance.Multiplier >= 10f && electricTrailPrefab != null)
+            else if (ComboManager.Instance != null && ComboManager.Instance.IsComboActive && electricTrailPrefab != null)
             {
                 prefabToUse = electricTrailPrefab;
                 isElectricTrail = true;

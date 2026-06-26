@@ -11,7 +11,6 @@ public class TapPoint : BasePoint
 
         TutorialManager.Instance?.OnActionPerformed(TutorialPointType.NormalPoint);
 
-        AudioManager.Instance?.PlayNormalPoint();
         spawner?.HandlePointHit(gameObject);
     }
 }

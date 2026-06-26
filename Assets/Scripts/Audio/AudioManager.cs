@@ -33,14 +33,29 @@ public class AudioManager : MonoBehaviour
         }
     }
 
-    // Hilfsfunktionen für Komfort
-    public void PlayNormalPoint()
+    // streak = aktueller Kombo-Streak NACH dem Treffer (aus ComboManager.ComboCount).
+    // Kein Argument nötig für Nicht-Farb-Treffer (PeekElement, Gravity, Fountain) → streak 0 → Originalpitch.
+    public void PlayNormalPoint(int streak = 0)
     {
-        PlaySfx(normalPointClip);
+        if (normalPointClip == null || sfxSource == null) return;
+        sfxSource.pitch = ComboPitch(streak);
+        sfxSource.PlayOneShot(normalPointClip);
     }
 
-    public void PlaySwipePoint()
+    public void PlaySwipePoint(int streak = 0)
     {
-        PlaySfx(swipePointClip);
+        if (swipePointClip == null || sfxSource == null) return;
+        sfxSource.pitch = ComboPitch(streak);
+        sfxSource.PlayOneShot(swipePointClip);
     }
+
+    private static float ComboPitch(int streak) => streak switch
+    {
+        <= 1 => 1.0f,
+        2    => 1.1f,
+        3    => 1.2f,
+        4    => 1.3f,
+        5    => 1.4f,
+        _    => 0.7f   // streak >= 6, Kombomodus läuft schon
+    };
 }

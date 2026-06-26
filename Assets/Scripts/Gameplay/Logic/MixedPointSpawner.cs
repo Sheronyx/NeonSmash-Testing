@@ -66,6 +66,16 @@ public class MixedPointSpawner : MonoBehaviour
     public GameObject normalPointPrefab;
     public GameObject swipePointPrefab;
 
+    [Header("Farbige Tap-Prefabs (Rot / Grün / Lila)")]
+    [SerializeField] private GameObject tapPrefab_Red;
+    [SerializeField] private GameObject tapPrefab_Green;
+    [SerializeField] private GameObject tapPrefab_Purple;
+
+    [Header("Farbige Swipe-Prefabs (Rot / Grün / Lila)")]
+    [SerializeField] private GameObject swipePrefab_Red;
+    [SerializeField] private GameObject swipePrefab_Green;
+    [SerializeField] private GameObject swipePrefab_Purple;
+
     [Header("Fake Point (Ablenkung)")]
     [Tooltip("Fake-Element-Prefab (FakePoint). Spawnt mit Chance parallel zu Tap-Points.")]
     public GameObject fakePointPrefab;
@@ -135,16 +145,94 @@ public class MixedPointSpawner : MonoBehaviour
     public float spawnAreaBorderThickness = 2f;
 
     public SwipePoint CurrentSwipePoint { get; private set; }
-    public Vector3? CurrentPointPosition => currentPoint != null ? currentPoint.transform.position : null;
     public bool IsRunning => running;
     public bool IsTutorialMode { get; private set; }
 
     public void SetTutorialMode(bool active) => IsTutorialMode = active;
 
+    // ── 3-Slot-System ─────────────────────────────────────────────────────────
+    private class SlotState
+    {
+        public GameObject point;
+        public PointColor color;
+        public Coroutine  timeout;
+        public bool       isThunder;
+    }
+
+    private readonly SlotState[] _slots =
+    {
+        new SlotState(), new SlotState(), new SlotState()
+    };
+
+    // Für Rückwärtskompatibilität (Tutorial, legacy-Checks)
+    private GameObject currentPoint
+    {
+        get { foreach (var s in _slots) if (s.point != null) return s.point; return null; }
+    }
+
+    // Alle aktiven SwipePoints — für PlayerInputHandler
+    public SwipePoint[] GetActiveSwipePoints()
+    {
+        var list = new System.Collections.Generic.List<SwipePoint>();
+        foreach (var s in _slots)
+            if (s.point != null) { var sp = s.point.GetComponent<SwipePoint>(); if (sp) list.Add(sp); }
+        return list.ToArray();
+    }
+
+    private int FindSlotIndex(GameObject point)
+    {
+        for (int i = 0; i < _slots.Length; i++)
+            if (_slots[i].point == point) return i;
+        return -1;
+    }
+
+    private void ClearAllSlots()
+    {
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i].timeout != null) { StopCoroutine(_slots[i].timeout); _slots[i].timeout = null; }
+            if (_slots[i].point  != null) { Destroy(_slots[i].point); _slots[i].point = null; }
+        }
+        CurrentSwipePoint = null;
+    }
+
+    // Räumt alle Slots außer exceptIndex lautlos auf (kein Score, kein Leben-Verlust).
+    private void ClearOtherSlots(int exceptIndex)
+    {
+        for (int j = 0; j < _slots.Length; j++)
+        {
+            if (j == exceptIndex) continue;
+            if (_slots[j].timeout != null) { StopCoroutine(_slots[j].timeout); _slots[j].timeout = null; }
+            if (_slots[j].point   != null)
+            {
+                if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == _slots[j].point)
+                    CurrentSwipePoint = null;
+                Destroy(_slots[j].point);
+                _slots[j].point = null;
+            }
+        }
+    }
+
+    // Hilfsmethoden für farbige Prefabs (Fallback auf Default)
+    private GameObject GetTapPrefab(PointColor c) => c switch
+    {
+        PointColor.Red    => tapPrefab_Red    != null ? tapPrefab_Red    : ActiveNormalPrefab,
+        PointColor.Green  => tapPrefab_Green  != null ? tapPrefab_Green  : ActiveNormalPrefab,
+        PointColor.Purple => tapPrefab_Purple != null ? tapPrefab_Purple : ActiveNormalPrefab,
+        _                 => ActiveNormalPrefab
+    };
+
+    private GameObject GetSwipePrefab(PointColor c) => c switch
+    {
+        PointColor.Red    => swipePrefab_Red    != null ? swipePrefab_Red    : ActiveSwipePrefab,
+        PointColor.Green  => swipePrefab_Green  != null ? swipePrefab_Green  : ActiveSwipePrefab,
+        PointColor.Purple => swipePrefab_Purple != null ? swipePrefab_Purple : ActiveSwipePrefab,
+        _                 => ActiveSwipePrefab
+    };
+
     // Zwischengespeicherter SwipePoint während er gesperrt ist
     private SwipePoint _lockedSwipePoint;
 
-    private GameObject currentPoint;
     private GameObject lastPoint;
 
     private int normalsInRow = 0;
@@ -152,8 +240,11 @@ public class MixedPointSpawner : MonoBehaviour
 
     private bool running = false;
     private bool gameOver = false;
-    private Coroutine timeoutRoutine;
     private bool spawnPausedForBanner = false;
+
+    // Rundentyp: alle 3 Slots spawnen immer denselben Typ (Tap oder Swipe).
+    // Wird neu gewürfelt, sobald alle 3 Slots gleichzeitig leer sind.
+    private bool _roundIsSwipe = false;
 
 
     void Awake()
@@ -192,7 +283,7 @@ public class MixedPointSpawner : MonoBehaviour
             MusicManager.Instance?.ResetGameMusicSpeed();
         }
 
-        if (currentPoint == null) SpawnNextPoint();
+        SpawnNextPoint();
     }
 
     public void StopSpawning()
@@ -205,150 +296,252 @@ public class MixedPointSpawner : MonoBehaviour
     public void SetBannerPause(bool paused)
     {
         spawnPausedForBanner = paused;
-        // Beim Fortsetzen das Spawning wieder anstoßen, falls gerade kein Punkt aktiv ist.
-        if (!paused && running && currentPoint == null)
+        if (!paused && running)
             SpawnNextPoint();
     }
 
+    // Füllt alle leeren Slots mit neuen Elementen.
     public void SpawnNextPoint()
     {
         if (IsTutorialMode) return;
-
-        if (!running || spawnPausedForBanner || currentPoint != null || isConvertingPoints) return;
-
-        // Activation Orb kommt allein (kein normaler Tap-/SwipePoint daneben).
-        // Im Phasen-System steuert der PhaseManager die Orbs → kein zufälliges Spawnen.
+        if (!running || spawnPausedForBanner || isConvertingPoints) return;
         if (IsInfinityMode && allowRandomActivationOrbs && TrySpawnActivationOrb()) return;
 
-        bool forceSwipe = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
-        bool forceNormal = maxSwipesInRow > 0 && swipesInRow >= maxSwipesInRow;
-
-        GameObject prefabToSpawn;
-        bool spawnSwipe;
-
-        if (forceSwipe) spawnSwipe = true;
-        else if (forceNormal) spawnSwipe = false;
-        else spawnSwipe = Random.value < swipeChance;
-
-        
-
-        prefabToSpawn = spawnSwipe ? ActiveSwipePrefab : ActiveNormalPrefab;
-
-        if (spawnSwipe)
+        // Alle Slots leer → neuen Rundentyp (Tap/Swipe) würfeln.
+        bool allEmpty = true;
+        foreach (var s in _slots) { if (s.point != null) { allEmpty = false; break; } }
+        if (allEmpty)
         {
-            swipesInRow++;
-            normalsInRow = 0;
-        }
-        else
-        {
-            normalsInRow++;
-            swipesInRow = 0;
+            bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+            bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
+            _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
+            if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
+            else               { normalsInRow++; swipesInRow = 0; }
         }
 
-        // Größe des zu spawnenden Points berechnen
-        float spawnPointHalfSizePx = GetHalfSizePixels(prefabToSpawn);
+        for (int i = 0; i < _slots.Length; i++)
+            if (_slots[i].point == null)
+                SpawnSlot(i);
+    }
 
-        Rect allowedScreen = GetAllowedSpawnRect();
-        Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
-
-        Vector2 viewportPos = new Vector2(0.5f, 0.5f);
-        bool foundValid = false;
-
-        int maxAttempts = currentActivationPoint != null ? 80 : 40;
-        int attempts = 0;
-
-        while (attempts < maxAttempts)
+    // Gibt die Farbe zurück, die in keinem anderen belegten Slot vorhanden ist.
+    private PointColor GetUnusedColor(int slotIndex)
+    {
+        bool redUsed = false, greenUsed = false, purpleUsed = false;
+        for (int j = 0; j < _slots.Length; j++)
         {
-            viewportPos = new Vector2(
-                Random.Range(allowedViewport.xMin, allowedViewport.xMax),
-                Random.Range(allowedViewport.yMin, allowedViewport.yMax)
-            );
-
-            attempts++;
-
-            bool farFromLast       = true;
-            bool farFromActivation = true;
-
-            // Abstand zu letztem Punkt
-            if (lastPoint != null)
+            if (j == slotIndex || _slots[j].point == null) continue;
+            switch (_slots[j].color)
             {
-                Vector2 lastVP = mainCamera.WorldToViewportPoint(lastPoint.transform.position);
-                farFromLast = IsFarEnough(viewportPos, lastVP);
-            }
-
-            // Abstand zu Activation Orb — mit Größen beider Objekte
-            if (currentActivationPoint != null)
-            {
-                Vector2 activationVP      = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
-                float   activationHalfSizePx = GetHalfSizePixels(currentActivationPoint);
-                farFromActivation = IsFarEnoughFromOrb(viewportPos, activationVP, spawnPointHalfSizePx, activationHalfSizePx);
-            }
-
-            if (farFromLast && farFromActivation)
-            {
-                foundValid = true;
-                break;
+                case PointColor.Red:    redUsed    = true; break;
+                case PointColor.Green:  greenUsed  = true; break;
+                case PointColor.Purple: purpleUsed = true; break;
             }
         }
+        var available = new System.Collections.Generic.List<PointColor>(3);
+        if (!redUsed)    available.Add(PointColor.Red);
+        if (!greenUsed)  available.Add(PointColor.Green);
+        if (!purpleUsed) available.Add(PointColor.Purple);
+        return available.Count > 0
+            ? available[Random.Range(0, available.Count)]
+            : (PointColor)Random.Range(0, 3);
+    }
 
-        if (!foundValid && debugLogs)
-            Debug.LogWarning("[Spawner] Kein gültiger Spawn gefunden → fallback Mitte");
+    // Spawnt ein neues Element in Slot i (zufällige Farbe, Tap oder Swipe).
+    private void SpawnSlot(int i)
+    {
+        if (!running || spawnPausedForBanner || _slots[i].point != null || isConvertingPoints) return;
 
-        Vector3 worldPos = ViewportToWorldOnZ0(viewportPos);
+        // Farbe: die noch nicht in einem anderen Slot belegten Farbe wählen
+        PointColor color = GetUnusedColor(i);
+        _slots[i].color = color;
 
-        // Peek-a-boo: übernimmt komplett (kein normales Element, kein Thunder/Fake)
-        if (peekABooSystem != null && !PeekABooSystem.IsActive && Random.value < peekABooChance)
+        // Peek-a-boo nur für Slot 0, und nur wenn kein anderer Slot aktiv ist
+        if (i == 0 && peekABooSystem != null && !PeekABooSystem.IsActive
+            && _slots[1].point == null && _slots[2].point == null
+            && Random.value < peekABooChance)
         {
             peekABooSystem.StartPeekABoo();
             return;
         }
 
-        // Donnerschock: ersetzt das normale Element (kein Fake, kein PortalBeam)
-        if (ActiveThunderPrefab != null && Random.value < thunderSpawnChance)
+        // Alle Slots dieser Runde haben denselben Typ (Tap oder Swipe)
+        bool spawnSwipe = _roundIsSwipe;
+
+        // Donnerschock
+        bool isThunder = ActiveThunderPrefab != null && Random.value < thunderSpawnChance;
+
+        // Position finden (Abstand zu anderen belegten Slots + Activation Orb)
+        GameObject samplePrefab = isThunder ? ActiveThunderPrefab
+                                 : (spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color));
+        Vector2 viewportPos = FindSlotPosition(i, samplePrefab);
+        Vector3 worldPos    = ViewportToWorldOnZ0(viewportPos);
+
+        if (isThunder)
         {
+            _slots[i].isThunder = true;
             var thunder = Instantiate(ActiveThunderPrefab, worldPos, Quaternion.identity);
-            float dynamicTime = CurrentReactionTime;
             var tp = thunder.GetComponent<ThunderPoint>();
+            float dynamicTime = CurrentReactionTime;
             if (tp != null) tp.Activate(dynamicTime);
 
-            // Spawner-Timer damit der nächste Point nach Timeout kommt
-            timeoutRoutine = StartCoroutine(Co_ThunderTimeout(thunder, dynamicTime));
+            _slots[i].point   = thunder;
+            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, thunder, dynamicTime));
+            lastPoint = thunder;
+            if (portalFlash != null) portalFlash.FlashParticles();
             return;
         }
 
-        if (portalBeam != null)
+        _slots[i].isThunder = false;
+
+        GameObject prefab = spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color);
+        var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
+
+        var tap   = newPoint.GetComponent<TapPoint>();
+        var swipe = newPoint.GetComponent<SwipePoint>();
+        if (tap   != null) tap.spawner   = this;
+        if (swipe != null) { swipe.spawner = this; CurrentSwipePoint = swipe; }
+
+        var bp = newPoint.GetComponent<BasePoint>();
+        if (bp != null) bp.Color = color;
+
+        _slots[i].point = newPoint;
+        lastPoint = newPoint;
+
+        if (IsInfinityMode && !IsTutorialMode)
         {
-            portalBeam.SpawnWithBeam(prefabToSpawn, worldPos);
+            float dynamicTime = CurrentReactionTime;
+            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, dynamicTime));
+
+            var fuse          = newPoint.GetComponentInChildren<FuseCountdown>();
+            var lineFuse      = newPoint.GetComponentInChildren<LineFuse>();
+            var sparks        = newPoint.GetComponentInChildren<BurnSparks>();
+            var countdownSq   = newPoint.GetComponentInChildren<CountdownSquare>();
+            var pulse         = newPoint.GetComponent<PointPulse>();
+
+            if (fuse        != null) fuse.StartBurn(dynamicTime);
+            if (lineFuse    != null) lineFuse.StartBurn(dynamicTime);
+            if (sparks      != null) { sparks.SetQuadMode(tap != null); sparks.StartBurn(dynamicTime); }
+            if (countdownSq != null) countdownSq.StartCountdown(dynamicTime);
+            if (pulse       != null) pulse.StartPulsing();
+
+            if (tap != null) TrySpawnFake(newPoint, dynamicTime);
         }
-        else
-        {
-            CreatePoint(prefabToSpawn, worldPos);
-        }
+
+        if (portalFlash != null) portalFlash.FlashParticles();
     }
 
-    // Wartet bis der Donnerschock abgelaufen ist, dann nächsten Point spawnen.
-    private IEnumerator Co_ThunderTimeout(GameObject thunder, float seconds)
+    // Findet eine Position für Slot i: vermeidet alle anderen belegten Slots + Activation Orb.
+    private Vector2 FindSlotPosition(int slotIndex, GameObject prefab)
     {
-        float t = 0f;
-        while (t < seconds)
+        float halfSizePx     = GetHalfSizePixels(prefab);
+        Rect  allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        int   maxAttempts    = currentActivationPoint != null ? 80 : 50;
+        Vector2 best = new Vector2(0.5f, 0.5f);
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
-            if (thunder == null)
+            Vector2 vp = new Vector2(
+                Random.Range(allowedViewport.xMin, allowedViewport.xMax),
+                Random.Range(allowedViewport.yMin, allowedViewport.yMax)
+            );
+
+            bool valid = true;
+
+            // Abstand zu allen anderen belegten Slots
+            for (int j = 0; j < _slots.Length; j++)
             {
-                // Angetippt → LoseLife-Animation abwarten, dann nächsten Point
-                float wait = LivesManager.Instance != null
-                    ? LivesManager.Instance.TotalGameOverAnimDuration : 1.8f;
-                yield return new WaitForSecondsRealtime(wait);
-                yield return null; // Extra frame: RunPhaseTimer (yield return null, FIFO-prior) setzt SetBannerPause zuerst
-                if (running && !gameOver) SpawnNextPoint();
-                yield break;
+                if (j == slotIndex || _slots[j].point == null) continue;
+                Vector2 otherVP   = mainCamera.WorldToViewportPoint(_slots[j].point.transform.position);
+                float   otherHalf = GetHalfSizePixels(_slots[j].point);
+                if (!IsFarEnoughFromOrb(vp, otherVP, halfSizePx, otherHalf)) { valid = false; break; }
             }
+
+            if (!valid) continue;
+
+            // Abstand zum Activation Orb
+            if (currentActivationPoint != null)
+            {
+                Vector2 orbVP   = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
+                float   orbHalf = GetHalfSizePixels(currentActivationPoint);
+                if (!IsFarEnoughFromOrb(vp, orbVP, halfSizePx, orbHalf)) continue;
+            }
+
+            best = vp;
+            break;
+        }
+
+        return best;
+    }
+
+    // Slot-Timeout: überwacht ein einzelnes Element und behandelt Ablauf / Leben-verlust.
+    private IEnumerator Co_SlotTimeout(int i, GameObject point, float seconds)
+    {
+        if (_slots[i].isThunder)
+        {
+            // Thunder verwaltet seinen eigenen Invoke-Timer; wir warten bis er verschwindet.
+            while (point != null && running && !gameOver)
+                yield return null;
+
+            _slots[i].point   = null;
+            _slots[i].timeout = null;
+            if (CurrentSwipePoint != null && point != null && CurrentSwipePoint.gameObject == point)
+                CurrentSwipePoint = null;
+
+            if (!running || gameOver) yield break;
+
+            // Andere Slots lautlos leeren, dann frische Dreier-Reihe
+            ClearOtherSlots(i);
+
+            // War es ein Tap (Leben verloren)? Dann auf Animation warten.
+            if (LivesManager.IsLifeLostAnimating)
+            {
+                yield return new WaitUntil(() => !LivesManager.IsLifeLostAnimating);
+                yield return null; // FIFO-Sicherheitsframe für RunPhaseTimer
+            }
+            if (running && !gameOver) SpawnNextPoint();
+            yield break;
+        }
+
+        // Normales Element — herunterzählen
+        float t = 0f;
+        while (t < seconds && running && !gameOver)
+        {
+            if (_slots[i].point != point) yield break; // bereits durch Hit gelöscht
             t += Time.deltaTime;
             yield return null;
         }
 
-        // Zeit abgelaufen → nächsten Point spawnen (ThunderPoint.OnTimeout + Shrink laufen separat)
-        if (running && !gameOver)
-            SpawnNextPoint();
+        if (!running || gameOver || _slots[i].point != point) yield break;
+
+        // Timeout: Leben verlieren
+        DismissCurrentFake();
+        ComboManager.Instance?.RegisterMiss();
+
+        Vector3 pos = point.transform.position;
+        _slots[i].timeout = null;
+        _slots[i].point   = null;
+        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
+        Destroy(point);
+
+        // Andere Slots lautlos leeren, dann frische Dreier-Reihe
+        ClearOtherSlots(i);
+
+        bool stillAlive = LivesManager.Instance.LoseLife(pos);
+        if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+
+        if (stillAlive)
+        {
+            yield return new WaitForSecondsRealtime(LivesManager.Instance.TotalGameOverAnimDuration);
+            yield return null; // FIFO-Sicherheitsframe
+            if (running && !gameOver) SpawnNextPoint();
+        }
+        else
+        {
+            float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
+            yield return new WaitForSecondsRealtime(delay);
+            GameOver();
+        }
     }
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
@@ -393,12 +586,14 @@ public class MixedPointSpawner : MonoBehaviour
     /// </summary>
     private bool IsFarEnoughFromCurrentPoint(Vector2 candidateVP, float orbHalfSizePx)
     {
-        if (currentPoint == null) return true;
-
-        Vector2 currentVP = mainCamera.WorldToViewportPoint(currentPoint.transform.position);
-        float currentPointHalfSizePx = GetHalfSizePixels(currentPoint);
-
-        return IsFarEnoughFromOrb(candidateVP, currentVP, orbHalfSizePx, currentPointHalfSizePx);
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i].point == null) continue;
+            Vector2 slotVP   = mainCamera.WorldToViewportPoint(_slots[i].point.transform.position);
+            float   slotHalf = GetHalfSizePixels(_slots[i].point);
+            if (!IsFarEnoughFromOrb(candidateVP, slotVP, orbHalfSizePx, slotHalf)) return false;
+        }
+        return true;
     }
 
 
@@ -505,10 +700,13 @@ public class MixedPointSpawner : MonoBehaviour
 
     // ─── CreatePoint & PointCleared ───────────────────────────────────────────
 
+    // Wird nur noch für Tutorial / PortalBeam-Callback genutzt (→ Slot 0).
     public void CreatePoint(GameObject prefab, Vector3 worldPos)
     {
-        StopPointTimer();
-        DismissCurrentFake();  // Altes Fake räumen (deckt auch Original-Timeout ab)
+        // Slot 0 freigeben
+        if (_slots[0].timeout != null) { StopCoroutine(_slots[0].timeout); _slots[0].timeout = null; }
+        if (_slots[0].point  != null) { Destroy(_slots[0].point);         _slots[0].point  = null; }
+        DismissCurrentFake();
 
         var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
 
@@ -517,17 +715,17 @@ public class MixedPointSpawner : MonoBehaviour
 
         var swipe = newPoint.GetComponent<SwipePoint>();
         if (swipe) { swipe.spawner = this; CurrentSwipePoint = swipe; }
-        else { CurrentSwipePoint = null; }
+        else       { CurrentSwipePoint = null; }
 
+        _slots[0].point = newPoint;
+        _slots[0].color = PointColor.Red; // Tutorial hat keine Farbe → Platzhalter
         lastPoint = newPoint;
-        currentPoint = newPoint;
-
 
         if (IsInfinityMode && !IsTutorialMode)
         {
             float dynamicTime = CurrentReactionTime;
-            timeoutRoutine = StartCoroutine(Co_PointTimeout(newPoint, dynamicTime, useUnscaledTime));
-            if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s (Intensität={(levelUp != null ? levelUp.CurrentLevel : 0)})");
+            _slots[0].timeout = StartCoroutine(Co_SlotTimeout(0, newPoint, dynamicTime));
+            if (debugLogs) Debug.Log($"[Spawner] Timer gestartet: {dynamicTime:F2}s");
 
             var fuse = newPoint.GetComponentInChildren<FuseCountdown>();
             if (fuse) fuse.StartBurn(dynamicTime);
@@ -549,7 +747,6 @@ public class MixedPointSpawner : MonoBehaviour
             var pulse = newPoint.GetComponent<PointPulse>();
             if (pulse) pulse.StartPulsing();
 
-            // Fake-Element parallel zum echten Tap-Point (10% Chance, max 1, kein Overlap)
             if (tap != null) TrySpawnFake(newPoint, dynamicTime);
         }
         else if (!IsTutorialMode)
@@ -557,40 +754,35 @@ public class MixedPointSpawner : MonoBehaviour
             if (debugLogs) Debug.Log("[Spawner] Kein Timer gestartet.");
         }
 
-        if (portalFlash != null)
-        {
-            portalFlash.FlashParticles();
-        }
+        if (portalFlash != null) portalFlash.FlashParticles();
     }
 
+    // Fallback-Adapter für externe Aufrufer (kein Score/Combo, nur Slot freigeben + respawn).
     public void PointCleared(GameObject point)
     {
-        Debug.Log($"[PointCleared] START | converting={isConvertingPoints} | point={point.name}");
-        if (isConvertingPoints && point != currentPoint)
-        {
-            Debug.Log("[PointCleared] ABORTED wegen isConvertingPoints");
-            return;
-        }
+        if (isConvertingPoints) return;
 
-        if (point == currentPoint)
+        int idx = FindSlotIndex(point);
+        if (idx >= 0)
         {
-            StopPointTimer(); currentPoint = null;
+            if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
+            _slots[idx].point = null;
         }
-        if (CurrentSwipePoint != null && point == CurrentSwipePoint.gameObject) CurrentSwipePoint = null;
-
+        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
         Destroy(point);
 
-        SpawnNextPoint();
+        if (idx >= 0) ClearOtherSlots(idx);
+
+        if (running && !gameOver && !spawnPausedForBanner)
+            SpawnNextPoint();
     }
 
     public bool ForceClearCurrentPoint()
     {
-        if (currentPoint != null)
-        {
-            HandlePointHit(currentPoint);
-            return true;
-        }
-        return false;
+        var pt = currentPoint;
+        if (pt == null) return false;
+        HandlePointHit(pt);
+        return true;
     }
 
     // Gibt den aktuellen Point zurück und entfernt ihn aus dem Spawner-Tracking.
@@ -598,74 +790,27 @@ public class MixedPointSpawner : MonoBehaviour
     // Der Aufrufer ist verantwortlich für die Destroy.
     public GameObject StealCurrentPoint()
     {
-        if (currentPoint == null) return null;
+        int idx = -1;
+        for (int i = 0; i < _slots.Length; i++) { if (_slots[i].point != null) { idx = i; break; } }
+        if (idx < 0) return null;
 
-        StopPointTimer();
+        if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
 
-        var col = currentPoint.GetComponent<Collider2D>();
+        var col = _slots[idx].point.GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
 
-        var stolen = currentPoint;
-        currentPoint = null;
-        CurrentSwipePoint = null;
+        var stolen = _slots[idx].point;
+        _slots[idx].point = null;
+        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == stolen) CurrentSwipePoint = null;
         return stolen;
     }
 
     // ─── Countdown ────────────────────────────────────────────────────────────
 
-    private IEnumerator Co_PointTimeout(GameObject point, float seconds, bool unscaled)
-    {
-        float t = 0f;
-        while (t < seconds && running && !gameOver)
-        {
-            t += unscaled ? Time.unscaledDeltaTime : Time.deltaTime;
-            if (point == null || point != currentPoint) yield break;
-            yield return null;
-        }
-
-        if (running && !gameOver && point != null && point == currentPoint)
-        {
-            DismissCurrentFake();  // Original abgelaufen → Fake gleichzeitig verpuffen
-
-            if (LivesManager.Instance != null)
-            {
-                Vector3 pointPos = point.transform.position;
-                // Point sofort zerstören (kein Score)
-                // StopPointTimer() NICHT aufrufen — würde diese Coroutine sofort abbrechen
-                timeoutRoutine = null;
-                Destroy(currentPoint);
-                currentPoint = null;
-                CurrentSwipePoint = null;
-
-                ComboManager.Instance?.RegisterMiss();
-
-                bool stillAlive = LivesManager.Instance.LoseLife(pointPos);
-                if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
-                if (stillAlive)
-                {
-                    // Warten bis VFX + Herz-Animation fertig, dann nächsten Point spawnen.
-                    // Extra yield return null: WaitForSecondsRealtime feuert vor Update, aber
-                    // RunPhaseTimer setzt SetBannerPause(true) nach Update (yield return null).
-                    // Der Extra-Frame stellt sicher, dass RunPhaseTimer zuerst läuft (FIFO-Queue).
-                    yield return new WaitForSecondsRealtime(LivesManager.Instance.TotalGameOverAnimDuration);
-                    yield return null;
-                    if (running && !gameOver) SpawnNextPoint();
-                    yield break;
-                }
-                float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
-                yield return new WaitForSecondsRealtime(delay);
-            }
-            GameOver();
-        }
-    }
-
     private void StopPointTimer()
     {
-        if (timeoutRoutine != null)
-        {
-            StopCoroutine(timeoutRoutine);
-            timeoutRoutine = null;
-        }
+        for (int i = 0; i < _slots.Length; i++)
+            if (_slots[i].timeout != null) { StopCoroutine(_slots[i].timeout); _slots[i].timeout = null; }
     }
 
 
@@ -678,10 +823,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         running = false;
         spawnPausedForBanner = false;
-        StopPointTimer();
-
-        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
-        CurrentSwipePoint = null;
+        ClearAllSlots();
 
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
@@ -753,9 +895,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (gameOver) return;
         gameOver = true;
         running = false;
-        StopPointTimer();
-        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; }
-        CurrentSwipePoint = null;
+        ClearAllSlots();
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
     }
@@ -952,14 +1092,37 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void HandlePointHit(GameObject point)
     {
-        DismissCurrentFake();  // Original getappt → Fake lautlos entfernen
+        DismissCurrentFake();
+
+        int idx = FindSlotIndex(point);
+        PointColor color = idx >= 0 ? _slots[idx].color : PointColor.Red;
 
         ScoreManager.Instance?.AddPointsFromHit();
-        ComboManager.Instance?.RegisterHit();
+        ComboManager.Instance?.RegisterHit(color);
 
-        var basePoint = point.GetComponent<BasePoint>();
-        if (basePoint != null) basePoint.SendMessage("SpawnExplosion");
-        PointCleared(point);
+        // Sound NACH RegisterHit → Streak bereits aktualisiert → richtiger Pitch
+        int streak = ComboManager.Instance?.ComboCount ?? 0;
+        bool isSwipe = point.GetComponent<SwipePoint>() != null;
+        if (isSwipe) AudioManager.Instance?.PlaySwipePoint(streak);
+        else         AudioManager.Instance?.PlayNormalPoint(streak);
+
+        var bp = point.GetComponent<BasePoint>();
+        if (bp != null) bp.SendMessage("SpawnExplosion");
+
+        if (idx >= 0)
+        {
+            if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
+            _slots[idx].point = null;
+        }
+        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
+
+        Destroy(point);
+
+        // Ein Treffer → alle anderen Slots lautlos leeren, dann frische Dreier-Reihe spawnen
+        if (idx >= 0) ClearOtherSlots(idx);
+
+        if (running && !gameOver && !spawnPausedForBanner)
+            SpawnNextPoint();
     }
 
     // Vom PeekABooSystem: registriert das Swipe-Peek-Element für den Swipe-Input.
@@ -970,14 +1133,12 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void ResetCurrentPointTimer()
     {
-        if (currentPoint == null) return;
         StopPointTimer();
-
-        if (IsInfinityMode)
-        {
-            float dynamicTime = CurrentReactionTime;
-            timeoutRoutine = StartCoroutine(Co_PointTimeout(currentPoint, dynamicTime, useUnscaledTime));
-        }
+        if (!IsInfinityMode) return;
+        float dynamicTime = CurrentReactionTime;
+        for (int i = 0; i < _slots.Length; i++)
+            if (_slots[i].point != null)
+                _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, _slots[i].point, dynamicTime));
     }
 
     /// <summary>
@@ -1011,7 +1172,7 @@ public class MixedPointSpawner : MonoBehaviour
             if (fp2.IsShocker || fp2.IsFake) fp2.DissolveNoPenalty(); else fp2.TryTap();
         }
 
-        currentPoint = null;
+        // Slots wurden bereits in HandlePointHit bereinigt
         CurrentSwipePoint = null;
     }
 
@@ -1020,7 +1181,7 @@ public class MixedPointSpawner : MonoBehaviour
     /// um am Phasenende die Restelemente natürlich auslaufen zu lassen, bevor es weitergeht.</summary>
     public bool HasActiveGameplayPoints()
     {
-        if (currentPoint != null || CurrentSwipePoint != null) return true;
+        foreach (var s in _slots) if (s.point != null) return true;
         if (FindFirstObjectByType<TapPoint>()      != null) return true;
         if (FindFirstObjectByType<SwipePoint>()    != null) return true;
         if (FindFirstObjectByType<GravityPoint>()  != null) return true;
@@ -1033,7 +1194,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void ClearAllGameplayPoints()
     {
-        ForceClearCurrentPoint();
+        ClearAllSlots();
 
         foreach (var s in FindObjectsByType<SwipePoint>(FindObjectsSortMode.None))
             Destroy(s.gameObject);
@@ -1041,7 +1202,6 @@ public class MixedPointSpawner : MonoBehaviour
         foreach (var t in FindObjectsByType<TapPoint>(FindObjectsSortMode.None))
             Destroy(t.gameObject);
 
-        currentPoint = null;
         CurrentSwipePoint = null;
     }
 
@@ -1105,7 +1265,7 @@ public class MixedPointSpawner : MonoBehaviour
                                    SwipeDirection? forcedDir = null,
                                    bool lockUntilOverlay = true)
     {
-        if (currentPoint != null) { Destroy(currentPoint); currentPoint = null; CurrentSwipePoint = null; }
+        if (currentPoint != null) { Destroy(currentPoint); _slots[0].point = null; _slots[0].timeout = null; CurrentSwipePoint = null; }
         StopPointTimer();
 
         GameObject prefab = isTap ? ActiveNormalPrefab : ActiveSwipePrefab;

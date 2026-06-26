@@ -4,12 +4,24 @@ using UnityEngine;
 public class ComboManager : MonoBehaviour
 {
     public static ComboManager Instance { get; private set; }
+
+    // Liefert den aktuellen Streak (0 = kein Streak, 5+ = Kombo aktiv).
+    // ComboDisplay abonniert dieses Event.
     public static event Action<int> OnComboChanged;
 
-    public int ComboCount    { get; private set; }
-    // ComboCount 0 → x1.0, ComboCount 1 → x2.0, ..., ComboCount 9 → x10.0 (max)
-    public int Multiplier    => Mathf.Min(ComboCount + 1, 10);
-    public bool IsMaxCombo   => ComboCount >= 9;
+    private const int ComboThreshold = 5;
+
+    private PointColor? _lastColor;
+    private int         _streak;
+
+    /// <summary>True sobald 5x dieselbe Farbe hintereinander getroffen wurde.</summary>
+    public bool IsComboActive { get; private set; }
+
+    /// <summary>5 im Kombo-Modus, sonst 1.</summary>
+    public int Multiplier => IsComboActive ? 5 : 1;
+
+    /// <summary>Aktueller Streak (für UI). Entspricht der Streak-Zählung.</summary>
+    public int ComboCount => _streak;
 
     private void Awake()
     {
@@ -17,26 +29,41 @@ public class ComboManager : MonoBehaviour
         Instance = this;
     }
 
-    // Aufgerufen bei jedem erfolgreichen Tap/Swipe-Hit
-    public void RegisterHit()
+    /// <summary>Nach jedem erfolgreichen Tap/Swipe aufrufen.</summary>
+    public void RegisterHit(PointColor color)
     {
-        int next = Mathf.Min(ComboCount + 1, 9); // Multiplier cap: 9+1 = x10.0
-        if (next == ComboCount) return;           // schon am Maximum, kein Event nötig
-        ComboCount = next;
-        OnComboChanged?.Invoke(ComboCount);
+        if (_lastColor == color)
+        {
+            _streak++;
+        }
+        else
+        {
+            _streak    = 1;
+            _lastColor = color;
+            SetActive(false);
+        }
+
+        if (_streak >= ComboThreshold)
+            SetActive(true);
+
+        OnComboChanged?.Invoke(_streak);
     }
 
-    // Aufgerufen wenn ein Point ausläuft (Timeout)
-    public void RegisterMiss()
-    {
-        if (ComboCount == 0) return;
-        ComboCount = 0;
-        OnComboChanged?.Invoke(ComboCount);
-    }
+    /// <summary>Bei Timeout oder Thunderpoint-Treffer aufrufen.</summary>
+    public void RegisterMiss() => BreakCombo();
 
-    public void ResetCombo()
+    public void ResetCombo() => BreakCombo();
+
+    public void BreakCombo()
     {
-        ComboCount = 0;
+        _streak    = 0;
+        _lastColor = null;
+        SetActive(false);
         OnComboChanged?.Invoke(0);
+    }
+
+    private void SetActive(bool active)
+    {
+        IsComboActive = active;
     }
 }

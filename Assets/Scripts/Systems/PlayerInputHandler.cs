@@ -110,9 +110,11 @@ public class PlayerInputHandler : MonoBehaviour
                 }
                 else
                 {
-                    var swipePoint = spawner != null ? spawner.CurrentSwipePoint : null;
-                    if (swipePoint != null)
-                        swipePoint.TryStrikeScreen(touchStartPos, touchEndPos, cam);
+                    var swipePoints = spawner?.GetActiveSwipePoints();
+                    if (swipePoints != null)
+                        foreach (var sp in swipePoints)
+                            if (sp.TryStrikeScreen(touchStartPos, touchEndPos, cam))
+                                break;
                 }
             }
             else

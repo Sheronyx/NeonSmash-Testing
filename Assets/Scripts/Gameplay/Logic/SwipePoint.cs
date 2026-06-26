@@ -95,8 +95,6 @@ public class SwipePoint : BasePoint
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnActionPerformed(TutorialPointType.SwipePoint);
 
-        AudioManager.Instance?.PlaySwipePoint();
-
         spawner?.HandlePointHit(gameObject);
 
         return true;
