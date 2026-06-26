@@ -336,8 +336,8 @@ public class MixedPointSpawner : MonoBehaviour
             {
                 // Angetippt → LoseLife-Animation abwarten, dann nächsten Point
                 float wait = LivesManager.Instance != null
-                    ? LivesManager.Instance.TotalLoseDuration : 0.5f;
-                yield return new WaitForSeconds(wait);
+                    ? LivesManager.Instance.TotalGameOverAnimDuration : 1.8f;
+                yield return new WaitForSecondsRealtime(wait);
                 if (running && !gameOver) SpawnNextPoint();
                 yield break;
             }
@@ -643,7 +643,7 @@ public class MixedPointSpawner : MonoBehaviour
                 if (stillAlive)
                 {
                     // Warten bis VFX + Herz-Animation fertig, dann nächsten Point spawnen
-                    yield return new WaitForSeconds(LivesManager.Instance.TotalLoseDuration);
+                    yield return new WaitForSecondsRealtime(LivesManager.Instance.TotalGameOverAnimDuration);
                     SpawnNextPoint();
                     yield break;
                 }

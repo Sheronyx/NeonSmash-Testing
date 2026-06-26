@@ -22,6 +22,10 @@ public class LivesManager : MonoBehaviour
     [SerializeField] private GameObject lifeLostAnimationPrefab;
     [SerializeField] private float lifeLostAnimDuration = 1.0f;
 
+    [Header("Ramp-Up nach Leben verlieren")]
+    [SerializeField] private float rampUpStartScale = 0.3f;
+    [SerializeField] private float rampUpDuration = 3f;
+
     [Header("Pop Animation")]
     [SerializeField] private float popScale = 1.4f;
     [SerializeField] private float popDuration = 0.15f;
@@ -37,6 +41,8 @@ public class LivesManager : MonoBehaviour
     private const float maxHealth = 3f;
 
     public static bool IsLifeLostAnimating { get; private set; }
+
+    private Coroutine _rampUpRoutine;
 
     public bool HasLivesLeft => health > 0f;
     public float TotalLoseDuration => vfxDuration + popDuration * 2f;
@@ -74,6 +80,12 @@ public class LivesManager : MonoBehaviour
         if (TutorialManager.IsTutorialActive) return true;
         if (health <= 0f) return false;
         if (IsLifeLostAnimating) return health > 0f;
+
+        if (_rampUpRoutine != null)
+        {
+            StopCoroutine(_rampUpRoutine);
+            _rampUpRoutine = null;
+        }
 
         float actualDamage = damage > 0f ? damage : damagePerMiss;
 
@@ -123,10 +135,24 @@ public class LivesManager : MonoBehaviour
             Destroy(instance);
         }
 
-        Time.timeScale = 1f;
         IsLifeLostAnimating = false;
         UpdateHeartFills();
         StartCoroutine(PopHeart(heart));
+        _rampUpRoutine = StartCoroutine(RampUpTimeScale());
+    }
+
+    private IEnumerator RampUpTimeScale()
+    {
+        Time.timeScale = rampUpStartScale;
+        float elapsed = 0f;
+        while (elapsed < rampUpDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            Time.timeScale = Mathf.Lerp(rampUpStartScale, 1f, elapsed / rampUpDuration);
+            yield return null;
+        }
+        Time.timeScale = 1f;
+        _rampUpRoutine = null;
     }
 
     private IEnumerator PopHeart(Image img)
