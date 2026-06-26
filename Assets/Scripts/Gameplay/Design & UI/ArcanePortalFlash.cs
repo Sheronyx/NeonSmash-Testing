@@ -17,6 +17,7 @@ public class ArcanePortalFlash : MonoBehaviour
 
     private Vector4 baseNormal;
     private Vector4 baseBlue;
+    private bool    _isFountainMode;
 
     private void Start()
     {
@@ -97,7 +98,8 @@ public class ArcanePortalFlash : MonoBehaviour
 
     public void SetMode(SpecialMode mode)
     {
+        _isFountainMode = mode == SpecialMode.Fountain;
         if (vfx == null) return;
-        vfx.SetBool("IsFountainMode", mode == SpecialMode.Fountain);
+        vfx.SetBool("IsFountainMode", _isFountainMode);
     }
 }
