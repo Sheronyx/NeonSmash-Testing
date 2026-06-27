@@ -164,6 +164,9 @@ public class MixedPointSpawner : MonoBehaviour
         new SlotState(), new SlotState(), new SlotState()
     };
 
+    // Reservierte Positionen während Beam-Flug (Slot hat noch kein point, aber Pos ist vergeben).
+    private readonly Vector3?[] _pendingSlotPositions = { null, null, null };
+
     // Für Rückwärtskompatibilität (Tutorial, legacy-Checks)
     private GameObject currentPoint
     {
@@ -194,6 +197,7 @@ public class MixedPointSpawner : MonoBehaviour
             if (_slots[i].point  != null) { Destroy(_slots[i].point); _slots[i].point = null; }
         }
         CurrentSwipePoint = null;
+        DismissExtraThunder();
     }
 
     // Räumt alle Slots außer exceptIndex lautlos auf (kein Score, kein Leben-Verlust).
@@ -244,7 +248,13 @@ public class MixedPointSpawner : MonoBehaviour
 
     // Rundentyp: alle 3 Slots spawnen immer denselben Typ (Tap oder Swipe).
     // Wird neu gewürfelt, sobald alle 3 Slots gleichzeitig leer sind.
-    private bool _roundIsSwipe = false;
+    private bool _roundIsSwipe         = false;
+    private bool _roundIsAllThunder    = false; // alle 3 Slots sind Shocker
+    private bool _roundHasExtraThunder = false; // 3 normale + 1 extra Shocker
+
+    // Extra-Shocker (bei _roundHasExtraThunder): außerhalb des Slot-Systems
+    private GameObject _extraThunder;
+    private Coroutine  _extraThunderRoutine;
 
 
     void Awake()
@@ -307,21 +317,42 @@ public class MixedPointSpawner : MonoBehaviour
         if (!running || spawnPausedForBanner || isConvertingPoints) return;
         if (IsInfinityMode && allowRandomActivationOrbs && TrySpawnActivationOrb()) return;
 
-        // Alle Slots leer → neuen Rundentyp (Tap/Swipe) würfeln.
+        // Alle Slots leer → neuen Rundentyp würfeln.
         bool allEmpty = true;
         foreach (var s in _slots) { if (s.point != null) { allEmpty = false; break; } }
         if (allEmpty)
         {
-            bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
-            bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
-            _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
-            if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
-            else               { normalsInRow++; swipesInRow = 0; }
+            _roundIsAllThunder    = false;
+            _roundHasExtraThunder = false;
+
+            if (ActiveThunderPrefab != null && thunderSpawnChance > 0f && Random.value < thunderSpawnChance)
+            {
+                // 50/50: alle drei Shocker ODER normale Elemente + ein extra Shocker
+                if (Random.value < 0.5f) _roundIsAllThunder    = true;
+                else                     _roundHasExtraThunder = true;
+            }
+
+            if (!_roundIsAllThunder)
+            {
+                bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+                bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
+                _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
+                if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
+                else               { normalsInRow++; swipesInRow = 0; }
+            }
         }
 
         for (int i = 0; i < _slots.Length; i++)
             if (_slots[i].point == null)
                 SpawnSlot(i);
+
+        // Extra-Shocker erst spawnen, wenn alle 3 Slots belegt sind
+        if (_roundHasExtraThunder && _extraThunder == null)
+        {
+            bool allFilled = true;
+            foreach (var s in _slots) { if (s.point == null) { allFilled = false; break; } }
+            if (allFilled) SpawnExtraThunder();
+        }
     }
 
     // Gibt die Farbe zurück, die in keinem anderen belegten Slot vorhanden ist.
@@ -330,7 +361,8 @@ public class MixedPointSpawner : MonoBehaviour
         bool redUsed = false, greenUsed = false, purpleUsed = false;
         for (int j = 0; j < _slots.Length; j++)
         {
-            if (j == slotIndex || _slots[j].point == null) continue;
+            // Slot zählt als belegt wenn er ein point hat ODER sein Beam noch im Flug ist
+            if (j == slotIndex || (_slots[j].point == null && !_pendingSlotPositions[j].HasValue)) continue;
             switch (_slots[j].color)
             {
                 case PointColor.Red:    redUsed    = true; break;
@@ -365,18 +397,44 @@ public class MixedPointSpawner : MonoBehaviour
             return;
         }
 
-        // Alle Slots dieser Runde haben denselben Typ (Tap oder Swipe)
         bool spawnSwipe = _roundIsSwipe;
+        bool isThunder  = _roundIsAllThunder;
 
-        // Donnerschock
-        bool isThunder = ActiveThunderPrefab != null && Random.value < thunderSpawnChance;
-
-        // Position finden (Abstand zu anderen belegten Slots + Activation Orb)
         GameObject samplePrefab = isThunder ? ActiveThunderPrefab
                                  : (spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color));
         Vector2 viewportPos = FindSlotPosition(i, samplePrefab);
         Vector3 worldPos    = ViewportToWorldOnZ0(viewportPos);
 
+        // Position sofort reservieren, damit Geschwister-Slots sie in FindSlotPosition vermeiden
+        _pendingSlotPositions[i] = worldPos;
+
+        if (portalBeam != null && !IsTutorialMode)
+        {
+            // Variablen für Closure festhalten
+            int        ci    = i;
+            PointColor cc    = color;
+            bool       cs    = spawnSwipe;
+            bool       ct    = isThunder;
+            Vector3    cpos  = worldPos;
+            GameObject cpref = samplePrefab;
+            portalBeam.FireBeamTo(worldPos, color, () =>
+            {
+                _pendingSlotPositions[ci] = null;
+                if (!running || gameOver || _slots[ci].point != null) return;
+                FinishSlotSpawn(ci, cpref, cpos, cc, cs, ct);
+            });
+        }
+        else
+        {
+            _pendingSlotPositions[i] = null;
+            FinishSlotSpawn(i, samplePrefab, worldPos, color, spawnSwipe, isThunder);
+        }
+    }
+
+    // Instanziiert das Element und startet Timer/Fuse — nach Beam-Ankunft oder direkt.
+    private void FinishSlotSpawn(int i, GameObject prefab, Vector3 worldPos,
+                                  PointColor color, bool spawnSwipe, bool isThunder)
+    {
         if (isThunder)
         {
             _slots[i].isThunder = true;
@@ -394,7 +452,6 @@ public class MixedPointSpawner : MonoBehaviour
 
         _slots[i].isThunder = false;
 
-        GameObject prefab = spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color);
         var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
 
         var tap   = newPoint.GetComponent<TapPoint>();
@@ -413,11 +470,11 @@ public class MixedPointSpawner : MonoBehaviour
             float dynamicTime = CurrentReactionTime;
             _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, dynamicTime));
 
-            var fuse          = newPoint.GetComponentInChildren<FuseCountdown>();
-            var lineFuse      = newPoint.GetComponentInChildren<LineFuse>();
-            var sparks        = newPoint.GetComponentInChildren<BurnSparks>();
-            var countdownSq   = newPoint.GetComponentInChildren<CountdownSquare>();
-            var pulse         = newPoint.GetComponent<PointPulse>();
+            var fuse        = newPoint.GetComponentInChildren<FuseCountdown>();
+            var lineFuse    = newPoint.GetComponentInChildren<LineFuse>();
+            var sparks      = newPoint.GetComponentInChildren<BurnSparks>();
+            var countdownSq = newPoint.GetComponentInChildren<CountdownSquare>();
+            var pulse       = newPoint.GetComponent<PointPulse>();
 
             if (fuse        != null) fuse.StartBurn(dynamicTime);
             if (lineFuse    != null) lineFuse.StartBurn(dynamicTime);
@@ -448,12 +505,18 @@ public class MixedPointSpawner : MonoBehaviour
 
             bool valid = true;
 
-            // Abstand zu allen anderen belegten Slots
+            // Abstand zu allen anderen belegten Slots (auch pending / Beam im Flug)
             for (int j = 0; j < _slots.Length; j++)
             {
-                if (j == slotIndex || _slots[j].point == null) continue;
-                Vector2 otherVP   = mainCamera.WorldToViewportPoint(_slots[j].point.transform.position);
-                float   otherHalf = GetHalfSizePixels(_slots[j].point);
+                if (j == slotIndex) continue;
+                Vector2 otherVP;
+                if (_slots[j].point != null)
+                    otherVP = mainCamera.WorldToViewportPoint(_slots[j].point.transform.position);
+                else if (_pendingSlotPositions[j].HasValue)
+                    otherVP = mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value);
+                else
+                    continue;
+                float otherHalf = _slots[j].point != null ? GetHalfSizePixels(_slots[j].point) : halfSizePx;
                 if (!IsFarEnoughFromOrb(vp, otherVP, halfSizePx, otherHalf)) { valid = false; break; }
             }
 
@@ -465,6 +528,14 @@ public class MixedPointSpawner : MonoBehaviour
                 Vector2 orbVP   = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
                 float   orbHalf = GetHalfSizePixels(currentActivationPoint);
                 if (!IsFarEnoughFromOrb(vp, orbVP, halfSizePx, orbHalf)) continue;
+            }
+
+            // Abstand zum Extra-Shocker
+            if (_extraThunder != null)
+            {
+                Vector2 exVP   = mainCamera.WorldToViewportPoint(_extraThunder.transform.position);
+                float   exHalf = GetHalfSizePixels(_extraThunder);
+                if (!IsFarEnoughFromOrb(vp, exVP, halfSizePx, exHalf)) continue;
             }
 
             best = vp;
@@ -490,8 +561,9 @@ public class MixedPointSpawner : MonoBehaviour
 
             if (!running || gameOver) yield break;
 
-            // Andere Slots lautlos leeren, dann frische Dreier-Reihe
+            // Andere Slots lautlos leeren + Extra-Shocker wegräumen, dann frische Dreier-Reihe
             ClearOtherSlots(i);
+            DismissExtraThunder();
 
             // War es ein Tap (Leben verloren)? Dann auf Animation warten.
             if (LivesManager.IsLifeLostAnimating)
@@ -524,8 +596,9 @@ public class MixedPointSpawner : MonoBehaviour
         if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
         Destroy(point);
 
-        // Andere Slots lautlos leeren, dann frische Dreier-Reihe
+        // Andere Slots + Extra-Shocker lautlos leeren, dann frische Dreier-Reihe
         ClearOtherSlots(i);
+        DismissExtraThunder();
 
         bool stillAlive = LivesManager.Instance.LoseLife(pos);
         if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
@@ -542,6 +615,96 @@ public class MixedPointSpawner : MonoBehaviour
             yield return new WaitForSecondsRealtime(delay);
             GameOver();
         }
+    }
+
+    // ─── Extra-Thunder ─────────────────────────────────────────────────────────
+
+    // Spawnt den Extra-Shocker an einer Position, die alle 3 Slots + Activation Orb vermeidet.
+    private void SpawnExtraThunder()
+    {
+        if (ActiveThunderPrefab == null) return;
+
+        float   halfPx        = GetHalfSizePixels(ActiveThunderPrefab);
+        Rect    allowedVP     = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        int     maxAttempts   = 80;
+        Vector2 best          = new Vector2(0.5f, 0.5f);
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            Vector2 vp = new Vector2(
+                Random.Range(allowedVP.xMin, allowedVP.xMax),
+                Random.Range(allowedVP.yMin, allowedVP.yMax)
+            );
+
+            bool valid = true;
+
+            // Abstand zu allen belegten Slots
+            foreach (var s in _slots)
+            {
+                if (s.point == null) continue;
+                Vector2 sVP   = mainCamera.WorldToViewportPoint(s.point.transform.position);
+                float   sHalf = GetHalfSizePixels(s.point);
+                if (!IsFarEnoughFromOrb(vp, sVP, halfPx, sHalf)) { valid = false; break; }
+            }
+
+            if (!valid) continue;
+
+            if (currentActivationPoint != null)
+            {
+                Vector2 orbVP   = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
+                float   orbHalf = GetHalfSizePixels(currentActivationPoint);
+                if (!IsFarEnoughFromOrb(vp, orbVP, halfPx, orbHalf)) continue;
+            }
+
+            best = vp;
+            break;
+        }
+
+        float dynamicTime = CurrentReactionTime;
+        Vector3 worldPos  = ViewportToWorldOnZ0(best);
+        _extraThunder     = Instantiate(ActiveThunderPrefab, worldPos, Quaternion.identity);
+
+        var tp = _extraThunder.GetComponent<ThunderPoint>();
+        if (tp != null) tp.Activate(dynamicTime);
+
+        _extraThunderRoutine = StartCoroutine(Co_ExtraThunderMonitor(dynamicTime));
+    }
+
+    // Räumt den Extra-Shocker lautlos auf (kein Leben-Verlust).
+    private void DismissExtraThunder()
+    {
+        if (_extraThunderRoutine != null) { StopCoroutine(_extraThunderRoutine); _extraThunderRoutine = null; }
+        if (_extraThunder == null) return;
+        var tp = _extraThunder.GetComponent<ThunderPoint>();
+        if (tp != null) tp.Vanish(); else Destroy(_extraThunder);
+        _extraThunder = null;
+    }
+
+    // Überwacht den Extra-Shocker. Wird er angetippt (Leben verloren), leert er alle Slots
+    // und startet die nächste Runde. Verpufft er natürlich, läuft die Runde normal weiter.
+    private IEnumerator Co_ExtraThunderMonitor(float seconds)
+    {
+        float t = 0f;
+        while (_extraThunder != null && t < seconds + 1f && running && !gameOver)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        _extraThunder        = null;
+        _extraThunderRoutine = null;
+
+        if (!running || gameOver) yield break;
+
+        // Angetippt → Leben verloren → farbige Elemente leeren + Runde neu starten
+        if (LivesManager.IsLifeLostAnimating)
+        {
+            ClearAllSlots();
+            yield return new WaitUntil(() => !LivesManager.IsLifeLostAnimating);
+            yield return null; // FIFO-Sicherheitsframe
+            if (running && !gameOver) SpawnNextPoint();
+        }
+        // Natürlich verschwunden → farbige Elemente laufen weiter, nichts tun
     }
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
@@ -1118,8 +1281,9 @@ public class MixedPointSpawner : MonoBehaviour
 
         Destroy(point);
 
-        // Ein Treffer → alle anderen Slots lautlos leeren, dann frische Dreier-Reihe spawnen
+        // Ein Treffer → alle anderen Slots lautlos leeren + Extra-Shocker wegräumen, dann frische Reihe
         if (idx >= 0) ClearOtherSlots(idx);
+        DismissExtraThunder();
 
         if (running && !gameOver && !spawnPausedForBanner)
             SpawnNextPoint();
