@@ -54,12 +54,14 @@ public class ScoreManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void AddPointsFromHit(int basePoints = 10)
+    public int AddPointsFromHit(int basePoints = 10)
     {
         int combo    = ComboManager.Instance != null ? ComboManager.Instance.Multiplier : 1;
         bool special = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
-        score += basePoints * combo * (special ? 2 : 1);
+        int amount   = basePoints * combo * (special ? 2 : 1);
+        score += amount;
         UpdateUI();
+        return amount;
     }
 
     public void ResetScore()

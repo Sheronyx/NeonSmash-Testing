@@ -76,6 +76,13 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject swipePrefab_Green;
     [SerializeField] private GameObject swipePrefab_Purple;
 
+    [Header("Floating Score")]
+    [SerializeField] private GameObject floatingScorePrefab;
+    [SerializeField] private Color floatingColorDefault = Color.white;
+    [SerializeField] private Color floatingColorRed     = new Color(1f,  0.35f, 0.35f);
+    [SerializeField] private Color floatingColorGreen   = new Color(0.35f, 1f,  0.45f);
+    [SerializeField] private Color floatingColorPurple  = new Color(0.75f, 0.3f, 1f);
+
     [Header("Fake Point (Ablenkung)")]
     [Tooltip("Fake-Element-Prefab (FakePoint). Spawnt mit Chance parallel zu Tap-Points.")]
     public GameObject fakePointPrefab;
@@ -1302,11 +1309,13 @@ public class MixedPointSpawner : MonoBehaviour
         int idx = FindSlotIndex(point);
         PointColor color = idx >= 0 ? _slots[idx].color : PointColor.Red;
 
-        ScoreManager.Instance?.AddPointsFromHit();
+        int scored = ScoreManager.Instance?.AddPointsFromHit() ?? 0;
         ComboManager.Instance?.RegisterHit(color);
 
         // Sound NACH RegisterHit → Streak bereits aktualisiert → richtiger Pitch
         int streak = ComboManager.Instance?.ComboCount ?? 0;
+
+        SpawnFloatingScore(scored, point.transform.position, color, streak);
         bool isSwipe = point.GetComponent<SwipePoint>() != null;
         if (isSwipe) AudioManager.Instance?.PlaySwipePoint(streak);
         else         AudioManager.Instance?.PlayNormalPoint(streak);
@@ -1329,6 +1338,24 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (running && !gameOver && !spawnPausedForBanner)
             SpawnNextPoint();
+    }
+
+    private void SpawnFloatingScore(int score, Vector3 worldPos, PointColor color, int streak)
+    {
+        if (floatingScorePrefab == null || score <= 0) return;
+
+        // Bei aktivem Kombo (streak >= 5) Streak-Farbe, sonst weiß
+        Color c = streak >= 5 ? color switch
+        {
+            PointColor.Red    => floatingColorRed,
+            PointColor.Green  => floatingColorGreen,
+            PointColor.Purple => floatingColorPurple,
+            _                 => floatingColorDefault
+        } : floatingColorDefault;
+
+        var go  = Instantiate(floatingScorePrefab, worldPos, Quaternion.identity);
+        var fst = go.GetComponent<FloatingScoreText>();
+        fst?.Play(score, c);
     }
 
     // Vom PeekABooSystem: registriert das Swipe-Peek-Element für den Swipe-Input.
