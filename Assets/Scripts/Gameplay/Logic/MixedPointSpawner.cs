@@ -491,10 +491,37 @@ public class MixedPointSpawner : MonoBehaviour
     // Findet eine Position für Slot i: vermeidet alle anderen belegten Slots + Activation Orb.
     private Vector2 FindSlotPosition(int slotIndex, GameObject prefab)
     {
-        float halfSizePx     = GetHalfSizePixels(prefab);
+        float halfSizePx      = GetHalfSizePixels(prefab);
         Rect  allowedViewport = ScreenRectToViewportRect(GetAllowedSpawnRect());
-        int   maxAttempts    = currentActivationPoint != null ? 80 : 50;
-        Vector2 best = new Vector2(0.5f, 0.5f);
+        int   maxAttempts     = 120;
+
+        // Sibling-Positionen und -Größen einmal cachen (nicht pro Attempt neu berechnen)
+        var siblingVP   = new Vector2[_slots.Length];
+        var siblingHalf = new float[_slots.Length];
+        var siblingActive = new bool[_slots.Length];
+        for (int j = 0; j < _slots.Length; j++)
+        {
+            if (j == slotIndex) continue;
+            if (_slots[j].point != null)
+            {
+                siblingVP[j]     = mainCamera.WorldToViewportPoint(_slots[j].point.transform.position);
+                siblingHalf[j]   = GetHalfSizePixels(_slots[j].point);
+                siblingActive[j] = true;
+            }
+            else if (_pendingSlotPositions[j].HasValue)
+            {
+                siblingVP[j]     = mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value);
+                siblingHalf[j]   = halfSizePx;
+                siblingActive[j] = true;
+            }
+        }
+
+        float orbHalfPx = currentActivationPoint != null ? GetHalfSizePixels(currentActivationPoint) : 0f;
+        float exHalfPx  = _extraThunder            != null ? GetHalfSizePixels(_extraThunder)            : 0f;
+
+        // Fallback: Kandidat mit dem größten Mindestabstand zu allen Hindernissen
+        Vector2 bestFallback     = new Vector2(0.5f, 0.5f);
+        float   bestFallbackDist = -1f;
 
         for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
@@ -503,46 +530,54 @@ public class MixedPointSpawner : MonoBehaviour
                 Random.Range(allowedViewport.yMin, allowedViewport.yMax)
             );
 
-            bool valid = true;
+            float minDistToAny = float.MaxValue;
+            bool  valid        = true;
 
             // Abstand zu allen anderen belegten Slots (auch pending / Beam im Flug)
             for (int j = 0; j < _slots.Length; j++)
             {
-                if (j == slotIndex) continue;
-                Vector2 otherVP;
-                if (_slots[j].point != null)
-                    otherVP = mainCamera.WorldToViewportPoint(_slots[j].point.transform.position);
-                else if (_pendingSlotPositions[j].HasValue)
-                    otherVP = mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value);
-                else
-                    continue;
-                float otherHalf = _slots[j].point != null ? GetHalfSizePixels(_slots[j].point) : halfSizePx;
-                if (!IsFarEnoughFromOrb(vp, otherVP, halfSizePx, otherHalf)) { valid = false; break; }
+                if (j == slotIndex || !siblingActive[j]) continue;
+                float dist = PixelDistance(vp, siblingVP[j]);
+                minDistToAny = Mathf.Min(minDistToAny, dist);
+                if (!IsFarEnoughFromOrb(vp, siblingVP[j], halfSizePx, siblingHalf[j])) { valid = false; break; }
             }
 
-            if (!valid) continue;
+            if (!valid)
+            {
+                if (minDistToAny > bestFallbackDist) { bestFallbackDist = minDistToAny; bestFallback = vp; }
+                continue;
+            }
 
             // Abstand zum Activation Orb
             if (currentActivationPoint != null)
             {
-                Vector2 orbVP   = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
-                float   orbHalf = GetHalfSizePixels(currentActivationPoint);
-                if (!IsFarEnoughFromOrb(vp, orbVP, halfSizePx, orbHalf)) continue;
+                Vector2 orbVP = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
+                float   dist  = PixelDistance(vp, orbVP);
+                minDistToAny = Mathf.Min(minDistToAny, dist);
+                if (!IsFarEnoughFromOrb(vp, orbVP, halfSizePx, orbHalfPx))
+                {
+                    if (minDistToAny > bestFallbackDist) { bestFallbackDist = minDistToAny; bestFallback = vp; }
+                    continue;
+                }
             }
 
             // Abstand zum Extra-Shocker
             if (_extraThunder != null)
             {
-                Vector2 exVP   = mainCamera.WorldToViewportPoint(_extraThunder.transform.position);
-                float   exHalf = GetHalfSizePixels(_extraThunder);
-                if (!IsFarEnoughFromOrb(vp, exVP, halfSizePx, exHalf)) continue;
+                Vector2 exVP = mainCamera.WorldToViewportPoint(_extraThunder.transform.position);
+                float   dist = PixelDistance(vp, exVP);
+                minDistToAny = Mathf.Min(minDistToAny, dist);
+                if (!IsFarEnoughFromOrb(vp, exVP, halfSizePx, exHalfPx))
+                {
+                    if (minDistToAny > bestFallbackDist) { bestFallbackDist = minDistToAny; bestFallback = vp; }
+                    continue;
+                }
             }
 
-            best = vp;
-            break;
+            return vp; // perfekte Position gefunden
         }
 
-        return best;
+        return bestFallback; // beste verfügbare Position nach allen Versuchen
     }
 
     // Slot-Timeout: überwacht ein einzelnes Element und behandelt Ablauf / Leben-verlust.
@@ -708,6 +743,13 @@ public class MixedPointSpawner : MonoBehaviour
     }
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
+
+    private float PixelDistance(Vector2 vpA, Vector2 vpB)
+    {
+        Vector2 a = vpA * new Vector2(Screen.width, Screen.height);
+        Vector2 b = vpB * new Vector2(Screen.width, Screen.height);
+        return Vector2.Distance(a, b);
+    }
 
     private float GetBaseMinDistancePixels()
     {
