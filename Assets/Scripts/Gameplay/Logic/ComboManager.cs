@@ -23,6 +23,9 @@ public class ComboManager : MonoBehaviour
     /// <summary>Aktueller Streak (für UI). Entspricht der Streak-Zählung.</summary>
     public int ComboCount => _streak;
 
+    /// <summary>Farbe des aktuellen Streaks (null wenn kein Streak läuft).</summary>
+    public PointColor? CurrentColor => _lastColor;
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }

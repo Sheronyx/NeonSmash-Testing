@@ -11,9 +11,9 @@ GameObject:
   - component: {fileID: 6954727806901115329}
   - component: {fileID: 8025902521728191616}
   - component: {fileID: 5224203294009475255}
-  - component: {fileID: -7493825207691706789}
+  - component: {fileID: 2102251003835895666}
   m_Layer: 0
-  m_Name: FloatingScoreText
+  m_Name: FloatingComboLost
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -36,7 +36,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 4, y: 2}
+  m_SizeDelta: {x: 8, y: 2}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &8025902521728191616
 MeshRenderer:
@@ -107,7 +107,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 60
+  m_text: Combo lost
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1634ee5018beb4412b7d5d439f957bbc, type: 2}
   m_sharedMaterial: {fileID: -9141405031924291846, guid: 1634ee5018beb4412b7d5d439f957bbc, type: 2}
@@ -134,13 +134,13 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 5
-  m_fontSizeBase: 5
+  m_fontSize: 6
+  m_fontSizeBase: 6
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -182,7 +182,7 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 8025902521728191616}
   m_maskType: 0
---- !u!114 &-7493825207691706789
+--- !u!114 &2102251003835895666
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -191,14 +191,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 8247571385506089158}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3aaa5f9c5e6754d049779ef9a0b3ec31, type: 3}
+  m_Script: {fileID: 11500000, guid: 41889583fd9cc417f9336c61770a4915, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FloatingScoreText
+  m_EditorClassIdentifier: Assembly-CSharp::FloatingComboText
   label: {fileID: 5224203294009475255}
-  materialDefault: {fileID: -9141405031924291846, guid: 1634ee5018beb4412b7d5d439f957bbc, type: 2}
-  materialRed: {fileID: 2100000, guid: 9ecb171f69fa84c1da3dce86ddb8c4f3, type: 2}
-  materialGreen: {fileID: 2100000, guid: 119cb11d3acc04556ac50b2446fb194a, type: 2}
-  materialPurple: {fileID: 2100000, guid: 2ff28a98a80c242fd951dc77b7871a61, type: 2}
-  punchDuration: 0.08
-  punchScale: 1.3
-  fadeDuration: 0.3
+  punchInDuration: 0.15
+  punchInScale: 1.35
+  holdDuration: 0.6
+  punchOutDuration: 0.35
+  punchOutScale: 1.15
+  materialDefault: {fileID: 2100000, guid: 2af9f22e68567403da88cf97fb61fe1a, type: 2}
+  materialRed: {fileID: 0}
+  materialGreen: {fileID: 0}
+  materialPurple: {fileID: 0}

@@ -76,12 +76,16 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject swipePrefab_Green;
     [SerializeField] private GameObject swipePrefab_Purple;
 
+    [Header("Combo-System")]
+    [SerializeField] public bool comboEnabled = true;
+
+    [Header("Spawn Delay nach Treffer")]
+    [SerializeField] private float spawnDelayAfterHit = 0.25f;
+
+
     [Header("Floating Score")]
     [SerializeField] private GameObject floatingScorePrefab;
-    [SerializeField] private Color floatingColorDefault = Color.white;
-    [SerializeField] private Color floatingColorRed     = new Color(1f,  0.35f, 0.35f);
-    [SerializeField] private Color floatingColorGreen   = new Color(0.35f, 1f,  0.45f);
-    [SerializeField] private Color floatingColorPurple  = new Color(0.75f, 0.3f, 1f);
+    [SerializeField] private float floatingScoreSpawnOffsetY = 0.8f;
 
     [Header("Fake Point (Ablenkung)")]
     [Tooltip("Fake-Element-Prefab (FakePoint). Spawnt mit Chance parallel zu Tap-Points.")]
@@ -613,7 +617,7 @@ public class MixedPointSpawner : MonoBehaviour
                 yield return new WaitUntil(() => !LivesManager.IsLifeLostAnimating);
                 yield return null; // FIFO-Sicherheitsframe für RunPhaseTimer
             }
-            if (running && !gameOver) SpawnNextPoint();
+            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
             yield break;
         }
 
@@ -630,7 +634,8 @@ public class MixedPointSpawner : MonoBehaviour
 
         // Timeout: Leben verlieren
         DismissCurrentFake();
-        ComboManager.Instance?.RegisterMiss();
+        if (comboEnabled) ComboManager.Instance?.RegisterMiss();
+        SequenceManager.Instance?.ResetAllProgress();
 
         Vector3 pos = point.transform.position;
         _slots[i].timeout = null;
@@ -649,7 +654,7 @@ public class MixedPointSpawner : MonoBehaviour
         {
             yield return new WaitForSecondsRealtime(LivesManager.Instance.TotalGameOverAnimDuration);
             yield return null; // FIFO-Sicherheitsframe
-            if (running && !gameOver) SpawnNextPoint();
+            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
         }
         else
         {
@@ -744,7 +749,7 @@ public class MixedPointSpawner : MonoBehaviour
             ClearAllSlots();
             yield return new WaitUntil(() => !LivesManager.IsLifeLostAnimating);
             yield return null; // FIFO-Sicherheitsframe
-            if (running && !gameOver) SpawnNextPoint();
+            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
         }
         // Natürlich verschwunden → farbige Elemente laufen weiter, nichts tun
     }
@@ -1040,7 +1045,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
         if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
         PhaseManager.Instance?.StopRun();
-        ComboManager.Instance?.ResetCombo();
+        if (comboEnabled) ComboManager.Instance?.ResetCombo();
 
         if (MultiplayerManager.IsMultiplayerGame)
         {
@@ -1309,11 +1314,12 @@ public class MixedPointSpawner : MonoBehaviour
         int idx = FindSlotIndex(point);
         PointColor color = idx >= 0 ? _slots[idx].color : PointColor.Red;
 
-        int scored = ScoreManager.Instance?.AddPointsFromHit() ?? 0;
-        ComboManager.Instance?.RegisterHit(color);
+        // RegisterHit zuerst → Multiplier und Streak sind aktuell wenn Score berechnet wird
+        if (comboEnabled) ComboManager.Instance?.RegisterHit(color);
 
-        // Sound NACH RegisterHit → Streak bereits aktualisiert → richtiger Pitch
-        int streak = ComboManager.Instance?.ComboCount ?? 0;
+        int streak = comboEnabled ? (ComboManager.Instance?.ComboCount ?? 0) : 0;
+        int sequenceBonus  = SequenceManager.Instance != null ? SequenceManager.Instance.RegisterHit(color) : 0;
+        int scored         = ScoreManager.Instance?.AddPointsFromHit(10 + sequenceBonus) ?? 0;
 
         SpawnFloatingScore(scored, point.transform.position, color, streak);
         bool isSwipe = point.GetComponent<SwipePoint>() != null;
@@ -1337,25 +1343,30 @@ public class MixedPointSpawner : MonoBehaviour
         DismissExtraThunder();
 
         if (running && !gameOver && !spawnPausedForBanner)
+            StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
+    }
+
+    private float GetSpawnDelay() =>
+        comboEnabled && FloatingComboPopup.Instance != null
+            ? FloatingComboPopup.Instance.ConsumeSpawnDelay(spawnDelayAfterHit)
+            : spawnDelayAfterHit;
+
+    private IEnumerator Co_SpawnAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (running && !gameOver && !spawnPausedForBanner)
             SpawnNextPoint();
     }
+
 
     private void SpawnFloatingScore(int score, Vector3 worldPos, PointColor color, int streak)
     {
         if (floatingScorePrefab == null || score <= 0) return;
 
-        // Bei aktivem Kombo (streak >= 5) Streak-Farbe, sonst weiß
-        Color c = streak >= 5 ? color switch
-        {
-            PointColor.Red    => floatingColorRed,
-            PointColor.Green  => floatingColorGreen,
-            PointColor.Purple => floatingColorPurple,
-            _                 => floatingColorDefault
-        } : floatingColorDefault;
-
-        var go  = Instantiate(floatingScorePrefab, worldPos, Quaternion.identity);
+        Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
+        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
         var fst = go.GetComponent<FloatingScoreText>();
-        fst?.Play(score, c);
+        fst?.Play(score, Color.white, color);
     }
 
     // Vom PeekABooSystem: registriert das Swipe-Peek-Element für den Swipe-Input.

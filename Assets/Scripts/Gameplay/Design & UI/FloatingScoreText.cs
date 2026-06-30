@@ -6,22 +6,40 @@ public class FloatingScoreText : MonoBehaviour
 {
     [SerializeField] private TextMeshPro label;
 
-    [Header("Animation")]
-    [SerializeField] private float punchDuration = 0.10f;
-    [SerializeField] private float punchScale    = 1.35f;
-    [SerializeField] private float riseDuration  = 0.55f;
-    [SerializeField] private float riseDistance  = 1.4f;
+    [Header("Materialien pro Farbe")]
+    [SerializeField] private Material materialDefault;
+    [SerializeField] private Material materialRed;
+    [SerializeField] private Material materialGreen;
+    [SerializeField] private Material materialPurple;
 
-    public void Play(int score, Color color)
+    [Header("Animation")]
+    [SerializeField] private float punchDuration = 0.08f;
+    [SerializeField] private float punchScale    = 1.3f;
+    [SerializeField] private float fadeDuration  = 0.35f;
+
+    public void Play(int score, Color color, PointColor? pointColor = null)
     {
         label.text  = "+" + score;
         label.color = color;
+
+        if (pointColor.HasValue)
+        {
+            Material mat = pointColor.Value switch
+            {
+                PointColor.Red    => materialRed    ?? materialDefault,
+                PointColor.Green  => materialGreen  ?? materialDefault,
+                PointColor.Purple => materialPurple ?? materialDefault,
+                _                 => materialDefault
+            };
+            if (mat != null) label.fontMaterial = mat;
+        }
+
         StartCoroutine(Co_Animate());
     }
 
     private IEnumerator Co_Animate()
     {
-        // Punch: 0 → punchScale → 1
+        // Einpoppen: 0 → punchScale → 1
         float t = 0f;
         transform.localScale = Vector3.zero;
         while (t < punchDuration)
@@ -36,19 +54,14 @@ public class FloatingScoreText : MonoBehaviour
         }
         transform.localScale = Vector3.one;
 
-        // Float up + fade
-        Vector3 startPos   = transform.position;
-        Vector3 endPos     = startPos + Vector3.up * riseDistance;
-        Color   startColor = label.color;
-        Color   endColor   = new Color(startColor.r, startColor.g, startColor.b, 0f);
-
+        // Sofort wegfaden
+        Color startColor = label.color;
+        Color endColor   = new Color(startColor.r, startColor.g, startColor.b, 0f);
         t = 0f;
-        while (t < riseDuration)
+        while (t < fadeDuration)
         {
             t += Time.deltaTime;
-            float k = t / riseDuration;
-            transform.position = Vector3.Lerp(startPos, endPos, k);
-            label.color        = Color.Lerp(startColor, endColor, k * k); // verzögertes Fade
+            label.color = Color.Lerp(startColor, endColor, t / fadeDuration);
             yield return null;
         }
 
