@@ -91,6 +91,10 @@ public class PhaseManager : MonoBehaviour
     /// <summary>Entscheidungs-UI ausblenden (Wahl getroffen).</summary>
     public static event Action OnDecisionClosed;
     public static event Action OnGameWon;
+    /// <summary>SequenceTrackerRow ausblenden (Special-Phase beginnt).</summary>
+    public static event Action OnSequenceRowHide;
+    /// <summary>SequenceTrackerRow einblenden (Play-Phase beginnt).</summary>
+    public static event Action OnSequenceRowShow;
 
     /// <summary>Aktuelle Reaktionszeit aus der Curve — vom Spawner gelesen (ersetzt LevelUp).</summary>
     public float CurrentReactionTime { get; private set; } = 2f;
@@ -318,9 +322,10 @@ public class PhaseManager : MonoBehaviour
 
         float half = InterphaseHalf;
 
-        // 1) „Phase X cleared" (ersetzt die frühere reine Wartezeit vor der UI).
+        // 1) „Phase X cleared" — SequenceRow fliegt parallel nach links raus.
         if (clearedPhase >= 1)
         {
+            OnSequenceRowHide?.Invoke();
             OnPhaseTextBanner?.Invoke(ClearedText(clearedPhase), half);
             yield return new WaitForSecondsRealtime(half);
         }
@@ -383,6 +388,8 @@ public class PhaseManager : MonoBehaviour
         OnPhaseTextBanner?.Invoke(ClearedText(clearedPhase), half);
         yield return new WaitForSecondsRealtime(half);
 
+        // „Starting Phase X+1" — SequenceRow fliegt parallel von links wieder rein.
+        OnSequenceRowShow?.Invoke();
         OnPhaseTextBanner?.Invoke(StartingText(nextPhase), half);
         yield return new WaitForSecondsRealtime(half);
     }

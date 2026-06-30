@@ -1010,6 +1010,7 @@ GameObject:
   - component: {fileID: 4740428816258310285}
   - component: {fileID: 6424288227544871880}
   - component: {fileID: 242541680927897841}
+  - component: {fileID: 4723442698393002152}
   m_Layer: 5
   m_Name: Sequence Tracker Row
   m_TagString: Untagged
@@ -1102,12 +1103,30 @@ MonoBehaviour:
     - {fileID: 6842842182418941677}
     - {fileID: 2650415747472403192}
     - {fileID: 4073346581130015980}
+  slideAnimator: {fileID: 4723442698393002152}
   prefabOrange: {fileID: 6675823165011593277, guid: 74c3f0d1f1247493c84857b37f27d1e9, type: 3}
   prefabGreen: {fileID: 883415637194220816, guid: 7a4f1f0a2dfc64a018f5d7130a87ea7a, type: 3}
   prefabPurple: {fileID: 2697113057061116615, guid: a241ae1bcb1a74e219f654d0d8885176, type: 3}
   dotFilled: {r: 1, g: 1, b: 1, a: 1}
   dotEmpty: {r: 1, g: 1, b: 1, a: 0.2}
   dotMaterial: {fileID: 2100000, guid: b14df1252452741d5880bce3be449523, type: 2}
+--- !u!114 &4723442698393002152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2873383469412431369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d33a3de2ec8fc409ba4bf002b96ea7c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISlideAnimator
+  slideInDuration: 0.45
+  slideOutDuration: 0.3
+  slideDistance: 1600
+  overshootAmount: 1.70158
+  startHidden: 0
 --- !u!1 &3132826504741590799
 GameObject:
   m_ObjectHideFlags: 0

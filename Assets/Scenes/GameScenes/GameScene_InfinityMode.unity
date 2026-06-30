@@ -791,7 +791,7 @@ MonoBehaviour:
   floatingScorePrefab: {fileID: 8247571385506089158, guid: c42de2f0571514492a8cfcbc37f7cc70, type: 3}
   floatingScoreSpawnOffsetY: 0.7
   fakePointPrefab: {fileID: 7634417711000780290, guid: 37444548a828f4baf99a6238e13cc95d, type: 3}
-  fakeSpawnChance: 0.15
+  fakeSpawnChance: 0
   thunderPointPrefab: {fileID: 7032938748382792654, guid: b64f768a4b1fa4b4e84b730ce566bfcc, type: 3}
   thunderSpawnChance: 0.15
   peekABooSystem: {fileID: 697214894}
@@ -1335,6 +1335,7 @@ GameObject:
   - component: {fileID: 376641123}
   - component: {fileID: 376641125}
   - component: {fileID: 376641124}
+  - component: {fileID: 376641126}
   m_Layer: 5
   m_Name: Phase Banner
   m_TagString: Untagged
@@ -1386,11 +1387,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac5f1c7ac02a54a968fd52c26f62f720, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PhaseBannerUI
-  group: {fileID: 376641124}
+  slideAnimator: {fileID: 376641126}
   label: {fileID: 462219560}
-  fadeDuration: 0.25
   holdDuration: 0.7
   textFormat: Phase {0}
+--- !u!114 &376641126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 376641122}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d33a3de2ec8fc409ba4bf002b96ea7c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISlideAnimator
+  slideInDuration: 0.45
+  slideOutDuration: 0.3
+  slideDistance: 1600
+  overshootAmount: 1.70158
+  startHidden: 1
 --- !u!1 &390818960
 GameObject:
   m_ObjectHideFlags: 0
@@ -4376,6 +4393,7 @@ GameObject:
   - component: {fileID: 721958826}
   - component: {fileID: 721958828}
   - component: {fileID: 721958827}
+  - component: {fileID: 721958829}
   m_Layer: 5
   m_Name: Decision Panel
   m_TagString: Untagged
@@ -4425,10 +4443,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 263061d26ea1e46b49624d7cb747cc85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DecisionUI
+  slideAnimator: {fileID: 721958829}
   group: {fileID: 721958828}
   gravityButton: {fileID: 1626452500}
   fountainButton: {fileID: 49322051}
-  fadeDuration: 0.25
   content: {fileID: 452334056}
 --- !u!225 &721958828
 CanvasGroup:
@@ -4442,6 +4460,23 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &721958829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 721958823}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d33a3de2ec8fc409ba4bf002b96ea7c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UISlideAnimator
+  slideInDuration: 0.45
+  slideOutDuration: 0.3
+  slideDistance: 1600
+  overshootAmount: 1.70158
+  startHidden: 1
 --- !u!1 &753253250
 GameObject:
   m_ObjectHideFlags: 0
@@ -13228,7 +13263,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.6666667}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

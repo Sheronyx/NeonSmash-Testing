@@ -19,6 +19,9 @@ public class SequenceTrackerUI : MonoBehaviour
     [Header("Slots (einer pro aktiver Sequenz)")]
     [SerializeField] private SlotUI[] slots;
 
+    [Header("Slide-Animation")]
+    [SerializeField] private UISlideAnimator slideAnimator;
+
     [Header("Next-Element Prefabs")]
     [SerializeField] private GameObject prefabOrange;   // PointColor.Red
     [SerializeField] private GameObject prefabGreen;    // PointColor.Green
@@ -41,6 +44,8 @@ public class SequenceTrackerUI : MonoBehaviour
         SequenceManager.OnProgressChanged   += HandleProgressChanged;
         SequenceManager.OnSequenceCompleted += HandleSequenceCompleted;
         SequenceManager.OnAllProgressReset  += HandleAllReset;
+        PhaseManager.OnSequenceRowHide      += HandleRowHide;
+        PhaseManager.OnSequenceRowShow      += HandleRowShow;
     }
 
     private void OnDisable()
@@ -48,6 +53,26 @@ public class SequenceTrackerUI : MonoBehaviour
         SequenceManager.OnProgressChanged   -= HandleProgressChanged;
         SequenceManager.OnSequenceCompleted -= HandleSequenceCompleted;
         SequenceManager.OnAllProgressReset  -= HandleAllReset;
+        PhaseManager.OnSequenceRowHide      -= HandleRowHide;
+        PhaseManager.OnSequenceRowShow      -= HandleRowShow;
+    }
+
+    private void HandleRowHide()
+    {
+        slideAnimator?.SlideOutToLeft();
+        SetNextPrefabsActive(false);
+    }
+
+    private void HandleRowShow()
+    {
+        slideAnimator?.SlideInFromLeft(() => SetNextPrefabsActive(true));
+    }
+
+    private void SetNextPrefabsActive(bool active)
+    {
+        if (_nextPrefabs == null) return;
+        foreach (var p in _nextPrefabs)
+            if (p != null) p.SetActive(active);
     }
 
     private void Start() => StartCoroutine(Co_RefreshAfterLayout());
