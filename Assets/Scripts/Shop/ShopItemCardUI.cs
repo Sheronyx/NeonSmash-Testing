@@ -96,14 +96,34 @@ public class ShopItemCardUI : MonoBehaviour
 
         if (priceLabel != null)
         {
-            if (equipped)                  priceLabel.text = "EQUIPPED";
-            else if (owned)                priceLabel.text = "EQUIP";
-            else if (_item.coinPrice == 0) priceLabel.text = "FREE";
-            else                           priceLabel.text = $"{_item.coinPrice:N0}";
+            if (equipped)
+                priceLabel.text = "EQUIPPED";
+            else if (owned)
+                priceLabel.text = "EQUIP";
+            else if (!string.IsNullOrEmpty(_item.iapProductId))
+                priceLabel.text = IAPManager.Instance?.GetLocalizedPrice(_item.iapProductId) ?? "...";
+            else if (_item.coinPrice == 0)
+                priceLabel.text = "FREE";
+            else
+                priceLabel.text = $"{_item.coinPrice:N0}";
         }
 
         SetPreviewIcons(isPlaying: _playingCard == this);
     }
+
+    void OnEnable()
+    {
+        IAPManager.OnStoreInitialized += Refresh;
+        IAPManager.OnPurchaseSuccess  += HandlePurchaseSuccess;
+    }
+
+    void OnDisable()
+    {
+        IAPManager.OnStoreInitialized -= Refresh;
+        IAPManager.OnPurchaseSuccess  -= HandlePurchaseSuccess;
+    }
+
+    void HandlePurchaseSuccess(string _) => Refresh();
 
     void OnDestroy()
     {

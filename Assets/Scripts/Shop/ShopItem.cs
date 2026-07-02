@@ -13,8 +13,10 @@ public class ShopItem : ScriptableObject
     public bool         isDaily;       // täglich kostenlos abrufbar
     public bool         isFeatured;    // im Daily-Banner oben anzeigen
     public bool         isDefault;     // beim ersten Start automatisch equipped
-    [Tooltip("Leer lassen — Platzhalter für spätere IAP-Integration")]
+    [Tooltip("Store-Produkt-ID (Google Play / App Store). Leer = kein IAP.")]
     public string       iapProductId;
+    [Tooltip("Coins die bei einem IAP-Kauf gutgeschrieben werden (nur bei type == Currency).")]
+    public int          coinReward;
 
     [Header("Gameplay Assets")]
     public SkinTheme  skinTheme;   // nur für type == Skin

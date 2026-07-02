@@ -185,12 +185,14 @@ public class ShopController : MonoBehaviour
 
     void OnBuyItem(ShopItem item)
     {
-        if (item.type == ShopItemType.Currency)
+        // IAP-Produkt (Currency oder Unlock via echtem Geld)
+        if (!string.IsNullOrEmpty(item.iapProductId))
         {
-            Debug.Log($"[Shop] IAP '{item.displayName}' — noch nicht implementiert");
+            IAPManager.Instance?.BuyProduct(item.iapProductId);
             return;
         }
 
+        // Coin-Kauf (bisheriger Weg)
         if (ShopInventory.TryPurchase(item))
         {
             RefreshCoinDisplay(CoinManager.Balance);

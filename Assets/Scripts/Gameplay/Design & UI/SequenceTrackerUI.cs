@@ -12,8 +12,10 @@ public class SequenceTrackerUI : MonoBehaviour
         public Image abilityIconImage;
         [Tooltip("Weltkoordinaten-Ankerpunkt für das nächste Element-Visual")]
         public Transform nextElementAnchor;
-        [Tooltip("Fortschrittspunkte von links nach rechts")]
+        [Tooltip("Alle Dots: [0-5] = Reihe 1, [6-11] = Reihe 2 (max. 12)")]
         public Image[] dots;
+        [Tooltip("GameObject der zweiten Dot-Reihe — wird ausgeblendet wenn Sequenz ≤ 6 Elemente hat")]
+        public GameObject dotsRow2;
     }
 
     [Header("Slots (einer pro aktiver Sequenz)")]
@@ -154,6 +156,8 @@ public class SequenceTrackerUI : MonoBehaviour
             slot.dots[d].gameObject.SetActive(true);
             slot.dots[d].color = d < filledCount ? dotFilled : dotEmpty;
         }
+        if (slot.dotsRow2 != null)
+            slot.dotsRow2.SetActive(totalSteps > 6);
     }
 
     private GameObject PrefabForColor(PointColor pc) => pc switch
@@ -168,5 +172,54 @@ public class SequenceTrackerUI : MonoBehaviour
     {
         foreach (var go in _nextPrefabs)
             if (go != null) Destroy(go);
+    }
+
+    [ContextMenu("Auto-Configure Slots")]
+    private void AutoConfigureSlots()
+    {
+        int slotCount = 0;
+        while (transform.Find($"Slot {slotCount + 1}") != null) slotCount++;
+
+        slots = new SlotUI[slotCount];
+        for (int i = 0; i < slotCount; i++) slots[i] = new SlotUI();
+
+        for (int i = 0; i < slots.Length; i++)
+        {
+            var slot     = slots[i];
+            var slotRoot = transform.Find($"Slot {i + 1}");
+            if (slotRoot == null) continue;
+
+            var iconFrame = slotRoot.Find("Ability Icon Frame");
+            slot.abilityIconImage = iconFrame?.GetComponentInChildren<Image>();
+            slot.nextElementAnchor = slotRoot.Find("Next Element");
+
+            var dotsBar = slotRoot.Find("Dots Row Progress Bar");
+            if (dotsBar != null)
+            {
+                var row2Go    = dotsBar.Find("Dots Row 2");
+                slot.dotsRow2 = row2Go?.gameObject;
+
+                var allDots = new System.Collections.Generic.List<Image>();
+                var row1    = dotsBar.Find("Dots Row 1");
+                if (row1 != null)
+                    foreach (Transform child in row1)
+                    {
+                        var img = child.GetComponent<Image>();
+                        if (img != null) allDots.Add(img);
+                    }
+                if (row2Go != null)
+                    foreach (Transform child in row2Go)
+                    {
+                        var img = child.GetComponent<Image>();
+                        if (img != null) allDots.Add(img);
+                    }
+                slot.dots = allDots.ToArray();
+            }
+        }
+
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
+        Debug.Log($"[SequenceTrackerUI] {slots.Length} Slots automatisch konfiguriert.");
     }
 }
