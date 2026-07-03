@@ -45,8 +45,8 @@ public class MixedPointSpawner : MonoBehaviour
 
     [Header("Abstand & Padding")]
     [SerializeField] private bool minDistanceAsPercent = true;
-    [Range(0f, 0.5f)] public float minDistancePercent = 0.12f;
-    public float minScreenDistancePixels = 100f;
+    [Range(0f, 0.5f)] public float minDistancePercent = 0.22f;
+    public float minScreenDistancePixels = 140f;
     public float spawnPaddingPixels = 24f;
 
     [Header("Abstand Neon ↔ Activation Orb")]
@@ -1336,10 +1336,15 @@ public class MixedPointSpawner : MonoBehaviour
         if (comboEnabled) ComboManager.Instance?.RegisterHit(color);
 
         int streak = comboEnabled ? (ComboManager.Instance?.ComboCount ?? 0) : 0;
-        int sequenceBonus  = SequenceManager.Instance != null ? SequenceManager.Instance.RegisterHit(color) : 0;
-        int scored         = ScoreManager.Instance?.AddPointsFromHit(10 + sequenceBonus) ?? 0;
+        int sequenceBonus    = SequenceManager.Instance != null ? SequenceManager.Instance.RegisterHit(color) : 0;
+        bool comboSuppressed = SequenceManager.Instance != null && SequenceManager.Instance.LastHitSuppressedScore;
 
-        SpawnFloatingScore(scored, point.transform.position, color, streak);
+        if (!comboSuppressed)
+        {
+            int basePoints = sequenceBonus > 0 ? sequenceBonus : 10;
+            int scored     = ScoreManager.Instance?.AddPointsFromHit(basePoints) ?? 0;
+            SpawnFloatingScore(scored, point.transform.position, color, streak);
+        }
         bool isSwipe = point.GetComponent<SwipePoint>() != null;
         if (isSwipe) AudioManager.Instance?.PlaySwipePoint(streak);
         else         AudioManager.Instance?.PlayNormalPoint(streak);
@@ -1361,7 +1366,11 @@ public class MixedPointSpawner : MonoBehaviour
         DismissExtraThunder();
 
         if (running && !gameOver && !spawnPausedForBanner)
-            StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
+        {
+            float comboPreDelay = (SequenceManager.Instance != null && SequenceManager.Instance.LastHitTriggeredEffect)
+                ? SequenceManager.Instance.EffectPreDelay : 0f;
+            StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay() + comboPreDelay));
+        }
     }
 
     private float GetSpawnDelay() =>
@@ -1385,6 +1394,18 @@ public class MixedPointSpawner : MonoBehaviour
         var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
         var fst = go.GetComponent<FloatingScoreText>();
         fst?.Play(score, Color.white, color);
+    }
+
+    // Für SequenceManager: Bonus-Floating-Score an einer Viewport-Position spawnen.
+    public void SpawnBonusFloatingScore(int amount, Vector2 viewportPos, float scale, PointColor pointColor)
+    {
+        if (floatingScorePrefab == null || amount <= 0) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        Vector3 worldPos = cam.ViewportToWorldPoint(new Vector3(viewportPos.x, viewportPos.y, Mathf.Abs(cam.transform.position.z)));
+        worldPos.z = 0f;
+        var go = Instantiate(floatingScorePrefab, worldPos, Quaternion.identity);
+        go.GetComponent<FloatingScoreText>()?.Play(amount, Color.white, pointColor, scale);
     }
 
     // Vom PeekABooSystem: registriert das Swipe-Peek-Element für den Swipe-Input.

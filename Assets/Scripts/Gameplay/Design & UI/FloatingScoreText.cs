@@ -17,10 +17,13 @@ public class FloatingScoreText : MonoBehaviour
     [SerializeField] private float punchScale    = 1.3f;
     [SerializeField] private float fadeDuration  = 0.35f;
 
-    public void Play(int score, Color color, PointColor? pointColor = null)
+    private float _scale = 1f;
+
+    public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f)
     {
         label.text  = "+" + score;
         label.color = color;
+        _scale      = scale;
 
         if (pointColor.HasValue)
         {
@@ -39,20 +42,20 @@ public class FloatingScoreText : MonoBehaviour
 
     private IEnumerator Co_Animate()
     {
-        // Einpoppen: 0 → punchScale → 1
+        // Einpoppen: 0 → punchScale*_scale → _scale
         float t = 0f;
         transform.localScale = Vector3.zero;
         while (t < punchDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             float k = t / punchDuration;
             float s = k < 0.55f
-                ? Mathf.Lerp(0f, punchScale, k / 0.55f)
-                : Mathf.Lerp(punchScale, 1f, (k - 0.55f) / 0.45f);
+                ? Mathf.Lerp(0f, punchScale * _scale, k / 0.55f)
+                : Mathf.Lerp(punchScale * _scale, _scale, (k - 0.55f) / 0.45f);
             transform.localScale = Vector3.one * s;
             yield return null;
         }
-        transform.localScale = Vector3.one;
+        transform.localScale = Vector3.one * _scale;
 
         // Sofort wegfaden
         Color startColor = label.color;
@@ -60,7 +63,7 @@ public class FloatingScoreText : MonoBehaviour
         t = 0f;
         while (t < fadeDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             label.color = Color.Lerp(startColor, endColor, t / fadeDuration);
             yield return null;
         }
