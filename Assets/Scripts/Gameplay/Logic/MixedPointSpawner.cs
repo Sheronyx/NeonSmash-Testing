@@ -141,17 +141,9 @@ public class MixedPointSpawner : MonoBehaviour
 
     [SerializeField] private LevelUp levelUp;
 
-    // Aktuelle Reaktionszeit (dynamisch pro Level) — z.B. für Peek-a-boo.
-    public float CurrentReactionTime
-    {
-        get
-        {
-            float t = PhaseManager.Instance != null ? PhaseManager.Instance.CurrentReactionTime
-                    : levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
-            if (PortalElectrifier.IsActive) t += 0.5f;
-            return t;
-        }
-    }
+    // Aktuelle Reaktionszeit — score-basiert via InfinityRunManager.
+    public float CurrentReactionTime =>
+        InfinityRunManager.Instance != null ? InfinityRunManager.Instance.GetReactionTime() : reactionTime;
 
     // Vom PhaseManager gesteuert: in Play-Phasen kein zufälliges Activation-Orb-Spawning.
     [HideInInspector] public bool allowRandomActivationOrbs = true;
@@ -340,42 +332,17 @@ public class MixedPointSpawner : MonoBehaviour
     {
         if (IsTutorialMode) return;
         if (!running || spawnPausedForBanner || isConvertingPoints) return;
-        if (IsInfinityMode && allowRandomActivationOrbs && TrySpawnActivationOrb()) return;
 
         // Alle Slots leer → neuen Rundentyp würfeln.
         bool allEmpty = true;
         foreach (var s in _slots) { if (s.point != null) { allEmpty = false; break; } }
         if (allEmpty)
         {
-            _roundIsAllThunder    = false;
-            _roundHasExtraThunder = false;
-
-            bool triggeredThunder = false;
-            if (ActiveThunderPrefab != null && thunderSpawnChance > 0f && Random.value < thunderSpawnChance)
-            {
-                // 50/50: alle drei Shocker ODER normale Elemente + ein extra Shocker
-                if (Random.value < 0.5f) _roundIsAllThunder    = true;
-                else                     _roundHasExtraThunder = true;
-                triggeredThunder = true;
-            }
-
-            if (!triggeredThunder
-                && portalElectrifier != null
-                && portalElectrifier.CanActivate()
-                && electricPortalChance > 0f
-                && Random.value < electricPortalChance)
-            {
-                portalElectrifier.Activate();
-            }
-
-            if (!_roundIsAllThunder)
-            {
-                bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
-                bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
-                _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
-                if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
-                else               { normalsInRow++; swipesInRow = 0; }
-            }
+            bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+            bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
+            _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
+            if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
+            else               { normalsInRow++; swipesInRow = 0; }
         }
 
         for (int i = 0; i < _slots.Length; i++)
@@ -658,36 +625,22 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (!running || gameOver || _slots[i].point != point) yield break;
 
-        // Timeout: Leben verlieren
+        // Timeout: sofortiges Game Over (kein Leben-System mehr)
         DismissCurrentFake();
         if (comboEnabled) ComboManager.Instance?.RegisterMiss();
         SequenceManager.Instance?.ResetAllProgress();
 
-        Vector3 pos = point.transform.position;
         _slots[i].timeout = null;
         _slots[i].point   = null;
         if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
         Destroy(point);
 
-        // Andere Slots + Extra-Shocker lautlos leeren, dann frische Dreier-Reihe
         ClearOtherSlots(i);
         DismissExtraThunder();
 
-        bool stillAlive = LivesManager.Instance.LoseLife(pos);
         if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
-
-        if (stillAlive)
-        {
-            yield return new WaitForSecondsRealtime(LivesManager.Instance.TotalGameOverAnimDuration);
-            yield return null; // FIFO-Sicherheitsframe
-            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
-        }
-        else
-        {
-            float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
-            yield return new WaitForSecondsRealtime(delay);
-            GameOver();
-        }
+        yield return new WaitForSecondsRealtime(0.4f);
+        GameOver();
     }
 
     // ─── Extra-Thunder ─────────────────────────────────────────────────────────
@@ -1068,9 +1021,6 @@ public class MixedPointSpawner : MonoBehaviour
         spawnPausedForBanner = false;
         ClearAllSlots();
 
-        if (GravityModeSystem.Instance != null) GravityModeSystem.Instance.ForceStop();
-        if (FountainModeSystem.Instance != null) FountainModeSystem.Instance.ForceStop();
-        PhaseManager.Instance?.StopRun();
         if (comboEnabled) ComboManager.Instance?.ResetCombo();
 
         if (MultiplayerManager.IsMultiplayerGame)
@@ -1128,8 +1078,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     private IEnumerator Co_DelayedGameOver()
     {
-        float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
-        yield return new WaitForSecondsRealtime(delay);
+        yield return new WaitForSecondsRealtime(0.4f);
         GameOver();
     }
 

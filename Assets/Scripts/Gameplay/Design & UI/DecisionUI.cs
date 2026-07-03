@@ -27,17 +27,8 @@ public class DecisionUI : MonoBehaviour
         if (fountainButton != null) fountainButton.onClick.AddListener(() => Choose(SpecialMode.Fountain));
     }
 
-    private void OnEnable()
-    {
-        PhaseManager.OnDecisionRequested += Show;
-        PhaseManager.OnDecisionClosed    += Hide;
-    }
-
-    private void OnDisable()
-    {
-        PhaseManager.OnDecisionRequested -= Show;
-        PhaseManager.OnDecisionClosed    -= Hide;
-    }
+    private void OnEnable()  { }
+    private void OnDisable() { }
 
     private void Show()
     {
@@ -55,7 +46,7 @@ public class DecisionUI : MonoBehaviour
         });
     }
 
-    private void Choose(SpecialMode mode) => PhaseManager.Instance?.ChooseMode(mode);
+    private void Choose(SpecialMode mode) { }
 
     private void SetInteractable(bool value)
     {

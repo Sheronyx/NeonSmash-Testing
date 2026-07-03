@@ -164,10 +164,9 @@ public class FountainModeSystem : MonoBehaviour
         point.Init(this, velocity);
     }
 
-    // Spawn-Abstand folgt der Intensität des PhaseManagers (wie die Reaktionszeit der Spielphasen).
     private float GetCurrentSpawnInterval() =>
-        PhaseManager.Instance != null
-            ? PhaseManager.Instance.CurrentReactionTime * spawnIntervalFactor
+        MixedPointSpawner.Instance != null
+            ? MixedPointSpawner.Instance.CurrentReactionTime * spawnIntervalFactor
             : fallbackSpawnInterval;
 
     public void OnPointFinished(bool hit)

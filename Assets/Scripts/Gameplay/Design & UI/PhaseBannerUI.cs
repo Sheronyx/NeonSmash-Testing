@@ -17,17 +17,8 @@ public class PhaseBannerUI : MonoBehaviour
 
     private Coroutine _routine;
 
-    private void OnEnable()
-    {
-        PhaseManager.OnPhaseBanner     += Show;
-        PhaseManager.OnPhaseTextBanner += ShowText;
-    }
-
-    private void OnDisable()
-    {
-        PhaseManager.OnPhaseBanner     -= Show;
-        PhaseManager.OnPhaseTextBanner -= ShowText;
-    }
+    private void OnEnable()  { }
+    private void OnDisable() { }
 
     private void Show(int phaseNumber, int totalPhases)
     {

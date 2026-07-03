@@ -1,23 +1,21 @@
 using System;
 using UnityEngine;
-using System.Collections;
 
 /// <summary>
-/// Erkennt bevorstehende Intensitäts-Sprünge und benachrichtigt andere Systeme (Portal).
-/// Kein visueller Effekt auf den Hintergrund.
+/// Erkennt Score-Schwellen (Reaktionszeit-Sprünge) und benachrichtigt das Portal-System.
+/// Feuert OnSpeedupWarning wenn eine Score-Schwelle überschritten wird.
 /// </summary>
 public class BackgroundIntensityWarning : MonoBehaviour
 {
     public static BackgroundIntensityWarning Instance { get; private set; }
 
-    /// <summary>Gefeuert wenn ein Speedup in warningLeadTime Sekunden kommt.</summary>
     public static event Action OnSpeedupWarning;
-    /// <summary>Gefeuert beim Phasen-Reset (für andere Systeme zum Zurücksetzen).</summary>
     public static event Action OnPhaseReset;
 
-    [SerializeField] private float warningLeadTime = 2f;
+    // Dieselben Schwellen wie in InfinityRunManager.GetReactionTime()
+    private static readonly int[] ScoreThresholds = { 500, 1000, 1500, 2000, 3000, 4000, 6000, 8000, 10000 };
 
-    private bool _warningTriggered;
+    private int _lastScore = -1;
 
     private void Awake()
     {
@@ -27,24 +25,20 @@ public class BackgroundIntensityWarning : MonoBehaviour
 
     public void ResetPhase()
     {
-        _warningTriggered = false;
         OnPhaseReset?.Invoke();
     }
 
     private void Update()
     {
-        var pm = PhaseManager.Instance;
-        if (pm == null) return;
+        int score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0;
+        if (score == _lastScore) return;
 
-        float secs = pm.GetSecondsUntilNextSpeedup();
-
-        if (!_warningTriggered && secs <= warningLeadTime && secs > 0.1f)
+        foreach (int threshold in ScoreThresholds)
         {
-            _warningTriggered = true;
-            OnSpeedupWarning?.Invoke();
+            if (_lastScore < threshold && score >= threshold)
+                OnSpeedupWarning?.Invoke();
         }
 
-        if (_warningTriggered && secs > warningLeadTime * 1.5f)
-            _warningTriggered = false;
+        _lastScore = score;
     }
 }

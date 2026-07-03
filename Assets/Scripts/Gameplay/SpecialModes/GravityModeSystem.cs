@@ -27,10 +27,9 @@ public class GravityModeSystem : MonoBehaviour
     private bool isActive = false;
     private bool spawnLoopActive = false;
 
-    // Spawn-Abstand folgt der Intensität des PhaseManagers (wie die Reaktionszeit der Spielphasen).
     private float CurrentSpawnInterval() =>
-        PhaseManager.Instance != null
-            ? PhaseManager.Instance.CurrentReactionTime * spawnIntervalFactor
+        MixedPointSpawner.Instance != null
+            ? MixedPointSpawner.Instance.CurrentReactionTime * spawnIntervalFactor
             : spawnInterval;
 
     public bool IsActive => isActive;
@@ -215,10 +214,5 @@ public void StopMode()
     SpecialModeManager.Instance.EndCurrentMode();
 }
 
-private float GetSpeedMultiplier()
-{
-    // Fallgeschwindigkeit folgt der Intensität des PhaseManagers (Curve).
-    if (PhaseManager.Instance == null) return 1f;
-    return 1f + PhaseManager.Instance.CurrentIntensity01 * maxExtraSpeed;
-}
+private float GetSpeedMultiplier() => 1f;
 }

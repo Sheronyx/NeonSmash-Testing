@@ -90,15 +90,7 @@ if (!spawner)
         NeonAnalytics.LogGameStart(
             GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
 
-        // Infinity Mode läuft über das Phasen-System (PhaseManager steuert den Spawner).
-        // Multiplayer (und Fallback ohne PhaseManager) startet den Spawner weiterhin direkt.
-        bool infinity = GlobalGameManager.Instance == null
-                        || GlobalGameManager.Instance.SelectedMode == GameMode.Infinity;
-
-        if (infinity && PhaseManager.Instance != null)
-            PhaseManager.Instance.BeginRun();
-        else if (spawner)
-            spawner.Begin();
+        if (spawner) spawner.Begin();
     }
 
     void OnDestroy()

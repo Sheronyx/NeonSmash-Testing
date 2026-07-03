@@ -46,8 +46,6 @@ public class SequenceTrackerUI : MonoBehaviour
         SequenceManager.OnProgressChanged   += HandleProgressChanged;
         SequenceManager.OnSequenceCompleted += HandleSequenceCompleted;
         SequenceManager.OnAllProgressReset  += HandleAllReset;
-        PhaseManager.OnSequenceRowHide      += HandleRowHide;
-        PhaseManager.OnSequenceRowShow      += HandleRowShow;
     }
 
     private void OnDisable()
@@ -55,8 +53,6 @@ public class SequenceTrackerUI : MonoBehaviour
         SequenceManager.OnProgressChanged   -= HandleProgressChanged;
         SequenceManager.OnSequenceCompleted -= HandleSequenceCompleted;
         SequenceManager.OnAllProgressReset  -= HandleAllReset;
-        PhaseManager.OnSequenceRowHide      -= HandleRowHide;
-        PhaseManager.OnSequenceRowShow      -= HandleRowShow;
     }
 
     private void HandleRowHide()
