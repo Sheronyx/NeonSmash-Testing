@@ -20,9 +20,12 @@ public class PhaseManager : MonoBehaviour
     public class PhaseDef
     {
         public PhaseKind kind = PhaseKind.Play;
-        [Range(0f, 1f)] public float thunderChance = 0f;   // Shocker-Wahrscheinlichkeit
-        [Range(0f, 1f)] public float fakeChance    = 0f;    // Fake-Wahrscheinlichkeit
-        [Range(0f, 1f)] public float peekChance    = 0f;    // Peek-a-boo (Standard aus)
+        [Range(0f, 1f)] public float thunderChance        = 0f;
+        [Range(0f, 1f)] public float electricPortalChance = 0f;
+        [Range(0f, 1f)] public float fakeChance           = 0f;
+        [Range(0f, 1f)] public float peekChance           = 0f;
+        [Tooltip("Zwei schwebende Minen erscheinen zu Beginn dieser Phase.")]
+        public bool hasMines = false;
         [Tooltip("Vor dieser Phase erscheint die Entscheidungs-UI (Special-Mode-Wahl).")]
         public bool decisionBefore = false;
     }
@@ -98,6 +101,28 @@ public class PhaseManager : MonoBehaviour
 
     /// <summary>Aktuelle Reaktionszeit aus der Curve — vom Spawner gelesen (ersetzt LevelUp).</summary>
     public float CurrentReactionTime { get; private set; } = 2f;
+
+    public float PhaseElapsed => _phaseElapsed;
+    public float CurveMinRT   => _minRT;
+    public float CurveMaxRT   => _maxRT;
+    public float GetReactionTimeAt(float elapsed) => _running ? ComputeReactionTime(elapsed) : _maxRT;
+
+    /// <summary>Sekunden bis zum nächsten Reaktionszeit-Sprung (schneller) in dieser Phase.
+    /// Gibt float.MaxValue zurück wenn kein Speedup mehr kommt.</summary>
+    public float GetSecondsUntilNextSpeedup()
+    {
+        if (!_running || reactionCurve == null || reactionCurve.Length == 0) return float.MaxValue;
+        float currentRT = ComputeReactionTime(_phaseElapsed);
+        float t = 0f;
+        foreach (var seg in reactionCurve)
+        {
+            t += seg.duration;
+            if (_phaseElapsed >= t) continue;
+            if (ComputeReactionTime(t + 0.01f) < currentRT - 0.005f)
+                return t - _phaseElapsed;
+        }
+        return float.MaxValue;
+    }
 
     /// <summary>Normalisierte Intensität 0..1 (0 = langsamstes Curve-Segment, 1 = schnellstes).
     /// Für Special Modes (Spawn-Tempo / Element-Geschwindigkeit), damit sie dem Curve folgen.</summary>
@@ -201,11 +226,15 @@ public class PhaseManager : MonoBehaviour
     // ----------------------------------------------------------------- Play-Phase
     IEnumerator Co_PlayPhase(PhaseDef def)
     {
+        BackgroundIntensityWarning.Instance?.ResetPhase();
+        if (def.hasMines) FloatingMineSystem.Instance?.SpawnMines();
+
         if (Spawner != null)
         {
-            Spawner.thunderSpawnChance = def.thunderChance;
-            Spawner.fakeSpawnChance    = def.fakeChance;
-            Spawner.peekABooChance     = def.peekChance;
+            Spawner.thunderSpawnChance    = def.thunderChance;
+            Spawner.electricPortalChance  = def.electricPortalChance;
+            Spawner.fakeSpawnChance       = def.fakeChance;
+            Spawner.peekABooChance        = def.peekChance;
             if (!Spawner.IsRunning) Spawner.Begin();
             else                    Spawner.SetBannerPause(false);   // ggf. von Vorphase/Zwischenphase pausiert → fortsetzen
         }
@@ -218,10 +247,14 @@ public class PhaseManager : MonoBehaviour
     {
         // WICHTIG: Spawner NICHT stoppen! Die Mode-Systeme (Gravity/Fountain) pausieren den
         // normalen Spawner selbst (PauseSpawning) und beenden sich über StopMode.
+        BackgroundIntensityWarning.Instance?.ResetPhase();
+        if (def.hasMines) FloatingMineSystem.Instance?.SpawnMines();
+
         if (Spawner != null)
         {
-            Spawner.thunderSpawnChance = def.thunderChance;   // Shocker-Anteil im Mode
-            Spawner.fakeSpawnChance    = def.fakeChance;      // Fake-Anteil im Mode
+            Spawner.thunderSpawnChance   = def.thunderChance;
+            Spawner.electricPortalChance = def.electricPortalChance;
+            Spawner.fakeSpawnChance      = def.fakeChance;
             // Normales Spawning hart aus, solange der Special Mode läuft (kein „eines noch"-Element).
             // KEIN Begin() hier — das würde entpausieren UND einen normalen Point spawnen.
             Spawner.SetBannerPause(true);
@@ -283,6 +316,9 @@ public class PhaseManager : MonoBehaviour
     {
         if (Spawner == null) yield break;
 
+        PortalElectrifier.Instance?.ForceDeactivate();
+        if (FloatingMineSystem.Instance != null)
+            StartCoroutine(FloatingMineSystem.Instance.Co_RemoveMines());
         Spawner.SetBannerPause(true);   // kein Nachspawn
 
         // Cap gegen 0/nicht-gesetzt absichern (neu hinzugefügtes SerializeField kann in einer

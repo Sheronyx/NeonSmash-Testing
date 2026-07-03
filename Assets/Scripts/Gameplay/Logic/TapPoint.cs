@@ -11,6 +11,12 @@ public class TapPoint : BasePoint
 
         TutorialManager.Instance?.OnActionPerformed(TutorialPointType.NormalPoint);
 
+        if (PortalElectrifier.IsActive)
+        {
+            spawner?.HandleElectrifiedTap(gameObject);
+            return;
+        }
+
         spawner?.HandlePointHit(gameObject);
     }
 }

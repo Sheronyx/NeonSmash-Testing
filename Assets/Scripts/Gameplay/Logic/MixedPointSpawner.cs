@@ -102,6 +102,12 @@ public class MixedPointSpawner : MonoBehaviour
     [Tooltip("Wahrscheinlichkeit, dass ein Donnerschock anstelle des normalen Elements spawnt.")]
     public float thunderSpawnChance = 0.1f;
 
+    [Header("Portal Elektrifizierung")]
+    [SerializeField] private PortalElectrifier portalElectrifier;
+    [Range(0f, 1f)]
+    [Tooltip("Wahrscheinlichkeit, dass das Portal zu blitzen beginnt und alle Elemente elektrifiziert.")]
+    public float electricPortalChance = 0f;
+
     [Header("Peek-a-boo (Wolken-Sequenz)")]
     [SerializeField] private PeekABooSystem peekABooSystem;
     [Range(0f, 1f)]
@@ -136,9 +142,16 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private LevelUp levelUp;
 
     // Aktuelle Reaktionszeit (dynamisch pro Level) — z.B. für Peek-a-boo.
-    public float CurrentReactionTime =>
-        PhaseManager.Instance != null ? PhaseManager.Instance.CurrentReactionTime
-        : levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+    public float CurrentReactionTime
+    {
+        get
+        {
+            float t = PhaseManager.Instance != null ? PhaseManager.Instance.CurrentReactionTime
+                    : levelUp != null ? levelUp.GetCurrentReactionTime(reactionTime) : reactionTime;
+            if (PortalElectrifier.IsActive) t += 0.5f;
+            return t;
+        }
+    }
 
     // Vom PhaseManager gesteuert: in Play-Phasen kein zufälliges Activation-Orb-Spawning.
     [HideInInspector] public bool allowRandomActivationOrbs = true;
@@ -209,6 +222,7 @@ public class MixedPointSpawner : MonoBehaviour
         }
         CurrentSwipePoint = null;
         DismissExtraThunder();
+        portalElectrifier?.ForceDeactivate();
     }
 
     // Räumt alle Slots außer exceptIndex lautlos auf (kein Score, kein Leben-Verlust).
@@ -336,11 +350,22 @@ public class MixedPointSpawner : MonoBehaviour
             _roundIsAllThunder    = false;
             _roundHasExtraThunder = false;
 
+            bool triggeredThunder = false;
             if (ActiveThunderPrefab != null && thunderSpawnChance > 0f && Random.value < thunderSpawnChance)
             {
                 // 50/50: alle drei Shocker ODER normale Elemente + ein extra Shocker
                 if (Random.value < 0.5f) _roundIsAllThunder    = true;
                 else                     _roundHasExtraThunder = true;
+                triggeredThunder = true;
+            }
+
+            if (!triggeredThunder
+                && portalElectrifier != null
+                && portalElectrifier.CanActivate()
+                && electricPortalChance > 0f
+                && Random.value < electricPortalChance)
+            {
+                portalElectrifier.Activate();
             }
 
             if (!_roundIsAllThunder)
@@ -497,6 +522,7 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         if (portalFlash != null) portalFlash.FlashParticles();
+        portalElectrifier?.ElectrifyElement(newPoint);
     }
 
     // Findet eine Position für Slot i: vermeidet alle anderen belegten Slots + Activation Orb.
@@ -1307,6 +1333,49 @@ public class MixedPointSpawner : MonoBehaviour
         if (pause) StopPointTimer();
     }
 
+    public void HandleElectrifiedTap(GameObject point)
+    {
+        DismissCurrentFake();
+        SequenceManager.Instance?.ResetAllProgress();
+        if (comboEnabled) ComboManager.Instance?.RegisterMiss();
+
+        int idx = FindSlotIndex(point);
+        Vector3 pos = point.transform.position;
+
+        if (idx >= 0)
+        {
+            if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
+            _slots[idx].point = null;
+        }
+        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
+        var bp = point.GetComponent<BasePoint>();
+        if (bp != null) bp.SendMessage("SpawnExplosion");
+        Destroy(point);
+
+        if (idx >= 0) ClearOtherSlots(idx);
+        DismissExtraThunder();
+
+        bool stillAlive = LivesManager.Instance.LoseLife(pos);
+        if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
+
+        StartCoroutine(Co_AfterElectrifiedTap(stillAlive));
+    }
+
+    private IEnumerator Co_AfterElectrifiedTap(bool stillAlive)
+    {
+        float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
+        yield return new WaitForSecondsRealtime(delay);
+        yield return null;
+        if (stillAlive)
+        {
+            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
+        }
+        else
+        {
+            GameOver();
+        }
+    }
+
     public void HandlePointHit(GameObject point)
     {
         DismissCurrentFake();
@@ -1392,6 +1461,8 @@ public class MixedPointSpawner : MonoBehaviour
     /// </summary>
     public void PositiveClearAll()
     {
+        portalElectrifier?.ForceDeactivate();
+
         // Fake: positiv = ignorieren (lautlos entfernen, kein Schaden)
         foreach (var f in FindObjectsByType<FakePoint>(FindObjectsSortMode.None))
             f.Dismiss();

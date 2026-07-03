@@ -95,7 +95,10 @@ public class SwipePoint : BasePoint
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnActionPerformed(TutorialPointType.SwipePoint);
 
-        spawner?.HandlePointHit(gameObject);
+        if (PortalElectrifier.IsActive)
+            spawner?.HandleElectrifiedTap(gameObject);
+        else
+            spawner?.HandlePointHit(gameObject);
 
         return true;
     }

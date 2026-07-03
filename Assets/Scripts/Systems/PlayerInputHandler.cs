@@ -32,6 +32,7 @@ public class PlayerInputHandler : MonoBehaviour
 
     // 👉 verhindert mehrfaches Treffen desselben Objekts pro Swipe
     private HashSet<GameObject> alreadyHit = new HashSet<GameObject>();
+    private bool _swipeBroken = false;
 
     private void Awake()
     {
@@ -49,6 +50,7 @@ public class PlayerInputHandler : MonoBehaviour
             isTouching = true;
             trailStarted = false;
             alreadyHit.Clear();
+            _swipeBroken = false;
 
             touchStartPos = controls.Player.TouchPosition.ReadValue<Vector2>();
             touchCurrentPos = touchStartPos;
@@ -60,6 +62,7 @@ public class PlayerInputHandler : MonoBehaviour
             if (PauseMenuController.IsPaused) return;
             if (LivesManager.IsLifeLostAnimating) return;
             if (!isTouching) return;
+            if (_swipeBroken) return;
 
             Vector2 newPos = ctx.ReadValue<Vector2>();
 
@@ -152,6 +155,16 @@ public class PlayerInputHandler : MonoBehaviour
             if (alreadyHit.Contains(obj)) continue;
             alreadyHit.Add(obj);
 
+            // Mine getroffen → Swipe bricht ab
+            var mine = obj.GetComponent<FloatingMine>();
+            if (mine != null)
+            {
+                mine.OnTapped();
+                _swipeBroken = true;
+                slashTrail?.End();
+                return;
+            }
+
             ProcessHit(hit.collider, fromSwipe);
         }
     }
@@ -161,6 +174,17 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     private void ProcessTap(Vector3 worldPos)
     {
+        // ⚡ Portal Elektrifizierung — Antippen deaktiviert sie (kein Collider nötig, Distanzprüfung)
+        if (PortalElectrifier.IsActive && PortalElectrifier.Instance != null)
+        {
+            float dist = Vector2.Distance(worldPos, PortalElectrifier.Instance.transform.position);
+            if (dist <= PortalElectrifier.Instance.TapRadius)
+            {
+                PortalElectrifier.Instance.OnPortalTapped();
+                return;
+            }
+        }
+
         // ✅ SCHRITT 1: ActivationOrbs – nur bei präzisem direktem Tap (kleiner Radius)
         Collider2D[] orbHits = Physics2D.OverlapCircleAll(worldPos, slashRadius * 0.55f, activationOrbLayerMask);
 
@@ -243,6 +267,13 @@ public class PlayerInputHandler : MonoBehaviour
                 fountainPoint.TryTap();
                 return;
             }
+        }
+
+        // 💣 Floating Mines — Antippen: kurzer Screen Shake, Mine bleibt
+        if (!fromSwipe)
+        {
+            var mine = col.GetComponent<FloatingMine>();
+            if (mine != null) { mine.OnTapped(); return; }
         }
 
         // ⚪ Fake Points — nie per Swipe treffbar, verpuffen nur (Ablenkung)

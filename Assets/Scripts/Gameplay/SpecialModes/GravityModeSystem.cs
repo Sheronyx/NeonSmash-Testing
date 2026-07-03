@@ -90,12 +90,21 @@ public void Activate()
             float thunder = spawner != null ? spawner.thunderSpawnChance : 0f;
             float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
 
+            bool triggeredThunder = false;
             if (gravityShockerPrefab != null && r < thunder)
-                SpawnGravitySpecial(gravityShockerPrefab);
+            { SpawnGravitySpecial(gravityShockerPrefab); triggeredThunder = true; }
             else if (gravityFakePrefab != null && r < thunder + fake)
                 SpawnGravitySpecial(gravityFakePrefab);
             else
                 SpawnGravityPoint();
+
+            if (!triggeredThunder && spawner != null)
+            {
+                var pe = PortalElectrifier.Instance;
+                if (pe != null && pe.CanActivate() && spawner.electricPortalChance > 0f
+                    && Random.value < spawner.electricPortalChance)
+                    pe.Activate();
+            }
 
             yield return new WaitForSeconds(CurrentSpawnInterval());
         }
@@ -115,6 +124,7 @@ public void Activate()
     worldPos.z = 0f;
 
     GameObject obj = Instantiate(ActiveGravityPrefab, worldPos, Quaternion.identity);
+    PortalElectrifier.Instance?.ElectrifyElement(obj);
 
     var gp = obj.GetComponent<GravityPoint>();
     if (gp != null)
@@ -142,6 +152,7 @@ public void Activate()
         worldPos.z = 0f;
 
         GameObject obj = Instantiate(prefab, worldPos, Quaternion.identity);
+        PortalElectrifier.Instance?.ElectrifyElement(obj);
         var gp = obj.GetComponent<GravityPoint>();
         if (gp != null)
         {

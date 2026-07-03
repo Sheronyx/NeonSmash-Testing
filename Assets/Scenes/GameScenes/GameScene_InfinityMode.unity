@@ -665,6 +665,77 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 74978480}
   m_CullTransparentMesh: 1
+--- !u!1001 &78245245
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 911621387}
+    m_Modifications:
+    - target: {fileID: 4697837064498953030, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_Name
+      value: Electro Shock Effect Yellow Looping
+      objectReference: {fileID: 0}
+    - target: {fileID: 4697837064498953030, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -100
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+--- !u!4 &78245246 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5743823474081700068, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+  m_PrefabInstance: {fileID: 78245245}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &78245247 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4697837064498953030, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+  m_PrefabInstance: {fileID: 78245245}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &80872768
 GameObject:
   m_ObjectHideFlags: 0
@@ -924,6 +995,7 @@ GameObject:
   m_Component:
   - component: {fileID: 190732375}
   - component: {fileID: 190732374}
+  - component: {fileID: 190732376}
   m_Layer: 0
   m_Name: SpawnManager
   m_TagString: Untagged
@@ -981,7 +1053,9 @@ MonoBehaviour:
   fakePointPrefab: {fileID: 7634417711000780290, guid: 37444548a828f4baf99a6238e13cc95d, type: 3}
   fakeSpawnChance: 0
   thunderPointPrefab: {fileID: 7032938748382792654, guid: b64f768a4b1fa4b4e84b730ce566bfcc, type: 3}
-  thunderSpawnChance: 0.15
+  thunderSpawnChance: 0
+  portalElectrifier: {fileID: 911621395}
+  electricPortalChance: 0.2
   peekABooSystem: {fileID: 697214894}
   peekABooChance: 0
   mainCamera: {fileID: 519420031}
@@ -1017,6 +1091,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &190732376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190732373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7315832a4def49b7baea5c6f967e920, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FloatingMineSystem
+  minePrefab: {fileID: 4566713099122441576, guid: a8be3a49b67fb41c9a2e480567bb9761, type: 3}
+  mineCount: 4
+  spawnYMin: 0.3
+  spawnYMax: 0.72
+  spawnXVariance: 0.1
 --- !u!1 &210196134
 GameObject:
   m_ObjectHideFlags: 0
@@ -6617,6 +6708,22 @@ MonoBehaviour:
     platform: {fileID: 510206016}
   - theme: {fileID: 11400000, guid: 6328f8a16d7be48edb13bd0845150b37, type: 2}
     platform: {fileID: 541811926}
+--- !u!114 &911621395
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 911621383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86ac840e62e4f4d5dad55c8919622ebe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PortalElectrifier
+  warningDuration: 1
+  postDeactivateCooldown: 7
+  elementOverlayPrefab: {fileID: 4697837064498953030, guid: b110cff9795224ef798c1ea622b86d29, type: 3}
+  tapRadius: 1.2
 --- !u!1 &914584639
 GameObject:
   m_ObjectHideFlags: 0
@@ -11209,6 +11316,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1500991853}
   m_CullTransparentMesh: 1
+--- !u!1 &1509680033
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1509680034}
+  - component: {fileID: 1509680035}
+  m_Layer: 0
+  m_Name: BackgroundIntensityWarning
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1509680034
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509680033}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.54447, y: 0.34023, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1509680035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1509680033}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185a2add355fa4671a8f97bad864d8c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BackgroundIntensityWarning
+  warningLeadTime: 2
 --- !u!1 &1509845928
 GameObject:
   m_ObjectHideFlags: 0
@@ -11547,33 +11699,59 @@ MonoBehaviour:
   phases:
   - kind: 0
     thunderChance: 0
+    electricPortalChance: 0
     fakeChance: 0
     peekChance: 0
+    hasMines: 0
     decisionBefore: 0
   - kind: 1
     thunderChance: 0
+    electricPortalChance: 0
     fakeChance: 0
     peekChance: 0
+    hasMines: 0
     decisionBefore: 1
   - kind: 0
-    thunderChance: 0.3
+    thunderChance: 0
+    electricPortalChance: 1
     fakeChance: 0
     peekChance: 0
+    hasMines: 0
     decisionBefore: 0
   - kind: 1
-    thunderChance: 0.3
+    thunderChance: 0
+    electricPortalChance: 1
     fakeChance: 0
     peekChance: 0
+    hasMines: 0
     decisionBefore: 1
   - kind: 0
-    thunderChance: 0.1
-    fakeChance: 0.3
+    thunderChance: 0
+    electricPortalChance: 0
+    fakeChance: 0
     peekChance: 0
+    hasMines: 1
     decisionBefore: 0
   - kind: 1
-    thunderChance: 0.1
-    fakeChance: 0.3
+    thunderChance: 0
+    electricPortalChance: 0
+    fakeChance: 0
     peekChance: 0
+    hasMines: 1
+    decisionBefore: 1
+  - kind: 1
+    thunderChance: 0
+    electricPortalChance: 1
+    fakeChance: 0
+    peekChance: 0
+    hasMines: 1
+    decisionBefore: 1
+  - kind: 0
+    thunderChance: 0
+    electricPortalChance: 1
+    fakeChance: 0
+    peekChance: 0
+    hasMines: 1
     decisionBefore: 1
   reactionCurve:
   - duration: 5
@@ -14114,7 +14292,7 @@ MonoBehaviour:
   popDuration: 0.15
   loseLifeClip: {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
   loseLifeVolume: 6
-  damagePerMiss: 0.5
+  damagePerMiss: 3
 --- !u!1 &1963151349
 GameObject:
   m_ObjectHideFlags: 0
@@ -14586,8 +14764,12 @@ PrefabInstance:
       value: 6.885405
       objectReference: {fileID: 0}
     - target: {fileID: 1680079434770537594, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[6].m_Value.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1680079434770537594, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[6].m_Value.z
-      value: 29.508844
+      value: 29.508846
       objectReference: {fileID: 0}
     - target: {fileID: 1680079434770537594, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: m_PropertySheet.m_Vector4f.m_Array.Array.data[7].m_Value.w
@@ -14831,15 +15013,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1.9999999
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.5
+      value: 1.5000002
       objectReference: {fileID: 0}
     - target: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.99999994
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: m_LocalPosition.x
@@ -14922,6 +15104,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      propertyPath: electricVFX
+      value: 
+      objectReference: {fileID: 78245247}
+    - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: goldPortal.w
       value: 100
       objectReference: {fileID: 0}
@@ -14994,6 +15180,22 @@ PrefabInstance:
       value: 4.72
       objectReference: {fileID: 0}
     - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      propertyPath: glowBoostPerLevel
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      propertyPath: popSpeedOvershoot
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      propertyPath: scaleBoostPerLevel
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      propertyPath: speedBoostPerLevel
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       propertyPath: comboParticles_Red.b
       value: 0.8000002
       objectReference: {fileID: 0}
@@ -15051,6 +15253,9 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 78245246}
+    - targetCorrespondingSourceObject: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 510206015}
     - targetCorrespondingSourceObject: {fileID: 3344191722590696321, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       insertIndex: -1
@@ -15062,6 +15267,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1057113481053056726, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 911621394}
+    - targetCorrespondingSourceObject: {fileID: 1057113481053056726, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 911621395}
   m_SourcePrefab: {fileID: 100100000, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
 --- !u!1 &2008210661
 GameObject:
@@ -19878,6 +20086,18 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5679833354830730809, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5679833354830730809, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5679833354830730809, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -20243,3 +20463,4 @@ SceneRoots:
   - {fileID: 624171506}
   - {fileID: 1407649566}
   - {fileID: 1807616414}
+  - {fileID: 1509680034}

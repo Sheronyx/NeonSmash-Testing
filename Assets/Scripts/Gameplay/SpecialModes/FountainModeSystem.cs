@@ -90,12 +90,21 @@ public class FountainModeSystem : MonoBehaviour
             float thunder = spawner != null ? spawner.thunderSpawnChance : 0f;
             float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
 
+            bool triggeredThunder = false;
             if (fountainShockerPrefab != null && r < thunder)
-                SpawnPoint(fountainShockerPrefab);
+            { SpawnPoint(fountainShockerPrefab); triggeredThunder = true; }
             else if (fountainFakePrefab != null && r < thunder + fake)
                 SpawnPoint(fountainFakePrefab);
             else
                 SpawnPoint(ActiveFountainPrefab);
+
+            if (!triggeredThunder && spawner != null)
+            {
+                var pe = PortalElectrifier.Instance;
+                if (pe != null && pe.CanActivate() && spawner.electricPortalChance > 0f
+                    && Random.value < spawner.electricPortalChance)
+                    pe.Activate();
+            }
 
             yield return new WaitForSeconds(GetCurrentSpawnInterval());
         }
@@ -146,6 +155,7 @@ public class FountainModeSystem : MonoBehaviour
         }
 
         var go = Instantiate(prefab, pos, Quaternion.identity);
+        PortalElectrifier.Instance?.ElectrifyElement(go);
         var point = go.GetComponent<FountainPoint>();
 
         if (prefab == ActiveFountainPrefab && TutorialManager.Instance != null)

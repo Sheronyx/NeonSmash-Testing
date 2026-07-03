@@ -85,6 +85,14 @@ public class FountainPoint : BasePoint
             return;
         }
 
+        if (PortalElectrifier.IsActive)
+        {
+            SpawnExplosion();
+            ApplyShockerPenalty(transform.position);
+            Destroy(gameObject);
+            return;
+        }
+
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnActionPerformed(TutorialPointType.FountainPoint);
 
