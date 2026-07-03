@@ -249,16 +249,18 @@ public class ArcanePortalFlash : MonoBehaviour
 
         string particlesKey = color switch
         {
-            PointColor.Red    => "Color Particles Combo Red",
+            PointColor.Pink   => "Color Particles Combo Pink",
+            PointColor.Blue   => "Color Particles Combo Blue",
             PointColor.Green  => "Color Particles Combo Green",
-            PointColor.Purple => "Color Particles Combo Purple",
+            PointColor.Orange => "Color Particles Combo Orange",
             _                 => "Color Particles Normal"
         };
         string portalKey = color switch
         {
-            PointColor.Red    => "Color Portal Combo Red",
+            PointColor.Pink   => "Color Portal Combo Pink",
+            PointColor.Blue   => "Color Portal Combo Blue",
             PointColor.Green  => "Color Portal Combo Green",
-            PointColor.Purple => "Color Portal Combo Purple",
+            PointColor.Orange => "Color Portal Combo Orange",
             _                 => "Color Portal Normal"
         };
 

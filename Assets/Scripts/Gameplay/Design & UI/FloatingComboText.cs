@@ -15,9 +15,10 @@ public class FloatingComboText : MonoBehaviour
 
     [Header("Materialien pro Farbe")]
     [SerializeField] private Material materialDefault;
-    [SerializeField] private Material materialRed;
+    [SerializeField] private Material materialPink;
+    [SerializeField] private Material materialBlue;
     [SerializeField] private Material materialGreen;
-    [SerializeField] private Material materialPurple;
+    [SerializeField] private Material materialOrange;
 
     public void Play(string message, Color color, PointColor? pointColor = null)
     {
@@ -29,9 +30,10 @@ public class FloatingComboText : MonoBehaviour
         {
             Material mat = pointColor.Value switch
             {
-                PointColor.Red    => materialRed    ?? materialDefault,
+                PointColor.Pink   => materialPink   ?? materialDefault,
+                PointColor.Blue   => materialBlue   ?? materialDefault,
                 PointColor.Green  => materialGreen  ?? materialDefault,
-                PointColor.Purple => materialPurple ?? materialDefault,
+                PointColor.Orange => materialOrange ?? materialDefault,
                 _                 => materialDefault
             };
             if (mat != null) label.fontMaterial = mat;

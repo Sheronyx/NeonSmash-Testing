@@ -7,22 +7,33 @@ public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance;
 
-    [Header("Live Score")]
-    public TextMeshProUGUI scoreText;
+    [Header("Live Score — Temp (gefährdet) / Safe (gesichert)")]
+    public TextMeshProUGUI tempScoreText;
+    public TextMeshProUGUI safeScoreText;
 
-    [Header("Personal Best (kleines Label unter dem Score)")]
+    [Header("Personal Best")]
     [SerializeField] private TextMeshProUGUI personalBestText;
 
     public TextMeshProUGUI endscoreText;
 
     private Coroutine punchRoutine;
-    private int score      = 0;
-    private int sessionBest = 0;   // Bestwert zu Spielbeginn (für In-Game-Anzeige)
+    private int _tempScore = 0;
+    private int _safeScore = 0;
+    private int sessionBest = 0;
 
-    public int CurrentScore => score;
+    /// <summary>TempScore + SafeScore — für Difficulty-Kurve (InfinityRunManager).</summary>
+    public int CurrentScore => _tempScore + _safeScore;
+
+    /// <summary>Punkte die noch nicht gesichert sind — bei Game Over verloren.</summary>
+    public int TempScore => _tempScore;
+
+    /// <summary>Gesicherte Punkte (via Orange gebanktes TempScore).</summary>
+    public int SafeScore => _safeScore;
+
+    /// <summary>Score der ans Leaderboard gemeldet wird.</summary>
+    public int FinalScore => _safeScore;
 
     private static readonly CultureInfo ScoreCulture = new CultureInfo("en-US");
-
     public static string Format(int value) => value.ToString("N0", ScoreCulture);
 
     private void Awake()
@@ -39,59 +50,74 @@ public class ScoreManager : MonoBehaviour
 
     private void OnEnable() => UpdateUI();
 
-    // Bindet die UI-Felder der aktuell aktiven Top Bar (z.B. nach einem
-    // Skin-Bar-Swap) und rendert den aktuellen Stand neu.
-    public void BindUI(TextMeshProUGUI score, TextMeshProUGUI best)
+    public void BindUI(TextMeshProUGUI temp, TextMeshProUGUI best, TextMeshProUGUI safe = null)
     {
-        if (score != null) scoreText        = score;
-        if (best  != null) personalBestText = best;
+        if (temp != null) tempScoreText    = temp;
+        if (best != null) personalBestText = best;
+        if (safe != null) safeScoreText    = safe;
         UpdateUI();
     }
 
+    /// <summary>Fügt amount direkt zum TempScore hinzu (kein Multiplikator).</summary>
     public void AddPoints(int amount)
     {
-        score += amount;
+        _tempScore += amount;
         UpdateUI();
     }
 
+    /// <summary>10 Punkte × Pink-Multiplikator → TempScore. Gibt tatsächlich addierten Betrag zurück.</summary>
     public int AddPointsFromHit(int basePoints = 10)
     {
-        int combo    = ComboManager.Instance != null ? ComboManager.Instance.Multiplier : 1;
+        float mult   = ColorEffectManager.Instance != null ? ColorEffectManager.Instance.Multiplier : 1f;
         bool special = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
-        int amount   = basePoints * combo * (special ? 2 : 1);
-        score += amount;
+        int amount   = Mathf.RoundToInt(basePoints * mult * (special ? 2 : 1));
+        _tempScore  += amount;
         UpdateUI();
         return amount;
     }
 
+    /// <summary>Schiebt den gesamten TempScore in den SafeScore. Gibt den gebankten Betrag zurück.</summary>
+    public int BankTempScore()
+    {
+        int banked  = _tempScore;
+        _safeScore += banked;
+        _tempScore  = 0;
+        UpdateUI();
+        return banked;
+    }
+
     public void ResetScore()
     {
-        score = 0;
+        _tempScore  = 0;
+        _safeScore  = 0;
         sessionBest = HighscoreUploader.GetLocalBest(LeaderboardApi.InfinityId);
         UpdateUI();
     }
 
     private void UpdateUI()
     {
-        if (scoreText != null)
-            scoreText.text = Format(score);
+        if (tempScoreText != null)
+            tempScoreText.text = Format(_tempScore);
+
+        if (safeScoreText != null)
+            safeScoreText.text = Format(_safeScore);
 
         if (personalBestText != null)
-            personalBestText.text = "BEST: " + Format(Mathf.Max(score, sessionBest));
+            personalBestText.text = "BEST: " + Format(Mathf.Max(_safeScore, sessionBest));
 
         PunchScore();
     }
 
     public void PunchScore()
     {
-        if (scoreText == null || this == null) return;
+        if (tempScoreText == null || this == null) return;
         if (punchRoutine != null) StopCoroutine(punchRoutine);
         punchRoutine = StartCoroutine(Co_Punch());
     }
 
     private IEnumerator Co_Punch()
     {
-        RectTransform rect = scoreText.GetComponent<RectTransform>();
+        RectTransform rect = tempScoreText.GetComponent<RectTransform>();
         Vector3 start  = Vector3.one;
         Vector3 target = start * 1.2f;
 

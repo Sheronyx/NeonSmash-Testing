@@ -11,19 +11,21 @@ public class PortalSpawnBeam : MonoBehaviour
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform portalOrigin;
 
-    [Header("Farbige Projektil-Prefabs (Rot / Grün / Lila)")]
-    [SerializeField] private GameObject projectilePrefab_Red;
+    [Header("Farbige Projektil-Prefabs (Pink / Blau / Grün / Orange)")]
+    [SerializeField] private GameObject projectilePrefab_Pink;
+    [SerializeField] private GameObject projectilePrefab_Blue;
     [SerializeField] private GameObject projectilePrefab_Green;
-    [SerializeField] private GameObject projectilePrefab_Purple;
+    [SerializeField] private GameObject projectilePrefab_Orange;
 
     GameObject ActiveProjectilePrefab =>
         SkinManager.Instance?.ActiveTheme?.beamProjectilePrefab ?? projectilePrefab;
 
     GameObject ProjectilePrefabForColor(PointColor color) => color switch
     {
-        PointColor.Red    => projectilePrefab_Red    ?? ActiveProjectilePrefab,
+        PointColor.Pink   => projectilePrefab_Pink   ?? ActiveProjectilePrefab,
+        PointColor.Blue   => projectilePrefab_Blue   ?? ActiveProjectilePrefab,
         PointColor.Green  => projectilePrefab_Green  ?? ActiveProjectilePrefab,
-        PointColor.Purple => projectilePrefab_Purple ?? ActiveProjectilePrefab,
+        PointColor.Orange => projectilePrefab_Orange ?? ActiveProjectilePrefab,
         _                 => ActiveProjectilePrefab
     };
 

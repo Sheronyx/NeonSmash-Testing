@@ -14,7 +14,8 @@ using UnityEngine.UI;
 public class TopBarBinding : MonoBehaviour
 {
     [Header("Score")]
-    [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI tempScoreText;
+    [SerializeField] private TextMeshProUGUI safeScoreText;
     [SerializeField] private TextMeshProUGUI personalBestText;
 
     [Header("Herzen (lifePoint3 = zuerst leer)")]
@@ -24,7 +25,7 @@ public class TopBarBinding : MonoBehaviour
 
     void OnEnable()
     {
-        ScoreManager.Instance?.BindUI(scoreText, personalBestText);
+        ScoreManager.Instance?.BindUI(tempScoreText, personalBestText, safeScoreText);
         LivesManager.Instance?.BindHearts(lifePoint1, lifePoint2, lifePoint3);
     }
 }

@@ -12,7 +12,7 @@ public class BonusDelivery
     [Tooltip("Position in Viewport-Koordinaten: (0,0)=unten links, (1,1)=oben rechts. (0.5,0.5)=Mitte.")]
     public Vector2 viewportPosition = new Vector2(0.5f, 0.6f);
     [Tooltip("Farbe des Floating Score Texts.")]
-    public PointColor textColor = PointColor.Red;
+    public PointColor textColor = PointColor.Pink;
 }
 
 [CreateAssetMenu(fileName = "SequenceDefinition", menuName = "NeonSmash/Sequence Definition")]

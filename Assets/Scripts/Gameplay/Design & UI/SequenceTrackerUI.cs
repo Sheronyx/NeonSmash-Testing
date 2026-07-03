@@ -25,9 +25,10 @@ public class SequenceTrackerUI : MonoBehaviour
     [SerializeField] private UISlideAnimator slideAnimator;
 
     [Header("Next-Element Prefabs")]
-    [SerializeField] private GameObject prefabOrange;   // PointColor.Red
-    [SerializeField] private GameObject prefabGreen;    // PointColor.Green
-    [SerializeField] private GameObject prefabPurple;   // PointColor.Purple
+    [SerializeField] private GameObject prefabPink;
+    [SerializeField] private GameObject prefabBlue;
+    [SerializeField] private GameObject prefabGreen;
+    [SerializeField] private GameObject prefabOrange;
 
     [Header("Dot-Farben")]
     [SerializeField] private Color dotFilled = new Color(1f, 1f, 1f, 1.00f);
@@ -158,9 +159,10 @@ public class SequenceTrackerUI : MonoBehaviour
 
     private GameObject PrefabForColor(PointColor pc) => pc switch
     {
-        PointColor.Red    => prefabOrange,
+        PointColor.Pink   => prefabPink,
+        PointColor.Blue   => prefabBlue,
         PointColor.Green  => prefabGreen,
-        PointColor.Purple => prefabPurple,
+        PointColor.Orange => prefabOrange,
         _                 => null
     };
 

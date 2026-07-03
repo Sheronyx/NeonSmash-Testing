@@ -1,1 +1,1 @@
-public enum PointColor { Red, Green, Purple }
+public enum PointColor { Pink, Blue, Green, Orange }

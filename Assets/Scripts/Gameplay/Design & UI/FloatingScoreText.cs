@@ -8,9 +8,10 @@ public class FloatingScoreText : MonoBehaviour
 
     [Header("Materialien pro Farbe")]
     [SerializeField] private Material materialDefault;
-    [SerializeField] private Material materialRed;
+    [SerializeField] private Material materialPink;
+    [SerializeField] private Material materialBlue;
     [SerializeField] private Material materialGreen;
-    [SerializeField] private Material materialPurple;
+    [SerializeField] private Material materialOrange;
 
     [Header("Animation")]
     [SerializeField] private float punchDuration = 0.08f;
@@ -29,9 +30,10 @@ public class FloatingScoreText : MonoBehaviour
         {
             Material mat = pointColor.Value switch
             {
-                PointColor.Red    => materialRed    ?? materialDefault,
+                PointColor.Pink   => materialPink   ?? materialDefault,
+                PointColor.Blue   => materialBlue   ?? materialDefault,
                 PointColor.Green  => materialGreen  ?? materialDefault,
-                PointColor.Purple => materialPurple ?? materialDefault,
+                PointColor.Orange => materialOrange ?? materialDefault,
                 _                 => materialDefault
             };
             if (mat != null) label.fontMaterial = mat;

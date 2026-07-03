@@ -334,6 +334,7 @@ MonoBehaviour:
   gravityFeature: {fileID: -3947423171857660942, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
   chaosFeature: {fileID: 1760235388702043137, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
   fountainFeature: {fileID: 6427664988018909874, guid: 70e3f23f6e27e1243a7e659accf93d35, type: 2}
+  comboFeatures: []
   gravityMaterial: {fileID: 2100000, guid: cbef78923e39c4cf79ecce0c6b239538, type: 2}
   chaosMaterial: {fileID: 0}
   fountainMaterial: {fileID: 2100000, guid: 71d4dcee25c0846d9b306cb95b3a3073, type: 2}
@@ -942,13 +943,14 @@ MonoBehaviour:
   extraPaddingPixels: 12
   normalPointPrefab: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
   swipePointPrefab: {fileID: 723352877289022949, guid: 39c180ab8a9244feba9b34ed6799ae1e, type: 3}
-  tapPrefab_Red: {fileID: 7634417711000780290, guid: 3b552f23e8be04965a32b844ccaf57f8, type: 3}
+  tapPrefab_Pink: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
+  tapPrefab_Blue: {fileID: 4948609275543435279, guid: 5c9f7a590e1a64056b8f4104f64a3661, type: 3}
   tapPrefab_Green: {fileID: 7634417711000780290, guid: ee97e43c4477d4f4fa4e427a82db8d1d, type: 3}
-  tapPrefab_Purple: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
-  swipePrefab_Red: {fileID: 723352877289022949, guid: 041a688f7984d48df8f5160b6789b562, type: 3}
+  tapPrefab_Orange: {fileID: 7634417711000780290, guid: 3b552f23e8be04965a32b844ccaf57f8, type: 3}
+  swipePrefab_Pink: {fileID: 723352877289022949, guid: 39c180ab8a9244feba9b34ed6799ae1e, type: 3}
+  swipePrefab_Blue: {fileID: 3982469549582881397, guid: 6d5bfa13d0ffd430383e579f099a2a00, type: 3}
   swipePrefab_Green: {fileID: 723352877289022949, guid: 84b3fb03b086c41518fef97145231078, type: 3}
-  swipePrefab_Purple: {fileID: 723352877289022949, guid: 39c180ab8a9244feba9b34ed6799ae1e, type: 3}
-  comboEnabled: 0
+  swipePrefab_Orange: {fileID: 723352877289022949, guid: 041a688f7984d48df8f5160b6789b562, type: 3}
   spawnDelayAfterHit: 0.3
   floatingScorePrefab: {fileID: 8247571385506089158, guid: c42de2f0571514492a8cfcbc37f7cc70, type: 3}
   floatingScoreSpawnOffsetY: 0.7
@@ -1757,7 +1759,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a055a5ecc78c19946a553e4fb5c8a31b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scoreText: {fileID: 121914568}
+  tempScoreText: {fileID: 121914568}
+  safeScoreText: {fileID: 121914568}
   personalBestText: {fileID: 636546391}
   endscoreText: {fileID: 121914568}
 --- !u!4 &413701485
@@ -5816,9 +5819,10 @@ MonoBehaviour:
   projectileSpeed: 50
   projectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
   portalOrigin: {fileID: 911621387}
-  projectilePrefab_Red: {fileID: 6237600531714503956, guid: f1b454657587d4e82b3e6d5b8c38691a, type: 3}
+  projectilePrefab_Pink: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
+  projectilePrefab_Blue: {fileID: 6237600531714503956, guid: d0969301322ff4f6e9d9a20975e3fe55, type: 3}
   projectilePrefab_Green: {fileID: 6237600531714503956, guid: b13ce538111974461b5f6b705daff640, type: 3}
-  projectilePrefab_Purple: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
+  projectilePrefab_Orange: {fileID: 6237600531714503956, guid: f1b454657587d4e82b3e6d5b8c38691a, type: 3}
 --- !u!114 &911621390 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 9180220913590575928, guid: 19b0b094e065d48bb993e1b1fee72d8d, type: 3}
@@ -12671,6 +12675,7 @@ GameObject:
   - component: {fileID: 1942897537}
   - component: {fileID: 1942897538}
   - component: {fileID: 1942897539}
+  - component: {fileID: 1942897540}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -12854,6 +12859,18 @@ MonoBehaviour:
   loseLifeClip: {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
   loseLifeVolume: 6
   damagePerMiss: 3
+--- !u!114 &1942897540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1942897533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3080591c0a2204197adc49a84e58441b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorEffectManager
 --- !u!1 &1963151349
 GameObject:
   m_ObjectHideFlags: 0
