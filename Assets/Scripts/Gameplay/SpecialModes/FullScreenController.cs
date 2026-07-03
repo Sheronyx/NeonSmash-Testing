@@ -8,6 +8,8 @@ public class FullScreenController : MonoBehaviour
     [SerializeField] private ScriptableRendererFeature gravityFeature;
     [SerializeField] private ScriptableRendererFeature chaosFeature;
     [SerializeField] private ScriptableRendererFeature fountainFeature;
+    [Tooltip("Alle Renderer Features die für Kombo-Effekte verwendet werden — werden beim Start einmal gewarmt.")]
+    [SerializeField] private UnityEngine.Rendering.Universal.ScriptableRendererFeature[] comboFeatures;
 
     private ScriptableRendererFeature currentFeature;
     private Material currentMaterial;
@@ -65,6 +67,31 @@ public class FullScreenController : MonoBehaviour
         DisableAllFeatures();
         currentFeature  = null;
         currentMaterial = null;
+    }
+
+    public static FullScreenController Instance { get; private set; }
+
+    private void Awake() => Instance = this;
+
+    public void ShowComboEffect(Material mat, UnityEngine.Rendering.Universal.ScriptableRendererFeature feature)
+    {
+        if (mat == null || feature == null) return;
+        SetFade(gravityMaterial,  0f);
+        SetFade(chaosMaterial,    0f);
+        SetFade(fountainMaterial, 0f);
+        currentFeature  = feature;
+        currentMaterial = mat;
+        SetFade(currentMaterial, 0f);
+        currentFeature.SetActive(true);
+        if (activeRoutine != null) StopCoroutine(activeRoutine);
+        // Feature sofort aktivieren — effectPreDelay in SequenceManager gibt Pipeline Zeit zur Initialisierung
+        activeRoutine = StartCoroutine(Fade(0f, 1f, fadeInTime));
+    }
+
+    public void HideComboEffect()
+    {
+        if (activeRoutine != null) StopCoroutine(activeRoutine);
+        activeRoutine = StartCoroutine(Co_End());
     }
 
     private void HandleModeStarted(SpecialMode mode)
@@ -147,6 +174,8 @@ public class FullScreenController : MonoBehaviour
         gravityFeature?.SetActive(true);
         chaosFeature?.SetActive(true);
         fountainFeature?.SetActive(true);
+        if (comboFeatures != null)
+            foreach (var f in comboFeatures) f?.SetActive(true);
     }
 
     private void DisableAllFeatures()
@@ -154,5 +183,7 @@ public class FullScreenController : MonoBehaviour
         gravityFeature?.SetActive(false);
         chaosFeature?.SetActive(false);
         fountainFeature?.SetActive(false);
+        if (comboFeatures != null)
+            foreach (var f in comboFeatures) f?.SetActive(false);
     }
 }

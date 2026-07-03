@@ -23,6 +23,12 @@ public class SequenceDefinition : ScriptableObject
     public int bonusPoints = 150;
     public Sprite abilityIcon;
 
+    [Header("Fullscreen-Effekt (optional)")]
+    [Tooltip("Material für den Vollbild-Shader. Leer = kein Fullscreen-Effekt.")]
+    public Material fullScreenMaterial;
+    [Tooltip("Renderer Feature das für dieses Material aktiviert werden muss.")]
+    public UnityEngine.Rendering.Universal.ScriptableRendererFeature fullScreenFeature;
+
     [Header("Kombo-Effekt")]
     [Tooltip("Prefab das beim Abschluss dieser Sequenz gespawnt wird (VFX, Partikel, Canvas-Overlay, oder Kombination). Position/Rotation werden aus dem Prefab übernommen.")]
     public GameObject comboEffectPrefab;

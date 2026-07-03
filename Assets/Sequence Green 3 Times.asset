@@ -16,10 +16,12 @@ MonoBehaviour:
   steps: 010000000100000001000000
   bonusPoints: 1500
   abilityIcon: {fileID: 21300000, guid: 60778923764304a34a673050900846ef, type: 3}
+  fullScreenMaterial: {fileID: 0}
+  fullScreenFeature: {fileID: 0}
   comboEffectPrefab: {fileID: 5297742729642442140, guid: f9e8f2a2839add943adb856f5adb1d7e, type: 3}
-  effectDuration: 2.5
+  effectDuration: 2.7
   bonusDeliveries:
-  - delay: 2
+  - delay: 2.2
     fraction: 1
     textScale: 1.5
     viewportPosition: {x: 0.5, y: 0.55}

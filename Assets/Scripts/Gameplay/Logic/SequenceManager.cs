@@ -94,6 +94,9 @@ public class SequenceManager : MonoBehaviour
     {
         _effectPlaying = true;
 
+        // Fullscreen-Effekt einblenden (vor dem Freeze, läuft auf unscaledDeltaTime)
+        FullScreenController.Instance?.ShowComboEffect(seq.fullScreenMaterial, seq.fullScreenFeature);
+
         // VFX Graphs unterstützen kein useUnscaledTime — kurze Pause gibt ihnen Zeit sich aufzulösen
         yield return new WaitForSecondsRealtime(effectPreDelay);
 
@@ -132,6 +135,8 @@ public class SequenceManager : MonoBehaviour
         // Szenen-PS zurücksetzen
         foreach (var ps in toRestore)
             if (ps != null) { var m = ps.main; m.useUnscaledTime = false; }
+
+        FullScreenController.Instance?.HideComboEffect();
 
         if (effect != null) Destroy(effect);
         _effectPlaying = false;
