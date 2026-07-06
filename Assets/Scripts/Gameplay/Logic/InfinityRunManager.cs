@@ -1,15 +1,33 @@
 using UnityEngine;
 
-/// <summary>
-/// Steuert den vereinfachten Infinity-Mode-Run.
-/// Keine Phasen, keine Special Modes — nur ein durchgängiger Run mit Score-basierter Reaktionszeit.
-/// Ein Fehler = sofortiges Game Over.
-/// </summary>
 public class InfinityRunManager : MonoBehaviour
 {
     public static InfinityRunManager Instance { get; private set; }
 
-    [Header("Reaktionszeit (Standard vor Score 500)")]
+    [System.Serializable]
+    public struct DifficultyLevel
+    {
+        [Tooltip("Ab diesem Score gilt diese Stufe")]
+        public int   scoreThreshold;
+        [Tooltip("Reaktionszeit in Sekunden")]
+        public float reactionTime;
+    }
+
+    [Header("Intensitätsstufen (absteigend nach Score sortieren)")]
+    [SerializeField] private DifficultyLevel[] levels = new DifficultyLevel[]
+    {
+        new DifficultyLevel { scoreThreshold = 10000, reactionTime = 0.5f },
+        new DifficultyLevel { scoreThreshold =  8000, reactionTime = 0.6f },
+        new DifficultyLevel { scoreThreshold =  6000, reactionTime = 0.7f },
+        new DifficultyLevel { scoreThreshold =  4000, reactionTime = 0.8f },
+        new DifficultyLevel { scoreThreshold =  3000, reactionTime = 0.9f },
+        new DifficultyLevel { scoreThreshold =  2000, reactionTime = 1.0f },
+        new DifficultyLevel { scoreThreshold =  1500, reactionTime = 1.5f },
+        new DifficultyLevel { scoreThreshold =  1000, reactionTime = 2.0f },
+        new DifficultyLevel { scoreThreshold =   500, reactionTime = 2.5f },
+    };
+
+    [Header("Standard (unter erstem Threshold)")]
     [SerializeField] private float defaultReactionTime = 3.5f;
 
     private void Awake()
@@ -18,23 +36,13 @@ public class InfinityRunManager : MonoBehaviour
         Instance = this;
     }
 
-    /// <summary>
-    /// Gibt die aktuelle Reaktionszeit basierend auf dem Score zurück.
-    /// Hinweis: Score 600 im Original war wahrscheinlich ein Tippfehler → hier 6000.
-    /// </summary>
     public float GetReactionTime()
     {
         int score = ScoreManager.Instance != null ? ScoreManager.Instance.CurrentScore : 0;
 
-        if (score >= 10000) return 0.5f;   // Level 10
-        if (score >= 8000)  return 0.6f;   // Level 9
-        if (score >= 6000)  return 0.7f;   // Level 8
-        if (score >= 4000)  return 0.8f;   // Level 7
-        if (score >= 3000)  return 0.9f;   // Level 6
-        if (score >= 2000)  return 1.0f;   // Level 5
-        if (score >= 1500)  return 1.5f;   // Level 4
-        if (score >= 1000)  return 2.0f;   // Level 3
-        if (score >= 500)   return 2.5f;   // Level 2
-        return defaultReactionTime;         // Level 1
+        foreach (var level in levels)
+            if (score >= level.scoreThreshold) return level.reactionTime;
+
+        return defaultReactionTime;
     }
 }

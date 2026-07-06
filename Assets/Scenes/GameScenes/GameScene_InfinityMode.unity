@@ -1089,7 +1089,7 @@ MonoBehaviour:
   thunderPointPrefab: {fileID: 7032938748382792654, guid: b64f768a4b1fa4b4e84b730ce566bfcc, type: 3}
   thunderSpawnChance: 0
   portalElectrifier: {fileID: 911621395}
-  electricPortalChance: 0.2
+  electricPortalChance: 0
   peekABooSystem: {fileID: 697214894}
   peekABooChance: 0
   mainCamera: {fileID: 519420031}
@@ -1110,6 +1110,7 @@ MonoBehaviour:
   spawnAreaFill: {r: 0, g: 1, b: 1, a: 0.08}
   spawnAreaBorder: {r: 0, g: 1, b: 1, a: 0.9}
   spawnAreaBorderThickness: 2
+  orangeSpawnWeight: 0.2
 --- !u!4 &190732375
 Transform:
   m_ObjectHideFlags: 0
@@ -12623,6 +12624,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40cdf4b774bf74e42a5d561b9666246c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InfinityRunManager
+  levels:
+  - scoreThreshold: 30000
+    reactionTime: 0.5
+  - scoreThreshold: 20000
+    reactionTime: 0.6
+  - scoreThreshold: 15000
+    reactionTime: 0.7
+  - scoreThreshold: 12000
+    reactionTime: 0.8
+  - scoreThreshold: 10000
+    reactionTime: 0.9
+  - scoreThreshold: 8000
+    reactionTime: 1
+  - scoreThreshold: 4000
+    reactionTime: 1.5
+  - scoreThreshold: 2000
+    reactionTime: 2
+  - scoreThreshold: 1000
+    reactionTime: 2.5
   defaultReactionTime: 3
 --- !u!1 &1945358656
 GameObject:

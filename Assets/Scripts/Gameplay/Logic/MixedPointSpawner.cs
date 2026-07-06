@@ -192,6 +192,11 @@ public class MixedPointSpawner : MonoBehaviour
 
     // ── Vorschau-Farben (eine pro Slot, immer eindeutig) ─────────────────────
     private static readonly PointColor[] AllColors = { PointColor.Pink, PointColor.Blue, PointColor.Green, PointColor.Orange };
+
+    [Header("Farb-Gewichtung")]
+    [Tooltip("Relative Häufigkeit von Orange (1 = gleich wie andere, 0.33 = 3× seltener)")]
+    [Range(0.05f, 1f)]
+    [SerializeField] private float orangeSpawnWeight = 0.33f;
     private readonly PointColor[] _previewColors = new PointColor[3];
     private bool _previewInitialized = false;
 
@@ -204,18 +209,16 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void InitPreviewColors()
     {
-        // 3 eindeutige Farben aus AllColors (4 Stück) zufällig wählen
         var pool = new List<PointColor>(AllColors);
         for (int i = 0; i < 3; i++)
         {
-            int idx = Random.Range(0, pool.Count);
-            _previewColors[i] = pool[idx];
-            pool.RemoveAt(idx);
+            PointColor picked = WeightedRandom(pool);
+            _previewColors[i] = picked;
+            pool.Remove(picked);
         }
         _previewInitialized = true;
     }
 
-    // Wählt eine neue Farbe für Slot slotIndex — eindeutig gegenüber den anderen beiden Preview-Farben.
     private void AdvancePreviewColor(int slotIndex)
     {
         var exclude = new System.Collections.Generic.HashSet<PointColor>();
@@ -227,8 +230,24 @@ public class MixedPointSpawner : MonoBehaviour
             if (!exclude.Contains(c)) available.Add(c);
 
         _previewColors[slotIndex] = available.Count > 0
-            ? available[Random.Range(0, available.Count)]
+            ? WeightedRandom(available)
             : (PointColor)Random.Range(0, 4);
+    }
+
+    private PointColor WeightedRandom(List<PointColor> pool)
+    {
+        float total = 0f;
+        foreach (var c in pool)
+            total += c == PointColor.Orange ? orangeSpawnWeight : 1f;
+
+        float roll = Random.Range(0f, total);
+        float cum  = 0f;
+        foreach (var c in pool)
+        {
+            cum += c == PointColor.Orange ? orangeSpawnWeight : 1f;
+            if (roll < cum) return c;
+        }
+        return pool[pool.Count - 1];
     }
 
     /// <summary>Gibt die nächsten count Vorschau-Farben zurück — immer eindeutig.</summary>
