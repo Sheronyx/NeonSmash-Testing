@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using System.Collections.Generic;
 
 public class MixedPointSpawner : MonoBehaviour
 {
@@ -189,6 +190,57 @@ public class MixedPointSpawner : MonoBehaviour
     // Reservierte Positionen während Beam-Flug (Slot hat noch kein point, aber Pos ist vergeben).
     private readonly Vector3?[] _pendingSlotPositions = { null, null, null };
 
+    // ── Vorschau-Farben (eine pro Slot, immer eindeutig) ─────────────────────
+    private static readonly PointColor[] AllColors = { PointColor.Pink, PointColor.Blue, PointColor.Green, PointColor.Orange };
+    private readonly PointColor[] _previewColors = new PointColor[3];
+    private bool _previewInitialized = false;
+
+    /// <summary>Feuert wenn ein Slot eine neue Farbe bekommt und die Vorschau aktualisiert wurde.</summary>
+    public event System.Action OnColorQueueChanged;
+    /// <summary>Feuert wenn einem Slot eine neue Farbe zugewiesen wird (vor dem Beam-Flug).</summary>
+    public event System.Action<int, PointColor> OnSlotColorAssigned;
+
+    public PointColor GetSlotColor(int slotIndex) => _slots[slotIndex].color;
+
+    private void InitPreviewColors()
+    {
+        // 3 eindeutige Farben aus AllColors (4 Stück) zufällig wählen
+        var pool = new List<PointColor>(AllColors);
+        for (int i = 0; i < 3; i++)
+        {
+            int idx = Random.Range(0, pool.Count);
+            _previewColors[i] = pool[idx];
+            pool.RemoveAt(idx);
+        }
+        _previewInitialized = true;
+    }
+
+    // Wählt eine neue Farbe für Slot slotIndex — eindeutig gegenüber den anderen beiden Preview-Farben.
+    private void AdvancePreviewColor(int slotIndex)
+    {
+        var exclude = new System.Collections.Generic.HashSet<PointColor>();
+        for (int j = 0; j < 3; j++)
+            if (j != slotIndex) exclude.Add(_previewColors[j]);
+
+        var available = new List<PointColor>();
+        foreach (var c in AllColors)
+            if (!exclude.Contains(c)) available.Add(c);
+
+        _previewColors[slotIndex] = available.Count > 0
+            ? available[Random.Range(0, available.Count)]
+            : (PointColor)Random.Range(0, 4);
+    }
+
+    /// <summary>Gibt die nächsten count Vorschau-Farben zurück — immer eindeutig.</summary>
+    public PointColor[] PeekUpcomingColors(int count)
+    {
+        if (!_previewInitialized) InitPreviewColors();
+        count = Mathf.Min(count, 3);
+        var result = new PointColor[count];
+        for (int i = 0; i < count; i++) result[i] = _previewColors[i];
+        return result;
+    }
+
     // Für Rückwärtskompatibilität (Tutorial, legacy-Checks)
     private GameObject currentPoint
     {
@@ -366,30 +418,35 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    // Gibt die Farbe zurück, die in keinem anderen belegten Slot vorhanden ist.
+    // Gibt die vorab bestimmte Preview-Farbe für diesen Slot zurück — ohne Duplikat auf dem Bildschirm.
     private PointColor GetUnusedColor(int slotIndex)
     {
-        bool pinkUsed = false, blueUsed = false, greenUsed = false, orangeUsed = false;
+        if (!_previewInitialized) InitPreviewColors();
+
+        // Ermitteln welche Farben aktuell auf dem Bildschirm sind
+        var onScreen = new System.Collections.Generic.HashSet<PointColor>();
         for (int j = 0; j < _slots.Length; j++)
         {
-            // Slot zählt als belegt wenn er ein point hat ODER sein Beam noch im Flug ist
             if (j == slotIndex || (_slots[j].point == null && !_pendingSlotPositions[j].HasValue)) continue;
-            switch (_slots[j].color)
+            onScreen.Add(_slots[j].color);
+        }
+
+        // Preview-Farbe für diesen Slot verwenden, wenn kein Konflikt
+        PointColor chosen = _previewColors[slotIndex];
+        if (onScreen.Contains(chosen))
+        {
+            // Fallback: erste Farbe die nicht auf dem Bildschirm ist
+            chosen = (PointColor)Random.Range(0, 4);
+            foreach (var c in AllColors)
             {
-                case PointColor.Pink:   pinkUsed   = true; break;
-                case PointColor.Blue:   blueUsed   = true; break;
-                case PointColor.Green:  greenUsed  = true; break;
-                case PointColor.Orange: orangeUsed = true; break;
+                if (!onScreen.Contains(c)) { chosen = c; break; }
             }
         }
-        var available = new System.Collections.Generic.List<PointColor>(4);
-        if (!pinkUsed)   available.Add(PointColor.Pink);
-        if (!blueUsed)   available.Add(PointColor.Blue);
-        if (!greenUsed)  available.Add(PointColor.Green);
-        if (!orangeUsed) available.Add(PointColor.Orange);
-        return available.Count > 0
-            ? available[Random.Range(0, available.Count)]
-            : (PointColor)Random.Range(0, 4);
+
+        // Preview für diesen Slot voranschreiten — neue eindeutige Farbe wählen
+        AdvancePreviewColor(slotIndex);
+        OnColorQueueChanged?.Invoke();
+        return chosen;
     }
 
     // Spawnt ein neues Element in Slot i (zufällige Farbe, Tap oder Swipe).
@@ -400,6 +457,7 @@ public class MixedPointSpawner : MonoBehaviour
         // Farbe: die noch nicht in einem anderen Slot belegten Farbe wählen
         PointColor color = GetUnusedColor(i);
         _slots[i].color = color;
+        OnSlotColorAssigned?.Invoke(i, color);
 
         // Peek-a-boo nur für Slot 0, und nur wenn kein anderer Slot aktiv ist
         if (i == 0 && peekABooSystem != null && !PeekABooSystem.IsActive
@@ -1340,7 +1398,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (color == PointColor.Orange)
         {
-            // Orange: TempScore → SafeScore sichern, alle Effekte zurücksetzen, kein TempScore
+            // Orange: TempScore → SafeScore sichern, alle Effekte zurücksetzen
             int banked = ScoreManager.Instance?.BankTempScore() ?? 0;
             if (banked > 0)
                 SpawnFloatingScore(banked, point.transform.position, color, 0, scale: 1.5f);
@@ -1348,15 +1406,22 @@ public class MixedPointSpawner : MonoBehaviour
         }
         else
         {
-            // Pink / Blau / Grün: 10 × Multiplikator → TempScore
-            int scored = ScoreManager.Instance?.AddPointsFromHit(10) ?? 0;
-            SpawnFloatingScore(scored, point.transform.position, color, 0);
-
+            // Pink / Blau / Grün: Effekt auslösen + Effekt-Text anzeigen (kein direktes Scoring)
             switch (color)
             {
-                case PointColor.Pink:  ColorEffectManager.Instance?.OnPinkHit();  break;
-                case PointColor.Blue:  ColorEffectManager.Instance?.OnBlueHit();  break;
-                case PointColor.Green: ColorEffectManager.Instance?.OnGreenHit(); break;
+                case PointColor.Pink:
+                    ColorEffectManager.Instance?.OnPinkHit();
+                    float mult = ColorEffectManager.Instance?.Multiplier ?? 1f;
+                    SpawnEffectText("×" + mult.ToString("F2"), point.transform.position, color);
+                    break;
+                case PointColor.Blue:
+                    ColorEffectManager.Instance?.OnBlueHit();
+                    SpawnEffectText("+0.1s", point.transform.position, color);
+                    break;
+                case PointColor.Green:
+                    ColorEffectManager.Instance?.OnGreenHit();
+                    SpawnEffectText("+2s Effects", point.transform.position, color);
+                    break;
             }
         }
 
@@ -1400,6 +1465,15 @@ public class MixedPointSpawner : MonoBehaviour
         var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
         var fst = go.GetComponent<FloatingScoreText>();
         fst?.Play(score, Color.white, color, scale);
+    }
+
+    private void SpawnEffectText(string text, Vector3 worldPos, PointColor color)
+    {
+        if (floatingScorePrefab == null) return;
+
+        Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
+        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
+        go.GetComponent<FloatingScoreText>()?.PlayText(text, Color.white, color);
     }
 
     // Für SequenceManager: Bonus-Floating-Score an einer Viewport-Position spawnen.

@@ -20,6 +20,28 @@ public class FloatingScoreText : MonoBehaviour
 
     private float _scale = 1f;
 
+    public void PlayText(string text, Color color, PointColor? pointColor = null, float scale = 1f)
+    {
+        label.text  = text;
+        label.color = color;
+        _scale      = scale;
+
+        if (pointColor.HasValue)
+        {
+            Material mat = pointColor.Value switch
+            {
+                PointColor.Pink   => materialPink   ?? materialDefault,
+                PointColor.Blue   => materialBlue   ?? materialDefault,
+                PointColor.Green  => materialGreen  ?? materialDefault,
+                PointColor.Orange => materialOrange ?? materialDefault,
+                _                 => materialDefault
+            };
+            if (mat != null) label.fontMaterial = mat;
+        }
+
+        StartCoroutine(Co_Animate());
+    }
+
     public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f)
     {
         label.text  = "+" + score;

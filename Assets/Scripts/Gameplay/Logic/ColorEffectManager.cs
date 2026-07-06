@@ -4,6 +4,10 @@ public class ColorEffectManager : MonoBehaviour
 {
     public static ColorEffectManager Instance { get; private set; }
 
+    [Header("Passives Scoring")]
+    [SerializeField] private float passiveScoreInterval = 1f;
+    [SerializeField] private int   passiveBasePoints    = 10;
+
     private bool  _pinkActive;
     private float _pinkTimeRemaining;
     private float _multiplier = 1f;
@@ -12,6 +16,8 @@ public class ColorEffectManager : MonoBehaviour
     private float _blueTimeRemaining;
     private float _reactionTimeBonus;
     private float _blueDecayTimer;
+
+    private float _passiveTimer;
 
     public float Multiplier        => _pinkActive ? _multiplier : 1f;
     public float ReactionTimeBonus => _blueActive ? _reactionTimeBonus : 0f;
@@ -29,6 +35,21 @@ public class ColorEffectManager : MonoBehaviour
     private void Update()
     {
         float dt = Time.deltaTime;
+
+        // Passives Scoring — läuft nur wenn das Spiel aktiv ist
+        bool gameRunning = MixedPointSpawner.Instance != null
+            && MixedPointSpawner.Instance.IsRunning
+            && !MixedPointSpawner.Instance.IsTutorialMode;
+
+        if (gameRunning)
+        {
+            _passiveTimer += dt;
+            if (_passiveTimer >= passiveScoreInterval)
+            {
+                _passiveTimer -= passiveScoreInterval;
+                ScoreManager.Instance?.AddPointsPassive(passiveBasePoints);
+            }
+        }
 
         if (_pinkActive)
         {
@@ -83,8 +104,8 @@ public class ColorEffectManager : MonoBehaviour
 
     public void OnGreenHit()
     {
-        if (_pinkActive) _pinkTimeRemaining += 2f;
-        if (_blueActive) _blueTimeRemaining += 2f;
+        if (_pinkActive) _pinkTimeRemaining = Mathf.Min(_pinkTimeRemaining + 2f, 10f);
+        if (_blueActive) _blueTimeRemaining = Mathf.Min(_blueTimeRemaining + 2f, 10f);
     }
 
     public void OnOrangeHit()
@@ -101,5 +122,6 @@ public class ColorEffectManager : MonoBehaviour
         _pinkTimeRemaining = 0f;
         _blueTimeRemaining = 0f;
         _blueDecayTimer    = 0f;
+        _passiveTimer      = 0f;
     }
 }
