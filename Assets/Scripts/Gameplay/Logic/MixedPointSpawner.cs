@@ -160,6 +160,11 @@ public class MixedPointSpawner : MonoBehaviour
     public int maxNormalsInRow = 4;
     public int maxSwipesInRow = 2;
 
+    [Header("Debug — Reihen-Spawn")]
+    [Tooltip("Alle Elemente in einer horizontalen Reihe spawnen (zum Testen)")]
+    public bool spawnInRow = false;
+    [Range(0f, 1f)] public float rowViewportY = 0.5f;
+
     [Header("Debug")]
     public bool debugLogs = false;
     public bool showSpawnAreaDebug = true;
@@ -417,7 +422,7 @@ public class MixedPointSpawner : MonoBehaviour
         foreach (var s in _slots) { if (s.point != null) { allEmpty = false; break; } }
         if (allEmpty)
         {
-            bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+            bool forceSwipe  = swipeChance > 0f && maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
             bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
             _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
             if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
@@ -492,7 +497,9 @@ public class MixedPointSpawner : MonoBehaviour
 
         GameObject samplePrefab = isThunder ? ActiveThunderPrefab
                                  : (spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color));
-        Vector2 viewportPos = FindSlotPosition(i, samplePrefab);
+        Vector2 viewportPos = spawnInRow
+            ? new Vector2(0.25f + i * 0.25f, rowViewportY)   // Slots bei 25% / 50% / 75%
+            : FindSlotPosition(i, samplePrefab);
         Vector3 worldPos    = ViewportToWorldOnZ0(viewportPos);
 
         // Position sofort reservieren, damit Geschwister-Slots sie in FindSlotPosition vermeiden

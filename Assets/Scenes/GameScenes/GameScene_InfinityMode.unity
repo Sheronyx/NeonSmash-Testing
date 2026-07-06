@@ -1102,9 +1102,11 @@ MonoBehaviour:
       m_Calls: []
   levelUp: {fileID: 250744643}
   allowRandomActivationOrbs: 1
-  swipeChance: 0.33
+  swipeChance: 0
   maxNormalsInRow: 5
   maxSwipesInRow: 3
+  spawnInRow: 1
+  rowViewportY: 0.35
   debugLogs: 1
   showSpawnAreaDebug: 1
   spawnAreaFill: {r: 0, g: 1, b: 1, a: 0.08}
@@ -1899,7 +1901,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -355, y: -315}
+  m_AnchoredPosition: {x: -187, y: -512}
   m_SizeDelta: {x: 280, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &404997164
@@ -4714,7 +4716,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -52, y: -315}
+  m_AnchoredPosition: {x: 187, y: -512}
   m_SizeDelta: {x: 280, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &795103451
@@ -6058,7 +6060,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 434, y: 200}
+  m_SizeDelta: {x: 800, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &948015758
 MonoBehaviour:
@@ -6072,7 +6074,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
+  m_Material: {fileID: -876546973899608171, guid: 9a79ff056fcec45a8ab450a60c443a59, type: 3}
   m_Color: {r: 0.8301887, g: 0.8301887, b: 0.8301887, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -6081,7 +6083,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: -2703604749301249932, guid: 511536c2f3eff453faf3a019e65e2fad, type: 3}
-  m_Type: 3
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
@@ -9732,8 +9734,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 316, y: -315}
-  m_SizeDelta: {x: 400, y: 200}
+  m_AnchoredPosition: {x: 0, y: -844}
+  m_SizeDelta: {x: 800, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1445619709
 MonoBehaviour:
@@ -9764,7 +9766,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 6
+  m_PixelsPerUnitMultiplier: 5
 --- !u!222 &1445619710
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9790,8 +9792,8 @@ MonoBehaviour:
   prefabGreen: {fileID: 883415637194220816, guid: 7a4f1f0a2dfc64a018f5d7130a87ea7a, type: 3}
   prefabOrange: {fileID: 6675823165011593277, guid: 74c3f0d1f1247493c84857b37f27d1e9, type: 3}
   anchorRect: {fileID: 1445619708}
-  worldSpacing: 0.46
-  iconScale: 0.22
+  worldSpacing: 1
+  iconScale: 0.4
   worldZ: 0
   sortingLayerName: Default
   sortingOrder: 100
@@ -12077,7 +12079,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 120}
+  m_AnchoredPosition: {x: 0, y: 176}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1823219603
