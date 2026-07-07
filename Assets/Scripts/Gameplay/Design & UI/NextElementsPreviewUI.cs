@@ -12,6 +12,7 @@ public class NextElementsPreviewUI : MonoBehaviour
     [SerializeField] private GameObject prefabBlue;
     [SerializeField] private GameObject prefabGreen;
     [SerializeField] private GameObject prefabOrange;
+    [SerializeField] private GameObject prefabDeath;
 
     [Header("Ankerposition — Preview-Box RectTransform hier reinziehen")]
     [SerializeField] private RectTransform anchorRect;
@@ -189,6 +190,7 @@ public class NextElementsPreviewUI : MonoBehaviour
         PointColor.Blue   => prefabBlue,
         PointColor.Green  => prefabGreen,
         PointColor.Orange => prefabOrange,
+        PointColor.Death  => prefabDeath,
         _                 => null
     };
 }

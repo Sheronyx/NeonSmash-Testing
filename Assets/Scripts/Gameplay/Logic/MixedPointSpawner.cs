@@ -73,6 +73,13 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject tapPrefab_Green;
     [SerializeField] private GameObject tapPrefab_Orange;
 
+    [Header("Tod-Element")]
+    [Tooltip("Prefab für das Todesprefab. Instant Game Over wenn getappt.")]
+    [SerializeField] private GameObject tapPrefab_Death;
+    [Tooltip("Relative Häufigkeit des Todeselements (sehr niedrig, 1 = gleich wie andere)")]
+    [Range(0.01f, 0.5f)]
+    [SerializeField] private float deathSpawnWeight = 0.1f;
+
     [Header("Farbige Swipe-Prefabs (Pink / Blau / Grün / Orange)")]
     [SerializeField] private GameObject swipePrefab_Pink;
     [SerializeField] private GameObject swipePrefab_Blue;
@@ -196,7 +203,7 @@ public class MixedPointSpawner : MonoBehaviour
     private readonly Vector3?[] _pendingSlotPositions = { null, null, null };
 
     // ── Vorschau-Farben (eine pro Slot, immer eindeutig) ─────────────────────
-    private static readonly PointColor[] AllColors = { PointColor.Pink, PointColor.Blue, PointColor.Green, PointColor.Orange };
+    private static readonly PointColor[] AllColors = { PointColor.Pink, PointColor.Blue, PointColor.Green, PointColor.Orange, PointColor.Death };
 
     [Header("Farb-Gewichtung")]
     [Tooltip("Relative Häufigkeit von Orange (1 = gleich wie andere, 0.33 = 3× seltener)")]
@@ -236,20 +243,25 @@ public class MixedPointSpawner : MonoBehaviour
 
         _previewColors[slotIndex] = available.Count > 0
             ? WeightedRandom(available)
-            : (PointColor)Random.Range(0, 4);
+            : AllColors[Random.Range(0, AllColors.Length)];
     }
+
+    private float GetColorWeight(PointColor c) => c switch
+    {
+        PointColor.Orange => orangeSpawnWeight,
+        PointColor.Death  => deathSpawnWeight,
+        _                 => 1f
+    };
 
     private PointColor WeightedRandom(List<PointColor> pool)
     {
         float total = 0f;
-        foreach (var c in pool)
-            total += c == PointColor.Orange ? orangeSpawnWeight : 1f;
-
+        foreach (var c in pool) total += GetColorWeight(c);
         float roll = Random.Range(0f, total);
         float cum  = 0f;
         foreach (var c in pool)
         {
-            cum += c == PointColor.Orange ? orangeSpawnWeight : 1f;
+            cum += GetColorWeight(c);
             if (roll < cum) return c;
         }
         return pool[pool.Count - 1];
@@ -323,6 +335,7 @@ public class MixedPointSpawner : MonoBehaviour
         PointColor.Blue   => tapPrefab_Blue   != null ? tapPrefab_Blue   : ActiveNormalPrefab,
         PointColor.Green  => tapPrefab_Green  != null ? tapPrefab_Green  : ActiveNormalPrefab,
         PointColor.Orange => tapPrefab_Orange != null ? tapPrefab_Orange : ActiveNormalPrefab,
+        PointColor.Death  => tapPrefab_Death  != null ? tapPrefab_Death  : ActiveNormalPrefab,
         _                 => ActiveNormalPrefab
     };
 
@@ -332,6 +345,7 @@ public class MixedPointSpawner : MonoBehaviour
         PointColor.Blue   => swipePrefab_Blue   != null ? swipePrefab_Blue   : ActiveSwipePrefab,
         PointColor.Green  => swipePrefab_Green  != null ? swipePrefab_Green  : ActiveSwipePrefab,
         PointColor.Orange => swipePrefab_Orange != null ? swipePrefab_Orange : ActiveSwipePrefab,
+        PointColor.Death  => tapPrefab_Death    != null ? tapPrefab_Death    : ActiveNormalPrefab,
         _                 => ActiveSwipePrefab
     };
 
@@ -460,7 +474,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (onScreen.Contains(chosen))
         {
             // Fallback: erste Farbe die nicht auf dem Bildschirm ist
-            chosen = (PointColor)Random.Range(0, 4);
+            chosen = AllColors[Random.Range(0, AllColors.Length)];
             foreach (var c in AllColors)
             {
                 if (!onScreen.Contains(c)) { chosen = c; break; }
@@ -1153,7 +1167,8 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    private string _gameOverCause = "timeout";
+    private string _gameOverCause    = "timeout";
+    private bool   _isPositiveClearing = false;
 
     private void GameOver()
     {
@@ -1422,6 +1437,29 @@ public class MixedPointSpawner : MonoBehaviour
 
         bool isSwipe = point.GetComponent<SwipePoint>() != null;
 
+        if (color == PointColor.Death)
+        {
+            // Tod: Explosion abspielen, Slot aufräumen, dann Game Over
+            if (idx >= 0)
+            {
+                if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
+                _slots[idx].point = null;
+            }
+            if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
+            var bp0 = point.GetComponent<BasePoint>();
+            if (bp0 != null) bp0.SendMessage("SpawnExplosion");
+            Destroy(point);
+            if (idx >= 0) ClearOtherSlots(idx);
+            DismissExtraThunder();
+            if (!_isPositiveClearing)
+            {
+                _gameOverCause = "death";
+                if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.5f, 0.35f);
+                StartCoroutine(Co_DelayedGameOver());
+            }
+            return;
+        }
+
         if (color == PointColor.Orange)
         {
             // Orange: TempScore → SafeScore sichern, alle Effekte zurücksetzen
@@ -1537,6 +1575,7 @@ public class MixedPointSpawner : MonoBehaviour
     /// </summary>
     public void PositiveClearAll()
     {
+        _isPositiveClearing = true;
         portalElectrifier?.ForceDeactivate();
 
         // Fake: positiv = ignorieren (lautlos entfernen, kein Schaden)
@@ -1564,7 +1603,8 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         // Slots wurden bereits in HandlePointHit bereinigt
-        CurrentSwipePoint = null;
+        CurrentSwipePoint   = null;
+        _isPositiveClearing = false;
     }
 
     /// <summary>True, solange noch irgendein spielbares Element in der Szene ist (currentPoint oder
