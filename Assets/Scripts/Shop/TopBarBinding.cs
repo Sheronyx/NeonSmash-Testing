@@ -25,6 +25,12 @@ public class TopBarBinding : MonoBehaviour
 
     void OnEnable()
     {
+        // Wellen/Korb-Modus (Infinity) hat weder Leben noch laufenden Score — nur das alte
+        // Binding überspringen. Die Bar selbst NICHT deaktivieren: sie wird im Infinity-Modus
+        // von WaveHUDBinder (Korbstand/Timer) auf demselben GameObject weiterverwendet.
+        if (GlobalGameManager.Instance != null && GlobalGameManager.Instance.SelectedMode == GameMode.Infinity)
+            return;
+
         ScoreManager.Instance?.BindUI(tempScoreText, personalBestText, safeScoreText);
         LivesManager.Instance?.BindHearts(lifePoint1, lifePoint2, lifePoint3);
     }

@@ -236,6 +236,17 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     private void ProcessHit(Collider2D col, bool fromSwipe = false)
     {
+        // 🍉 Wave Elements (Wellen/Korb-Modus) — NUR per Swipe treffbar (Multi-Slice)
+        if (fromSwipe)
+        {
+            var waveElement = col.GetComponent<WaveElement>();
+            if (waveElement != null)
+            {
+                waveElement.OnSliced();
+                return;
+            }
+        }
+
         // ☁️ Peek-a-boo Elemente — Klick löst beide gekoppelten Elemente aus
         if (!fromSwipe)
         {

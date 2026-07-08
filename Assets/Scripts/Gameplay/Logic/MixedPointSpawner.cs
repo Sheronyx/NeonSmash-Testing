@@ -159,9 +159,6 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    // Vom PhaseManager gesteuert: in Play-Phasen kein zufälliges Activation-Orb-Spawning.
-    [HideInInspector] public bool allowRandomActivationOrbs = true;
-
     [Header("Spawn-Verteilung (zufällig mit Grenzen)")]
     [Range(0f, 1f)] public float swipeChance = 0.33f;
     public int maxNormalsInRow = 4;
@@ -415,14 +412,6 @@ public class MixedPointSpawner : MonoBehaviour
     {
         running = false;
         StopPointTimer();
-    }
-
-    /// <summary>Vom PhaseManager: Spawning für den Phasen-Banner kurz anhalten / fortsetzen.</summary>
-    public void SetBannerPause(bool paused)
-    {
-        spawnPausedForBanner = paused;
-        if (!paused && running)
-            SpawnNextPoint();
     }
 
     // Füllt alle leeren Slots mit neuen Elementen.
@@ -1568,61 +1557,6 @@ public class MixedPointSpawner : MonoBehaviour
                 _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, _slots[i].point, dynamicTime));
     }
 
-    /// <summary>
-    /// Phasenende: alle noch aktiven Elemente POSITIV auflösen — als hätte der Spieler sie korrekt
-    /// bedient. Tap/Swipe/Gravity = Erfolg (Punkte + Combo); Shocker = Zeit auslaufen lassen;
-    /// Fake = ignorieren. Voraussetzung: Spawning ist pausiert (SetBannerPause(true)) → kein Nachspawn.
-    /// </summary>
-    public void PositiveClearAll()
-    {
-        _isPositiveClearing = true;
-        portalElectrifier?.ForceDeactivate();
-
-        // Fake: positiv = ignorieren (lautlos entfernen, kein Schaden)
-        foreach (var f in FindObjectsByType<FakePoint>(FindObjectsSortMode.None))
-            f.Dismiss();
-
-        // Shocker: positiv = Zeit auslaufen lassen (sicheres Verpuffen)
-        foreach (var s in FindObjectsByType<ThunderPoint>(FindObjectsSortMode.None))
-            s.Vanish();
-
-        // Tap & Swipe: als Erfolg auflösen (Punkte + Combo)
-        foreach (var sp in FindObjectsByType<SwipePoint>(FindObjectsSortMode.None))
-            HandlePointHit(sp.gameObject);
-        foreach (var tp in FindObjectsByType<TapPoint>(FindObjectsSortMode.None))
-            HandlePointHit(tp.gameObject);
-
-        // Gravity & Fountain: normale = Erfolg (Punkte+Combo); Shocker/Fake = sicher verpuffen (nicht tappen!)
-        foreach (var gp in FindObjectsByType<GravityPoint>(FindObjectsSortMode.None))
-        {
-            if (gp.IsShocker || gp.IsFake) gp.DissolveNoPenalty(); else gp.TryTap();
-        }
-        foreach (var fp2 in FindObjectsByType<FountainPoint>(FindObjectsSortMode.None))
-        {
-            if (fp2.IsShocker || fp2.IsFake) fp2.DissolveNoPenalty(); else fp2.TryTap();
-        }
-
-        // Slots wurden bereits in HandlePointHit bereinigt
-        CurrentSwipePoint   = null;
-        _isPositiveClearing = false;
-    }
-
-    /// <summary>True, solange noch irgendein spielbares Element in der Szene ist (currentPoint oder
-    /// frei fliegende Tap/Swipe/Gravity/Fountain/Fake/Thunder/Peek-Elemente). Genutzt vom PhaseManager,
-    /// um am Phasenende die Restelemente natürlich auslaufen zu lassen, bevor es weitergeht.</summary>
-    public bool HasActiveGameplayPoints()
-    {
-        foreach (var s in _slots) if (s.point != null) return true;
-        if (FindFirstObjectByType<TapPoint>()      != null) return true;
-        if (FindFirstObjectByType<SwipePoint>()    != null) return true;
-        if (FindFirstObjectByType<GravityPoint>()  != null) return true;
-        if (FindFirstObjectByType<FountainPoint>() != null) return true;
-        if (FindFirstObjectByType<FakePoint>()     != null) return true;
-        if (FindFirstObjectByType<ThunderPoint>()  != null) return true;
-        if (FindFirstObjectByType<PeekElement>()   != null) return true;
-        return false;
-    }
-
     public void ClearAllGameplayPoints()
     {
         ClearAllSlots();
@@ -1645,24 +1579,6 @@ public class MixedPointSpawner : MonoBehaviour
     public void ClearActivationPoint()
     {
         currentActivationPoint = null;
-    }
-
-    /// <summary>Vom PhaseManager: den Activation-Orb des gewählten Modus spawnen. Der Orb spielt
-    /// seine Animation selbst ab und ruft am Ende StartMode(mode) auf.</summary>
-    public void SpawnActivationOrb(SpecialMode mode)
-    {
-        GameObject prefab = mode == SpecialMode.Fountain
-            ? fountainModeActivationPointPrefab
-            : gravityModeActivationPointPrefab;
-        if (prefab == null) { Debug.LogWarning($"[Spawner] Kein Activation-Orb-Prefab für {mode}."); return; }
-
-        Vector3 pos = ViewportToWorldOnZ0(new Vector2(0.5f, 0.5f));
-        var orb = Instantiate(prefab, pos, Quaternion.identity);
-
-        var g = orb.GetComponent<GravityModeActivationPoint>();  if (g != null) g.spawner = this;
-        var f = orb.GetComponent<FountainModeActivationPoint>(); if (f != null) f.spawner = this;
-
-        currentActivationPoint = orb;
     }
 
     public bool IsLevelUpActive()

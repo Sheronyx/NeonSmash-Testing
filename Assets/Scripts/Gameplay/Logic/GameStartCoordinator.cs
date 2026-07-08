@@ -7,6 +7,7 @@ public class GameStartCoordinator : MonoBehaviour
     [SerializeField] private CountdownUI countdownUI;      // Default Countdown-Overlay
     [SerializeField] private MixedPointSpawner spawner;   // <- starker Typ!
     [SerializeField] private MonoBehaviour playerInput;     // z.B. PlayerInputHandler
+    [SerializeField] private WaveBasketController waveBasketController; // Infinity Mode (Wellen/Korb)
 
     [Header("Skin-Varianten (Countdown pro Bundle)")]
     [SerializeField] private CountdownSkin[] skinCountdowns;
@@ -37,8 +38,11 @@ if (!countdownUI)
                     countdownUI = v.countdownUI;
         }
 
-if (!spawner)     
+if (!spawner)
     spawner = FindFirstObjectByType<MixedPointSpawner>(FindObjectsInactive.Include);
+
+        if (!waveBasketController)
+            waveBasketController = FindFirstObjectByType<WaveBasketController>(FindObjectsInactive.Include);
 
         if (spawner)      spawner.StopSpawning();
         if (playerInput)  playerInput.enabled = false;
@@ -85,12 +89,19 @@ if (!spawner)
         if (blockTimeScale) Time.timeScale = 1f;
         if (playerInput)    playerInput.enabled = true;
         if (countdownUI)    countdownUI.OnCountdownFinished -= HandleCountdownFinished;
-        if (ScoreManager.Instance) ScoreManager.Instance.ResetScore();
 
-        NeonAnalytics.LogGameStart(
-            GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
+        var mode = GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity;
+        NeonAnalytics.LogGameStart(mode);
 
-        if (spawner) spawner.Begin();
+        if (mode == GameMode.Infinity)
+        {
+            if (waveBasketController) waveBasketController.Begin();
+        }
+        else
+        {
+            if (ScoreManager.Instance) ScoreManager.Instance.ResetScore();
+            if (spawner) spawner.Begin();
+        }
     }
 
     void OnDestroy()

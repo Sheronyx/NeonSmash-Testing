@@ -60,17 +60,17 @@ public class GameUIManager : MonoBehaviour
         if (backToMenuButton != null) backToMenuButton.onClick.AddListener(BackToMenu);
     }
 
-    public void ShowGameOver(int score)
+    public void ShowGameOver(int score, string bannerText = "GAME OVER")
     {
-        StartCoroutine(Co_ShowGameOver(score));
+        StartCoroutine(Co_ShowGameOver(score, bannerText));
     }
 
-    private IEnumerator Co_ShowGameOver(int score)
+    private IEnumerator Co_ShowGameOver(int score, string bannerText)
     {
         if (pauseButton != null)
             pauseButton.SetActive(false);
 
-        string text = "GAME OVER";
+        string text = bannerText;
 
         if (gameOverBanner != null && gameOverTextTMP != null)
         {
