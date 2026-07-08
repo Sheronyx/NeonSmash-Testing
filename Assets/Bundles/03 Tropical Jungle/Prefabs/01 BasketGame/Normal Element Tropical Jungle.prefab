@@ -157,7 +157,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0.28, y: -2.96, z: 0}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
+  m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3579061350522863264}
@@ -281,7 +281,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaveElement
   explodeVFXPrefab: {fileID: 7636390409669451756, guid: bd7f7c6c18abb48ac83bbf3605944bff, type: 3}
+  explodeParticlePrefab: {fileID: 0}
   type: 0
   flyToBasketDuration: 0.25
+  approachSmoothTime: 0.35
+  bobAmplitudeAlong: 0.15
+  bobAmplitudeAcross: 0.08
+  bobPeriod: 2
+  bobVariance: 0.35
+  repulsionRadius: 1.6
+  repulsionStrength: 3
   shockerShakeDuration: 2
   shockerShakeStrength: 0.25

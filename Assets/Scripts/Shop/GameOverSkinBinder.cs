@@ -30,6 +30,11 @@ public class GameOverSkinBinder : MonoBehaviour
         public TextMeshProUGUI resultScore;
         public Button          restartButton;
         public Button          backButton;
+
+        [Header("Element-Breakdown (optional — leer lassen, solange diese Variante die Reihen nicht hat)")]
+        public TextMeshProUGUI normalCount;
+        public TextMeshProUGUI specialCount;
+        public TextMeshProUGUI multiplier;
     }
 
     [SerializeField] private GameUIManager gameUI;
@@ -60,7 +65,8 @@ public class GameOverSkinBinder : MonoBehaviour
         gameUI.BindResultUI(
             gameOverBanner, chosen.gameOverText,
             resultPanel, chosen.resultHeadline, chosen.resultScore,
-            chosen.restartButton, chosen.backButton);
+            chosen.restartButton, chosen.backButton,
+            chosen.normalCount, chosen.specialCount, chosen.multiplier);
     }
 
     private void Toggle(Variant v, bool on)

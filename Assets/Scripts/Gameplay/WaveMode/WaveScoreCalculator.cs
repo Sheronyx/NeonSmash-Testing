@@ -8,10 +8,19 @@ public static class WaveScoreCalculator
     public const int SpecialPoints = 50;
     public const float MultiplierStep = 1.2f;
 
+    public static float ComputeMultiplier(int multiplierCount) => Mathf.Pow(MultiplierStep, multiplierCount);
+
     public static int ComputeFinalScore(int normalCount, int specialCount, int multiplierCount)
     {
         int basePoints = normalCount * NormalPoints + specialCount * SpecialPoints;
-        float multiplier = Mathf.Pow(MultiplierStep, multiplierCount);
-        return Mathf.RoundToInt(basePoints * multiplier);
+        return Mathf.RoundToInt(basePoints * ComputeMultiplier(multiplierCount));
     }
+}
+
+// Aufschlüsselung für den Ergebnis-Screen (Element-Breakdown-Reihen).
+public struct WaveResultBreakdown
+{
+    public int NormalCount;
+    public int SpecialCount;
+    public int MultiplierCount;
 }

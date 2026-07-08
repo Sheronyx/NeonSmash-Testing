@@ -131,9 +131,34 @@ public class WaveBasketController : MonoBehaviour
     private void SpawnWave()
     {
         int count = Random.Range(minWaveSize, maxWaveSize + 1);
+        var types = new WaveElementType[count];
+        int badCount = 0;
+
         for (int i = 0; i < count; i++)
-            SpawnOne(PickWeightedType());
+        {
+            types[i] = PickWeightedType();
+            if (IsObstacle(types[i])) badCount++;
+        }
+
+        // Hindernisse (Shocker/Bombe) dürfen in einer Welle nie mehr sein als positive
+        // Elemente (Normal/Special/Multiplier) — überschüssige Hindernis-Picks werden
+        // auf ein positives Element umgewürfelt.
+        int maxBad = count / 2;
+        for (int i = 0; i < count && badCount > maxBad; i++)
+        {
+            if (IsObstacle(types[i]))
+            {
+                types[i] = PickWeightedPositiveType();
+                badCount--;
+            }
+        }
+
+        for (int i = 0; i < count; i++)
+            SpawnOne(types[i]);
     }
+
+    private static bool IsObstacle(WaveElementType type) =>
+        type == WaveElementType.Shocker || type == WaveElementType.Bomb;
 
     private WaveElementType PickWeightedType()
     {
@@ -146,6 +171,18 @@ public class WaveBasketController : MonoBehaviour
         if ((roll -= multiplierSpawnWeight) < 0f) return WaveElementType.Multiplier;
         if ((roll -= shockerSpawnWeight) < 0f) return WaveElementType.Shocker;
         return WaveElementType.Bomb;
+    }
+
+    // Wie PickWeightedType(), aber nur unter den positiven Typen — für die Korrektur,
+    // wenn eine Welle zu viele Hindernisse gewürfelt hat.
+    private WaveElementType PickWeightedPositiveType()
+    {
+        float total = normalSpawnWeight + specialSpawnWeight + multiplierSpawnWeight;
+        float roll = Random.Range(0f, total);
+
+        if ((roll -= normalSpawnWeight) < 0f) return WaveElementType.Normal;
+        if ((roll -= specialSpawnWeight) < 0f) return WaveElementType.Special;
+        return WaveElementType.Multiplier;
     }
 
     private void SpawnOne(WaveElementType type)
@@ -284,7 +321,13 @@ public class WaveBasketController : MonoBehaviour
         AchievementManager.OnGameFinished(score, GameMode.Infinity);
         MissionManager.OnGameFinished(score);
 
-        uiManager?.ShowGameOver(score, cause == "basketFull" ? "FINISHED" : "GAME OVER");
+        var breakdown = new WaveResultBreakdown
+        {
+            NormalCount = _normalCount,
+            SpecialCount = _specialCount,
+            MultiplierCount = _multiplierCount
+        };
+        uiManager?.ShowGameOver(score, cause == "basketFull" ? "FINISHED" : "GAME OVER", breakdown);
 
         try
         {
