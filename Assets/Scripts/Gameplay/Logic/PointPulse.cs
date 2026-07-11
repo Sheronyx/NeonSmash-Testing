@@ -13,6 +13,12 @@ public class PointPulse : MonoBehaviour
         baseScale = transform.localScale;
     }
 
+    // Manche Aufrufer (z.B. DiamondBonusIndicatorUI) setzen localScale kurz auf 0, während das
+    // GameObject selbst noch deaktiviert ist — Awake() läuft dann erst NACHTRÄGLICH beim ersten
+    // SetActive(true) und würde fälschlich baseScale=0 einfrieren. Explizites Setzen unmittelbar
+    // vor StartPulsing() umgeht dieses fragile Awake-Timing.
+    public void SetBaseScale(Vector3 scale) => baseScale = scale;
+
     public void StartPulsing()
     {
         isPulsing = true;

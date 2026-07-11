@@ -767,11 +767,16 @@ public class MixedPointSpawner : MonoBehaviour
         return best;
     }
 
+    /// <summary>Gefeuert bei jedem eingesammelten Diamanten, mit dem neuen Gesamtstand dieser Phase.
+    /// Vom PhaseManager genutzt, um den Bonus-Freigeschaltet-Moment (5+) zu erkennen.</summary>
+    public static event System.Action<int> OnDiamondCollected;
+
     /// <summary>Vom DiamondPoint: wurde eingesammelt.</summary>
     public void HandleDiamondCollected()
     {
         DiamondsCollectedThisPhase++;
         _currentDiamond = null;
+        OnDiamondCollected?.Invoke(DiamondsCollectedThisPhase);
     }
 
     /// <summary>Vom DiamondPoint: ist ausgelaufen/wurde weggeräumt (folgenlos).</summary>
