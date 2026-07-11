@@ -21,6 +21,9 @@ public class VortexModeSystem : MonoBehaviour
     [SerializeField] private int diamondBonusMultiplier = 5;
     [Tooltip("Font-Material des Floating-Score-Texts bei Vortex-Treffern (wie materialPink/Green/Blue bei Normal-Mode-Treffern).")]
     [SerializeField] private Material scoreTextMaterial;
+    [Tooltip("Portal-Partikeleffekt (Szenen-Objekt, initial deaktiviert) — wird aktiviert sobald Vortex Mode " +
+             "tatsächlich startet (nach der Activation-Orb-Animation) und wieder deaktiviert, sobald der Mode endet.")]
+    [SerializeField] private GameObject portalEffect;
 
     /// <summary>Vom PhaseManager VOR dem Orb-Spawn gesetzt — vom nächsten Activate()-Aufruf konsumiert.</summary>
     [HideInInspector] public int PendingMaxSpawnCount = -1;
@@ -116,6 +119,8 @@ public class VortexModeSystem : MonoBehaviour
         isActive = true;
         spawnLoopActive = true;
         _spawnedCount = 0;
+
+        if (portalEffect != null) portalEffect.SetActive(true);
 
         spawner.PauseSpawning(true);
         spawner.ClearAllGameplayPoints();
@@ -217,6 +222,7 @@ public class VortexModeSystem : MonoBehaviour
         StopAllCoroutines();
         isActive = false;
         spawnLoopActive = false;
+        if (portalEffect != null) portalEffect.SetActive(false);
         foreach (var vp in FindObjectsByType<VortexPoint>(FindObjectsSortMode.None))
             Destroy(vp.gameObject);
     }
@@ -237,6 +243,7 @@ public class VortexModeSystem : MonoBehaviour
 
         isActive = false;
         spawnLoopActive = false;
+        if (portalEffect != null) portalEffect.SetActive(false);
         StopAllCoroutines();
         SpecialModeManager.Instance.EndCurrentMode();
     }

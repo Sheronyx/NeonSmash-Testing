@@ -79,6 +79,15 @@ public class PhaseManager : MonoBehaviour
     public int ColorTriggerThreshold => colorTriggerThreshold;
     public int GetColorCount(PointColor color) => _destroyedCount[(int)color];
 
+    /// <summary>Welcher Special Mode zu welcher Farbe gehört (Pink→Gravity, Green→Vortex, Blue→Fountain).
+    /// Zentral hier definiert, damit z.B. UI-Scripts dieselbe Zuordnung nutzen wie der Trigger selbst.</summary>
+    public static SpecialMode SpecialModeForColor(PointColor color) => color switch
+    {
+        PointColor.Blue  => SpecialMode.Fountain,
+        PointColor.Green => SpecialMode.Vortex,
+        _                => SpecialMode.Gravity // Pink
+    };
+
     /// <summary>Gefeuert bei jeder Änderung eines Farb-Zählers (Treffer ODER Reset bei Special-Mode-Trigger).
     /// Für UI-Anzeigen wie "12/20". Args: Farbe, aktueller Stand, Schwelle.</summary>
     public static event Action<PointColor, int, int> OnColorProgressChanged;
@@ -246,12 +255,7 @@ public class PhaseManager : MonoBehaviour
         bool diamondBonusActive = _bonusColor.HasValue && _bonusColor.Value == color;
         _bonusColor = null;
 
-        SpecialMode mode = color switch
-        {
-            PointColor.Blue  => SpecialMode.Fountain,
-            PointColor.Green => SpecialMode.Vortex,
-            _                => SpecialMode.Gravity // Pink
-        };
+        SpecialMode mode = SpecialModeForColor(color);
 
         // Zur nächsten Phase (per Definition immer die zugehörige Special-Phase) weiterschalten.
         _currentIndex++;
