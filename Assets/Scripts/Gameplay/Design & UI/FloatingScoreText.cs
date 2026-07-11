@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class FloatingScoreText : MonoBehaviour
 {
@@ -8,9 +9,11 @@ public class FloatingScoreText : MonoBehaviour
 
     [Header("Materialien pro Farbe")]
     [SerializeField] private Material materialDefault;
-    [SerializeField] private Material materialRed;
+    [FormerlySerializedAs("materialRed")]
+    [SerializeField] private Material materialPink;
     [SerializeField] private Material materialGreen;
-    [SerializeField] private Material materialPurple;
+    [FormerlySerializedAs("materialPurple")]
+    [SerializeField] private Material materialBlue;
 
     [Header("Animation")]
     [SerializeField] private float punchDuration = 0.08f;
@@ -19,19 +22,24 @@ public class FloatingScoreText : MonoBehaviour
 
     private float _scale = 1f;
 
-    public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f)
+    public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f, Material explicitMaterial = null)
     {
         label.text  = "+" + score;
         label.color = color;
         _scale      = scale;
 
-        if (pointColor.HasValue)
+        if (explicitMaterial != null)
+        {
+            // Direkt übergebenes Material (z.B. Special-Mode-Treffer) hat Vorrang vor der Farb-Auswahl.
+            label.fontMaterial = explicitMaterial;
+        }
+        else if (pointColor.HasValue)
         {
             Material mat = pointColor.Value switch
             {
-                PointColor.Red    => materialRed    ?? materialDefault,
+                PointColor.Pink   => materialPink   ?? materialDefault,
                 PointColor.Green  => materialGreen  ?? materialDefault,
-                PointColor.Purple => materialPurple ?? materialDefault,
+                PointColor.Blue   => materialBlue   ?? materialDefault,
                 _                 => materialDefault
             };
             if (mat != null) label.fontMaterial = mat;

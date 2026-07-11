@@ -247,18 +247,20 @@ public class ArcanePortalFlash : MonoBehaviour
     {
         if (vfx == null) return;
 
+        // Hinweis: String-Keys bleiben "Red"/"Purple" — sie referenzieren feste Property-Namen
+        // im VFX Graph Asset (nicht umbenannt), unabhängig vom PointColor-Enum-Rename.
         string particlesKey = color switch
         {
-            PointColor.Red    => "Color Particles Combo Red",
+            PointColor.Pink   => "Color Particles Combo Red",
             PointColor.Green  => "Color Particles Combo Green",
-            PointColor.Purple => "Color Particles Combo Purple",
+            PointColor.Blue   => "Color Particles Combo Purple",
             _                 => "Color Particles Normal"
         };
         string portalKey = color switch
         {
-            PointColor.Red    => "Color Portal Combo Red",
+            PointColor.Pink   => "Color Portal Combo Red",
             PointColor.Green  => "Color Portal Combo Green",
-            PointColor.Purple => "Color Portal Combo Purple",
+            PointColor.Blue   => "Color Portal Combo Purple",
             _                 => "Color Portal Normal"
         };
 

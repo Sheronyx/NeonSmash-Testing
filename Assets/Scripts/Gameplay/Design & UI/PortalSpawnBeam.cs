@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class PortalSpawnBeam : MonoBehaviour
 {
@@ -11,19 +12,21 @@ public class PortalSpawnBeam : MonoBehaviour
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform portalOrigin;
 
-    [Header("Farbige Projektil-Prefabs (Rot / Grün / Lila)")]
-    [SerializeField] private GameObject projectilePrefab_Red;
+    [Header("Farbige Projektil-Prefabs (Pink / Grün / Blau)")]
+    [FormerlySerializedAs("projectilePrefab_Red")]
+    [SerializeField] private GameObject projectilePrefab_Pink;
     [SerializeField] private GameObject projectilePrefab_Green;
-    [SerializeField] private GameObject projectilePrefab_Purple;
+    [FormerlySerializedAs("projectilePrefab_Purple")]
+    [SerializeField] private GameObject projectilePrefab_Blue;
 
     GameObject ActiveProjectilePrefab =>
         SkinManager.Instance?.ActiveTheme?.beamProjectilePrefab ?? projectilePrefab;
 
     GameObject ProjectilePrefabForColor(PointColor color) => color switch
     {
-        PointColor.Red    => projectilePrefab_Red    ?? ActiveProjectilePrefab,
+        PointColor.Pink   => projectilePrefab_Pink   ?? ActiveProjectilePrefab,
         PointColor.Green  => projectilePrefab_Green  ?? ActiveProjectilePrefab,
-        PointColor.Purple => projectilePrefab_Purple ?? ActiveProjectilePrefab,
+        PointColor.Blue   => projectilePrefab_Blue   ?? ActiveProjectilePrefab,
         _                 => ActiveProjectilePrefab
     };
 

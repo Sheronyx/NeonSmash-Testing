@@ -54,11 +54,12 @@ public class ScoreManager : MonoBehaviour
         UpdateUI();
     }
 
-    public int AddPointsFromHit(int basePoints = 10)
+    public int AddPointsFromHit(int basePoints = 10, int extraMultiplier = 1)
     {
-        int combo    = ComboManager.Instance != null ? ComboManager.Instance.Multiplier : 1;
         bool special = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
-        int amount   = basePoints * combo * (special ? 2 : 1);
+        // Special-Multiplikator: phasenbasiert (Infinity Mode) via PhaseManager, sonst Fallback 2x (Multiplayer/o. PhaseManager).
+        int specialMult = special ? (PhaseManager.Instance != null ? PhaseManager.Instance.CurrentSpecialMultiplier : 2) : 1;
+        int amount   = basePoints * specialMult * extraMultiplier;
         score += amount;
         UpdateUI();
         return amount;

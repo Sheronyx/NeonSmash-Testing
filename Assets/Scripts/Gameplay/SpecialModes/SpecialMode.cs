@@ -3,5 +3,6 @@ public enum SpecialMode
     None,
     Gravity,
     Chaos,
-    Fountain
+    Fountain,
+    Vortex
 }

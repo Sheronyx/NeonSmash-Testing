@@ -49,10 +49,11 @@ public void StartMode(SpecialMode mode)
     }
 
     // Zentrale Hit/Miss-Logik für alle Special Modes
-    public static void RegisterSpecialHit()
+    public static void RegisterSpecialHit(int extraMultiplier = 1, Vector3 position = default, Material textMaterial = null)
     {
-        ScoreManager.Instance?.AddPointsFromHit();
+        int amount = ScoreManager.Instance?.AddPointsFromHit(10, extraMultiplier) ?? 0;
         // Special-Mode-Elemente haben keine Farbe → neutraler Treffer, kein Kombo-Aufbau
+        MixedPointSpawner.Instance?.SpawnSpecialFloatingScore(amount, position, textMaterial);
     }
 
     public static void RegisterSpecialMiss()

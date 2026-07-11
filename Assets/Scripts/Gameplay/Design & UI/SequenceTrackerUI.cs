@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class SequenceTrackerUI : MonoBehaviour
@@ -25,9 +26,10 @@ public class SequenceTrackerUI : MonoBehaviour
     [SerializeField] private UISlideAnimator slideAnimator;
 
     [Header("Next-Element Prefabs")]
-    [SerializeField] private GameObject prefabOrange;   // PointColor.Red
+    [SerializeField] private GameObject prefabOrange;   // PointColor.Pink
     [SerializeField] private GameObject prefabGreen;    // PointColor.Green
-    [SerializeField] private GameObject prefabPurple;   // PointColor.Purple
+    [FormerlySerializedAs("prefabPurple")]
+    [SerializeField] private GameObject prefabBlue;     // PointColor.Blue
 
     [Header("Dot-Farben")]
     [SerializeField] private Color dotFilled = new Color(1f, 1f, 1f, 1.00f);
@@ -158,9 +160,9 @@ public class SequenceTrackerUI : MonoBehaviour
 
     private GameObject PrefabForColor(PointColor pc) => pc switch
     {
-        PointColor.Red    => prefabOrange,
+        PointColor.Pink   => prefabOrange,
         PointColor.Green  => prefabGreen,
-        PointColor.Purple => prefabPurple,
+        PointColor.Blue   => prefabBlue,
         _                 => null
     };
 

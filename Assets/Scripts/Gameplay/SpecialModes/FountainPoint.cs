@@ -13,6 +13,9 @@ public class FountainPoint : BasePoint
     [Tooltip("Fake: sieht echt aus, ist aber Köder. Tappen = nur verpuffen (kein Punkt, KEINE Strafe), Durchlassen = sicher.")]
     [SerializeField] private bool isFake = false;
     public bool IsFake => isFake;
+    [Tooltip("Diamant-Bonus: verhält sich wie ein normales Element, gibt aber beim Tappen den zusätzlichen Diamant-Bonus-Multiplikator.")]
+    [SerializeField] private bool isBonusDiamond = false;
+    public bool IsBonusDiamond => isBonusDiamond;
 
     private Vector3 velocity;
     private bool hasLanded = false;
@@ -99,7 +102,7 @@ public class FountainPoint : BasePoint
         SpawnExplosion();
         AudioManager.Instance?.PlayNormalPoint();
 
-        if (system != null) system.OnPointFinished(true); // ✅ Punkt
+        if (system != null) system.OnPointFinished(true, isBonusDiamond, transform.position); // ✅ Punkt
 
         Destroy(gameObject);
     }

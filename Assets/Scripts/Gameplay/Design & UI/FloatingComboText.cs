@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class FloatingComboText : MonoBehaviour
 {
@@ -15,9 +16,11 @@ public class FloatingComboText : MonoBehaviour
 
     [Header("Materialien pro Farbe")]
     [SerializeField] private Material materialDefault;
-    [SerializeField] private Material materialRed;
+    [FormerlySerializedAs("materialRed")]
+    [SerializeField] private Material materialPink;
     [SerializeField] private Material materialGreen;
-    [SerializeField] private Material materialPurple;
+    [FormerlySerializedAs("materialPurple")]
+    [SerializeField] private Material materialBlue;
 
     public void Play(string message, Color color, PointColor? pointColor = null)
     {
@@ -29,9 +32,9 @@ public class FloatingComboText : MonoBehaviour
         {
             Material mat = pointColor.Value switch
             {
-                PointColor.Red    => materialRed    ?? materialDefault,
+                PointColor.Pink   => materialPink   ?? materialDefault,
                 PointColor.Green  => materialGreen  ?? materialDefault,
-                PointColor.Purple => materialPurple ?? materialDefault,
+                PointColor.Blue   => materialBlue   ?? materialDefault,
                 _                 => materialDefault
             };
             if (mat != null) label.fontMaterial = mat;

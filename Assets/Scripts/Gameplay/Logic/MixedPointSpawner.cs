@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 using System.Collections;
 
 public class MixedPointSpawner : MonoBehaviour
@@ -8,6 +9,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     [SerializeField] private GameObject fountainModeActivationPointPrefab;
     [SerializeField] private GameObject gravityModeActivationPointPrefab;
+    [SerializeField] private GameObject vortexModeActivationPointPrefab;
 
     [SerializeField] private GameUIManager uiManager;
     private GameObject currentActivationPoint;
@@ -66,18 +68,19 @@ public class MixedPointSpawner : MonoBehaviour
     public GameObject normalPointPrefab;
     public GameObject swipePointPrefab;
 
-    [Header("Farbige Tap-Prefabs (Rot / Grün / Lila)")]
-    [SerializeField] private GameObject tapPrefab_Red;
+    [Header("Farbige Tap-Prefabs (Pink / Grün / Blau)")]
+    [FormerlySerializedAs("tapPrefab_Red")]
+    [SerializeField] private GameObject tapPrefab_Pink;
     [SerializeField] private GameObject tapPrefab_Green;
-    [SerializeField] private GameObject tapPrefab_Purple;
+    [FormerlySerializedAs("tapPrefab_Purple")]
+    [SerializeField] private GameObject tapPrefab_Blue;
 
-    [Header("Farbige Swipe-Prefabs (Rot / Grün / Lila)")]
-    [SerializeField] private GameObject swipePrefab_Red;
+    [Header("Farbige Swipe-Prefabs (Pink / Grün / Blau)")]
+    [FormerlySerializedAs("swipePrefab_Red")]
+    [SerializeField] private GameObject swipePrefab_Pink;
     [SerializeField] private GameObject swipePrefab_Green;
-    [SerializeField] private GameObject swipePrefab_Purple;
-
-    [Header("Combo-System")]
-    [SerializeField] public bool comboEnabled = true;
+    [FormerlySerializedAs("swipePrefab_Purple")]
+    [SerializeField] private GameObject swipePrefab_Blue;
 
     [Header("Spawn Delay nach Treffer")]
     [SerializeField] private float spawnDelayAfterHit = 0.25f;
@@ -101,6 +104,23 @@ public class MixedPointSpawner : MonoBehaviour
     [Range(0f, 1f)]
     [Tooltip("Wahrscheinlichkeit, dass ein Donnerschock anstelle des normalen Elements spawnt.")]
     public float thunderSpawnChance = 0.1f;
+
+    [Header("Diamant (Normal Mode, ab Phase 9)")]
+    [Tooltip("Diamant-Prefab (DiamondPoint). Bonus-Collectible, Sammeln = Punkte, Verpassen = folgenlos.")]
+    public GameObject diamondPrefab;
+    [Tooltip("Anzahl Diamanten, die pro diamant-aktiver Normal-Phase gespawnt werden.")]
+    public int diamondsPerPhase = 7;
+    [Range(0f, 1f)]
+    [Tooltip("Wahrscheinlichkeit pro Runde (parallel zu den 3 Farb-Slots), dass zusätzlich ein Diamant spawnt.")]
+    public float diamondSpawnChance = 0.3f;
+
+    private bool _diamondsEnabledThisPhase = false;
+    private bool _roundHasDiamond = false;
+    private int _diamondsSpawnedThisPhase = 0;
+    private GameObject _currentDiamond;
+
+    /// <summary>Wie viele der in dieser Normal-Phase gespawnten Diamanten bereits eingesammelt wurden.</summary>
+    public int DiamondsCollectedThisPhase { get; private set; }
 
     [Header("Portal Elektrifizierung")]
     [SerializeField] private PortalElectrifier portalElectrifier;
@@ -141,9 +161,18 @@ public class MixedPointSpawner : MonoBehaviour
 
     [SerializeField] private LevelUp levelUp;
 
-    // Aktuelle Reaktionszeit — score-basiert via InfinityRunManager.
+    // Aktuelle Reaktionszeit — Priorität: PhaseManager (Infinity Mode) → InfinityRunManager (Fallback/Multiplayer) → Feld.
     public float CurrentReactionTime =>
+        PhaseManager.Instance != null ? PhaseManager.Instance.CurrentReactionTime :
         InfinityRunManager.Instance != null ? InfinityRunManager.Instance.GetReactionTime() : reactionTime;
+
+    /// <summary>Gefeuert bei JEDEM erfolgreichen Normal-Mode-Tap/Swipe-Treffer (nicht bei Special-Mode-Treffern).
+    /// Vom PhaseManager genutzt, um die Farb-Zähler für den 20er-Special-Mode-Trigger zu führen.</summary>
+    public static event System.Action<PointColor> OnColorHitRegistered;
+
+    /// <summary>Vom PhaseManager beim 20er-Trigger: entfernt alle noch aktiven Slot-Elemente lautlos
+    /// (kein Score, kein Schaden) — z.B. wenn ein Special Mode mitten in einer Normal-Phase startet.</summary>
+    public void ClearAllSlotsSilently() => ClearAllSlots();
 
     // Vom PhaseManager gesteuert: in Play-Phasen kein zufälliges Activation-Orb-Spawning.
     [HideInInspector] public bool allowRandomActivationOrbs = true;
@@ -213,7 +242,6 @@ public class MixedPointSpawner : MonoBehaviour
             if (_slots[i].point  != null) { Destroy(_slots[i].point); _slots[i].point = null; }
         }
         CurrentSwipePoint = null;
-        DismissExtraThunder();
         portalElectrifier?.ForceDeactivate();
     }
 
@@ -232,22 +260,35 @@ public class MixedPointSpawner : MonoBehaviour
                 _slots[j].point = null;
             }
         }
+
+        // Ein Element der Runde wurde aufgelöst → frische Dreier-Reihe kommt. Ein evtl. noch aktiver
+        // Diamant aus der ALTEN Runde muss mit weg (gleiches Prinzip wie früher beim Extra-Shocker).
+        DismissCurrentDiamond();
+    }
+
+    // Räumt den aktuell aktiven Diamanten lautlos/folgenlos weg (Puff, kein Score, keine Strafe).
+    private void DismissCurrentDiamond()
+    {
+        if (_currentDiamond == null) return;
+        var dp = _currentDiamond.GetComponent<DiamondPoint>();
+        if (dp != null) dp.Dismiss(); else Destroy(_currentDiamond);
+        _currentDiamond = null;
     }
 
     // Hilfsmethoden für farbige Prefabs (Fallback auf Default)
     private GameObject GetTapPrefab(PointColor c) => c switch
     {
-        PointColor.Red    => tapPrefab_Red    != null ? tapPrefab_Red    : ActiveNormalPrefab,
+        PointColor.Pink   => tapPrefab_Pink   != null ? tapPrefab_Pink   : ActiveNormalPrefab,
         PointColor.Green  => tapPrefab_Green  != null ? tapPrefab_Green  : ActiveNormalPrefab,
-        PointColor.Purple => tapPrefab_Purple != null ? tapPrefab_Purple : ActiveNormalPrefab,
+        PointColor.Blue   => tapPrefab_Blue   != null ? tapPrefab_Blue   : ActiveNormalPrefab,
         _                 => ActiveNormalPrefab
     };
 
     private GameObject GetSwipePrefab(PointColor c) => c switch
     {
-        PointColor.Red    => swipePrefab_Red    != null ? swipePrefab_Red    : ActiveSwipePrefab,
+        PointColor.Pink   => swipePrefab_Pink   != null ? swipePrefab_Pink   : ActiveSwipePrefab,
         PointColor.Green  => swipePrefab_Green  != null ? swipePrefab_Green  : ActiveSwipePrefab,
-        PointColor.Purple => swipePrefab_Purple != null ? swipePrefab_Purple : ActiveSwipePrefab,
+        PointColor.Blue   => swipePrefab_Blue   != null ? swipePrefab_Blue   : ActiveSwipePrefab,
         _                 => ActiveSwipePrefab
     };
 
@@ -265,13 +306,11 @@ public class MixedPointSpawner : MonoBehaviour
 
     // Rundentyp: alle 3 Slots spawnen immer denselben Typ (Tap oder Swipe).
     // Wird neu gewürfelt, sobald alle 3 Slots gleichzeitig leer sind.
-    private bool _roundIsSwipe         = false;
-    private bool _roundIsAllThunder    = false; // alle 3 Slots sind Shocker
-    private bool _roundHasExtraThunder = false; // 3 normale + 1 extra Shocker
+    private bool _roundIsSwipe    = false;
 
-    // Extra-Shocker (bei _roundHasExtraThunder): außerhalb des Slot-Systems
-    private GameObject _extraThunder;
-    private Coroutine  _extraThunderRoutine;
+    // Ab Phase 5: EIN Slot der Runde wird (mit thunderSpawnChance) statt eines Farbelements
+    // zu einem Shocker — ersetzt, nicht zusätzlich. -1 = kein Shocker diese Runde.
+    private int _thunderSlotIndex = -1;
 
 
     void Awake()
@@ -343,40 +382,56 @@ public class MixedPointSpawner : MonoBehaviour
             _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
             if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
             else               { normalsInRow++; swipesInRow = 0; }
+
+            // Normal-Mode-Shocker (ab Phase 5): EIN Slot der Runde wird statt eines Farbelements
+            // zum Shocker (nie mehrere gleichzeitig).
+            bool shockerPhaseActive = PhaseManager.Instance != null && PhaseManager.Instance.ShockerEnabledThisPhase;
+            bool roundHasShocker = shockerPhaseActive && Random.value < thunderSpawnChance;
+            _thunderSlotIndex = roundHasShocker ? Random.Range(0, _slots.Length) : -1;
+
+            // Diamant (ab Phase 9): mit Chance zusätzlich zu den 3 Farb-Slots, solange die
+            // Phasen-Quote (diamondsPerPhase) noch nicht ausgeschöpft ist.
+            bool diamondsAvailable = _diamondsEnabledThisPhase && _diamondsSpawnedThisPhase < diamondsPerPhase;
+            _roundHasDiamond = diamondsAvailable && _currentDiamond == null && Random.value < diamondSpawnChance;
         }
 
         for (int i = 0; i < _slots.Length; i++)
             if (_slots[i].point == null)
                 SpawnSlot(i);
 
-        // Extra-Shocker erst spawnen, wenn alle 3 Slots belegt sind
-        if (_roundHasExtraThunder && _extraThunder == null)
+        // Diamant erst spawnen, wenn alle 3 Slots eine Zielposition haben — bei aktivem Portal-Beam
+        // ist .point erst NACH der Flug-Animation gesetzt, die Position aber schon vorher über
+        // _pendingSlotPositions reserviert (gleiches Muster wie FindSlotPosition beim Sibling-Check).
+        if (_roundHasDiamond && _currentDiamond == null)
         {
-            bool allFilled = true;
-            foreach (var s in _slots) { if (s.point == null) { allFilled = false; break; } }
-            if (allFilled) SpawnExtraThunder();
+            bool allPositioned = true;
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                if (_slots[i].point == null && !_pendingSlotPositions[i].HasValue) { allPositioned = false; break; }
+            }
+            if (allPositioned) SpawnDiamond();
         }
     }
 
     // Gibt die Farbe zurück, die in keinem anderen belegten Slot vorhanden ist.
     private PointColor GetUnusedColor(int slotIndex)
     {
-        bool redUsed = false, greenUsed = false, purpleUsed = false;
+        bool pinkUsed = false, greenUsed = false, blueUsed = false;
         for (int j = 0; j < _slots.Length; j++)
         {
             // Slot zählt als belegt wenn er ein point hat ODER sein Beam noch im Flug ist
             if (j == slotIndex || (_slots[j].point == null && !_pendingSlotPositions[j].HasValue)) continue;
             switch (_slots[j].color)
             {
-                case PointColor.Red:    redUsed    = true; break;
-                case PointColor.Green:  greenUsed  = true; break;
-                case PointColor.Purple: purpleUsed = true; break;
+                case PointColor.Pink:  pinkUsed  = true; break;
+                case PointColor.Green: greenUsed = true; break;
+                case PointColor.Blue:  blueUsed  = true; break;
             }
         }
         var available = new System.Collections.Generic.List<PointColor>(3);
-        if (!redUsed)    available.Add(PointColor.Red);
+        if (!pinkUsed)   available.Add(PointColor.Pink);
         if (!greenUsed)  available.Add(PointColor.Green);
-        if (!purpleUsed) available.Add(PointColor.Purple);
+        if (!blueUsed)   available.Add(PointColor.Blue);
         return available.Count > 0
             ? available[Random.Range(0, available.Count)]
             : (PointColor)Random.Range(0, 3);
@@ -401,7 +456,7 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         bool spawnSwipe = _roundIsSwipe;
-        bool isThunder  = _roundIsAllThunder;
+        bool isThunder  = (i == _thunderSlotIndex);
 
         GameObject samplePrefab = isThunder ? ActiveThunderPrefab
                                  : (spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color));
@@ -521,7 +576,6 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         float orbHalfPx = currentActivationPoint != null ? GetHalfSizePixels(currentActivationPoint) : 0f;
-        float exHalfPx  = _extraThunder            != null ? GetHalfSizePixels(_extraThunder)            : 0f;
 
         // Fallback: Kandidat mit dem größten Mindestabstand zu allen Hindernissen
         Vector2 bestFallback     = new Vector2(0.5f, 0.5f);
@@ -565,19 +619,6 @@ public class MixedPointSpawner : MonoBehaviour
                 }
             }
 
-            // Abstand zum Extra-Shocker
-            if (_extraThunder != null)
-            {
-                Vector2 exVP = mainCamera.WorldToViewportPoint(_extraThunder.transform.position);
-                float   dist = PixelDistance(vp, exVP);
-                minDistToAny = Mathf.Min(minDistToAny, dist);
-                if (!IsFarEnoughFromOrb(vp, exVP, halfSizePx, exHalfPx))
-                {
-                    if (minDistToAny > bestFallbackDist) { bestFallbackDist = minDistToAny; bestFallback = vp; }
-                    continue;
-                }
-            }
-
             return vp; // perfekte Position gefunden
         }
 
@@ -600,9 +641,8 @@ public class MixedPointSpawner : MonoBehaviour
 
             if (!running || gameOver) yield break;
 
-            // Andere Slots lautlos leeren + Extra-Shocker wegräumen, dann frische Dreier-Reihe
+            // Andere Slots lautlos leeren, dann frische Dreier-Reihe
             ClearOtherSlots(i);
-            DismissExtraThunder();
 
             // War es ein Tap (Leben verloren)? Dann auf Animation warten.
             if (LivesManager.IsLifeLostAnimating)
@@ -627,8 +667,6 @@ public class MixedPointSpawner : MonoBehaviour
 
         // Timeout: sofortiges Game Over (kein Leben-System mehr)
         DismissCurrentFake();
-        if (comboEnabled) ComboManager.Instance?.RegisterMiss();
-        SequenceManager.Instance?.ResetAllProgress();
 
         _slots[i].timeout = null;
         _slots[i].point   = null;
@@ -636,101 +674,110 @@ public class MixedPointSpawner : MonoBehaviour
         Destroy(point);
 
         ClearOtherSlots(i);
-        DismissExtraThunder();
 
         if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
         yield return new WaitForSecondsRealtime(0.4f);
         GameOver();
     }
 
-    // ─── Extra-Thunder ─────────────────────────────────────────────────────────
+    // ─── Diamant (Normal Mode, ab Phase 9) ────────────────────────────────────
 
-    // Spawnt den Extra-Shocker an einer Position, die alle 3 Slots + Activation Orb vermeidet.
-    private void SpawnExtraThunder()
+    /// <summary>Vom PhaseManager: Diamant-Spawning für die aktuelle Normal-Phase an/aus schalten.</summary>
+    public void SetDiamondsEnabled(bool enabled)
     {
-        if (ActiveThunderPrefab == null) return;
+        _diamondsEnabledThisPhase = enabled;
+        if (!enabled)
+        {
+            _roundHasDiamond = false;
+            DismissCurrentDiamond();
+        }
+    }
 
-        float   halfPx        = GetHalfSizePixels(ActiveThunderPrefab);
-        Rect    allowedVP     = ScreenRectToViewportRect(GetAllowedSpawnRect());
-        int     maxAttempts   = 80;
-        Vector2 best          = new Vector2(0.5f, 0.5f);
+    /// <summary>Vom PhaseManager: Zähler für eine neue diamant-aktive Normal-Phase zurücksetzen.</summary>
+    public void ResetDiamondTracking()
+    {
+        _diamondsSpawnedThisPhase = 0;
+        DiamondsCollectedThisPhase = 0;
+    }
 
-        for (int attempt = 0; attempt < maxAttempts; attempt++)
+    // Spawnt den Diamanten an einer Position, die alle 3 Slots + Activation Orb vermeidet. Eigene
+    // (kleinere) Abstandsregel statt FindSlotPosition/GetBaseMinDistancePixels: die große prozentuale
+    // Mindestdistanz ist für 3 gleichzeitige Hauptelemente gedacht — für ein zusätzliches 4. Element
+    // ist sie auf vielen Bildschirmen geometrisch kaum erfüllbar (Suche landet dann fast immer im
+    // Fallback, der selbst dann keinen brauchbaren Abstand mehr garantieren kann).
+    private void SpawnDiamond()
+    {
+        if (diamondPrefab == null) return;
+
+        Vector2 vp       = FindDiamondPosition();
+        Vector3 worldPos = ViewportToWorldOnZ0(vp);
+        _currentDiamond  = Instantiate(diamondPrefab, worldPos, Quaternion.identity);
+
+        var dp = _currentDiamond.GetComponent<DiamondPoint>();
+        if (dp != null)
+        {
+            dp.spawner = this;
+            dp.Activate(CurrentReactionTime);
+        }
+        _diamondsSpawnedThisPhase++;
+    }
+
+    // Tastet viele Kandidatenpunkte im erlaubten Bereich ab und nimmt den mit dem GRÖSSTEN
+    // Mindestabstand zu allen 3 Farbelementen — kein Schwellenwert, der scheitern kann, sondern
+    // immer die objektiv beste verfügbare Position. (Kein Activation-Orb-Check: der Orb erscheint
+    // erst NACHDEM der PhaseManager alles pausiert/geräumt hat, existiert also nie parallel zum
+    // Diamant-Spawning.)
+    private Vector2 FindDiamondPosition()
+    {
+        Rect allowedVP    = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        int  sampleCount  = 200;
+
+        var obstacles = new System.Collections.Generic.List<Vector2>(3);
+        for (int j = 0; j < _slots.Length; j++)
+        {
+            if (_slots[j].point != null)
+                obstacles.Add(mainCamera.WorldToViewportPoint(_slots[j].point.transform.position));
+            else if (_pendingSlotPositions[j].HasValue)
+                obstacles.Add(mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value));
+        }
+
+        Vector2 best        = new Vector2(0.5f, 0.5f);
+        float   bestMinDist = -1f;
+
+        for (int i = 0; i < sampleCount; i++)
         {
             Vector2 vp = new Vector2(
                 Random.Range(allowedVP.xMin, allowedVP.xMax),
                 Random.Range(allowedVP.yMin, allowedVP.yMax)
             );
 
-            bool valid = true;
+            float minDist = float.MaxValue;
+            foreach (var obstacleVP in obstacles)
+                minDist = Mathf.Min(minDist, PixelDistance(vp, obstacleVP));
 
-            // Abstand zu allen belegten Slots
-            foreach (var s in _slots)
+            if (obstacles.Count == 0) minDist = 0f; // keine Hindernisse → jede Position gleich gut
+
+            if (minDist > bestMinDist)
             {
-                if (s.point == null) continue;
-                Vector2 sVP   = mainCamera.WorldToViewportPoint(s.point.transform.position);
-                float   sHalf = GetHalfSizePixels(s.point);
-                if (!IsFarEnoughFromOrb(vp, sVP, halfPx, sHalf)) { valid = false; break; }
+                bestMinDist = minDist;
+                best = vp;
             }
-
-            if (!valid) continue;
-
-            if (currentActivationPoint != null)
-            {
-                Vector2 orbVP   = mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position);
-                float   orbHalf = GetHalfSizePixels(currentActivationPoint);
-                if (!IsFarEnoughFromOrb(vp, orbVP, halfPx, orbHalf)) continue;
-            }
-
-            best = vp;
-            break;
         }
 
-        float dynamicTime = CurrentReactionTime;
-        Vector3 worldPos  = ViewportToWorldOnZ0(best);
-        _extraThunder     = Instantiate(ActiveThunderPrefab, worldPos, Quaternion.identity);
-
-        var tp = _extraThunder.GetComponent<ThunderPoint>();
-        if (tp != null) tp.Activate(dynamicTime);
-
-        _extraThunderRoutine = StartCoroutine(Co_ExtraThunderMonitor(dynamicTime));
+        return best;
     }
 
-    // Räumt den Extra-Shocker lautlos auf (kein Leben-Verlust).
-    private void DismissExtraThunder()
+    /// <summary>Vom DiamondPoint: wurde eingesammelt.</summary>
+    public void HandleDiamondCollected()
     {
-        if (_extraThunderRoutine != null) { StopCoroutine(_extraThunderRoutine); _extraThunderRoutine = null; }
-        if (_extraThunder == null) return;
-        var tp = _extraThunder.GetComponent<ThunderPoint>();
-        if (tp != null) tp.Vanish(); else Destroy(_extraThunder);
-        _extraThunder = null;
+        DiamondsCollectedThisPhase++;
+        _currentDiamond = null;
     }
 
-    // Überwacht den Extra-Shocker. Wird er angetippt (Leben verloren), leert er alle Slots
-    // und startet die nächste Runde. Verpufft er natürlich, läuft die Runde normal weiter.
-    private IEnumerator Co_ExtraThunderMonitor(float seconds)
+    /// <summary>Vom DiamondPoint: ist ausgelaufen/wurde weggeräumt (folgenlos).</summary>
+    public void HandleDiamondResolved()
     {
-        float t = 0f;
-        while (_extraThunder != null && t < seconds + 1f && running && !gameOver)
-        {
-            t += Time.deltaTime;
-            yield return null;
-        }
-
-        _extraThunder        = null;
-        _extraThunderRoutine = null;
-
-        if (!running || gameOver) yield break;
-
-        // Angetippt → Leben verloren → farbige Elemente leeren + Runde neu starten
-        if (LivesManager.IsLifeLostAnimating)
-        {
-            ClearAllSlots();
-            yield return new WaitUntil(() => !LivesManager.IsLifeLostAnimating);
-            yield return null; // FIFO-Sicherheitsframe
-            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
-        }
-        // Natürlich verschwunden → farbige Elemente laufen weiter, nichts tun
+        _currentDiamond = null;
     }
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
@@ -914,7 +961,7 @@ public class MixedPointSpawner : MonoBehaviour
         else       { CurrentSwipePoint = null; }
 
         _slots[0].point = newPoint;
-        _slots[0].color = PointColor.Red; // Tutorial hat keine Farbe → Platzhalter
+        _slots[0].color = PointColor.Pink; // Tutorial hat keine Farbe → Platzhalter
         lastPoint = newPoint;
 
         if (IsInfinityMode && !IsTutorialMode)
@@ -1021,7 +1068,12 @@ public class MixedPointSpawner : MonoBehaviour
         spawnPausedForBanner = false;
         ClearAllSlots();
 
-        if (comboEnabled) ComboManager.Instance?.ResetCombo();
+        // Special Modes laufen als eigene Coroutinen auf ihrem eigenen Component — MixedPointSpawner.running
+        // stoppt die NICHT automatisch mit. Ohne das hier würde z.B. FountainModeSystem nach Game Over
+        // munter weiter spawnen.
+        GravityModeSystem.Instance?.ForceStop();
+        FountainModeSystem.Instance?.ForceStop();
+        VortexModeSystem.Instance?.ForceStop();
 
         if (MultiplayerManager.IsMultiplayerGame)
         {
@@ -1285,8 +1337,6 @@ public class MixedPointSpawner : MonoBehaviour
     public void HandleElectrifiedTap(GameObject point)
     {
         DismissCurrentFake();
-        SequenceManager.Instance?.ResetAllProgress();
-        if (comboEnabled) ComboManager.Instance?.RegisterMiss();
 
         int idx = FindSlotIndex(point);
         Vector3 pos = point.transform.position;
@@ -1302,7 +1352,6 @@ public class MixedPointSpawner : MonoBehaviour
         Destroy(point);
 
         if (idx >= 0) ClearOtherSlots(idx);
-        DismissExtraThunder();
 
         bool stillAlive = LivesManager.Instance.LoseLife(pos);
         if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
@@ -1330,24 +1379,16 @@ public class MixedPointSpawner : MonoBehaviour
         DismissCurrentFake();
 
         int idx = FindSlotIndex(point);
-        PointColor color = idx >= 0 ? _slots[idx].color : PointColor.Red;
+        PointColor color = idx >= 0 ? _slots[idx].color : PointColor.Pink;
 
-        // RegisterHit zuerst → Multiplier und Streak sind aktuell wenn Score berechnet wird
-        if (comboEnabled) ComboManager.Instance?.RegisterHit(color);
+        OnColorHitRegistered?.Invoke(color);
 
-        int streak = comboEnabled ? (ComboManager.Instance?.ComboCount ?? 0) : 0;
-        int sequenceBonus    = SequenceManager.Instance != null ? SequenceManager.Instance.RegisterHit(color) : 0;
-        bool comboSuppressed = SequenceManager.Instance != null && SequenceManager.Instance.LastHitSuppressedScore;
+        int scored = ScoreManager.Instance?.AddPointsFromHit(10) ?? 0;
+        SpawnFloatingScore(scored, point.transform.position, color, 0);
 
-        if (!comboSuppressed)
-        {
-            int basePoints = sequenceBonus > 0 ? sequenceBonus : 10;
-            int scored     = ScoreManager.Instance?.AddPointsFromHit(basePoints) ?? 0;
-            SpawnFloatingScore(scored, point.transform.position, color, streak);
-        }
         bool isSwipe = point.GetComponent<SwipePoint>() != null;
-        if (isSwipe) AudioManager.Instance?.PlaySwipePoint(streak);
-        else         AudioManager.Instance?.PlayNormalPoint(streak);
+        if (isSwipe) AudioManager.Instance?.PlaySwipePoint(0);
+        else         AudioManager.Instance?.PlayNormalPoint(0);
 
         var bp = point.GetComponent<BasePoint>();
         if (bp != null) bp.SendMessage("SpawnExplosion");
@@ -1361,22 +1402,14 @@ public class MixedPointSpawner : MonoBehaviour
 
         Destroy(point);
 
-        // Ein Treffer → alle anderen Slots lautlos leeren + Extra-Shocker wegräumen, dann frische Reihe
+        // Ein Treffer → alle anderen Slots lautlos leeren, dann frische Reihe
         if (idx >= 0) ClearOtherSlots(idx);
-        DismissExtraThunder();
 
         if (running && !gameOver && !spawnPausedForBanner)
-        {
-            float comboPreDelay = (SequenceManager.Instance != null && SequenceManager.Instance.LastHitTriggeredEffect)
-                ? SequenceManager.Instance.EffectPreDelay : 0f;
-            StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay() + comboPreDelay));
-        }
+            StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
     }
 
-    private float GetSpawnDelay() =>
-        comboEnabled && FloatingComboPopup.Instance != null
-            ? FloatingComboPopup.Instance.ConsumeSpawnDelay(spawnDelayAfterHit)
-            : spawnDelayAfterHit;
+    private float GetSpawnDelay() => spawnDelayAfterHit;
 
     private IEnumerator Co_SpawnAfterDelay(float delay)
     {
@@ -1396,7 +1429,21 @@ public class MixedPointSpawner : MonoBehaviour
         fst?.Play(score, Color.white, color);
     }
 
-    // Für SequenceManager: Bonus-Floating-Score an einer Viewport-Position spawnen.
+    /// <summary>Floating-Score für Special-Mode-Treffer (Gravity/Fountain) — die haben keine PointColor,
+    /// daher eigenes Material statt der materialPink/Green/Blue-Auswahl (pro Special-Mode auf
+    /// GravityModeSystem/FountainModeSystem einstellbar).</summary>
+    public void SpawnSpecialFloatingScore(int score, Vector3 worldPos, Material textMaterial)
+    {
+        if (floatingScorePrefab == null || score <= 0) return;
+
+        Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
+        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
+        var fst = go.GetComponent<FloatingScoreText>();
+        fst?.Play(score, Color.white, null, 1f, textMaterial);
+    }
+
+    // Bonus-Floating-Score an einer Viewport-Position spawnen (aktuell ungenutzt, da SequenceManager
+    // nicht mehr in HandlePointHit eingebunden ist — bleibt als Utility für spätere Bonus-Anzeigen stehen).
     public void SpawnBonusFloatingScore(int amount, Vector2 viewportPos, float scale, PointColor pointColor)
     {
         if (floatingScorePrefab == null || amount <= 0) return;
@@ -1505,9 +1552,12 @@ public class MixedPointSpawner : MonoBehaviour
     /// seine Animation selbst ab und ruft am Ende StartMode(mode) auf.</summary>
     public void SpawnActivationOrb(SpecialMode mode)
     {
-        GameObject prefab = mode == SpecialMode.Fountain
-            ? fountainModeActivationPointPrefab
-            : gravityModeActivationPointPrefab;
+        GameObject prefab = mode switch
+        {
+            SpecialMode.Fountain => fountainModeActivationPointPrefab,
+            SpecialMode.Vortex   => vortexModeActivationPointPrefab,
+            _                    => gravityModeActivationPointPrefab
+        };
         if (prefab == null) { Debug.LogWarning($"[Spawner] Kein Activation-Orb-Prefab für {mode}."); return; }
 
         Vector3 pos = ViewportToWorldOnZ0(new Vector2(0.5f, 0.5f));
@@ -1515,6 +1565,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         var g = orb.GetComponent<GravityModeActivationPoint>();  if (g != null) g.spawner = this;
         var f = orb.GetComponent<FountainModeActivationPoint>(); if (f != null) f.spawner = this;
+        var v = orb.GetComponent<VortexModeActivationPoint>();   if (v != null) v.spawner = this;
 
         currentActivationPoint = orb;
     }

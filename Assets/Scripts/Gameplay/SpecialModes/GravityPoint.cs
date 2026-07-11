@@ -27,6 +27,9 @@ public class GravityPoint : BasePoint
     [Tooltip("Fake: sieht echt aus, ist aber Köder. Tappen = nur verpuffen (kein Punkt, KEINE Strafe), Durchlassen = sicher.")]
     [SerializeField] private bool isFake = false;
     public bool IsFake => isFake;
+    [Tooltip("Diamant-Bonus: verhält sich wie ein normales Element, gibt aber beim Tappen den zusätzlichen Diamant-Bonus-Multiplikator.")]
+    [SerializeField] private bool isBonusDiamond = false;
+    public bool IsBonusDiamond => isBonusDiamond;
 
     private Vector3 initialScale;
     private bool isDestroyed = false;
@@ -210,7 +213,7 @@ private void CheckDestroy()
         SpawnExplosion();
         AudioManager.Instance?.PlayNormalPoint();
 
-        if (gravitySystem != null) gravitySystem.OnPointDestroyed(true);
+        if (gravitySystem != null) gravitySystem.OnPointDestroyed(true, transform.position, isBonusDiamond);
 
         Destroy(gameObject);
     }
@@ -237,9 +240,11 @@ private void CheckDestroy()
         Destroy(gameObject);
     }
 
-    public void SetSpeedMultiplier(float multiplier)
+    /// <summary>Vom GravityModeSystem: setzt die Fallgeschwindigkeit zentral (baseFallSpeed × Intensität),
+    /// überschreibt damit den Fallback-Wert auf dem Prefab. Sogkraft bleibt relativ zum Prefab-Wert.</summary>
+    public void SetSpeed(float baseFallSpeed, float multiplier)
     {
-        fallSpeed *= multiplier;
+        fallSpeed = baseFallSpeed * multiplier;
         maxSuckForce *= multiplier;
     }
 

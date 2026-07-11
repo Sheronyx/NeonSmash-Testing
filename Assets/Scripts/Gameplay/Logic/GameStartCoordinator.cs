@@ -90,7 +90,11 @@ if (!spawner)
         NeonAnalytics.LogGameStart(
             GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
 
-        if (spawner) spawner.Begin();
+        bool isInfinity = GlobalGameManager.Instance != null && GlobalGameManager.Instance.SelectedMode == GameMode.Infinity;
+        if (isInfinity && PhaseManager.Instance != null)
+            PhaseManager.Instance.BeginRun();
+        else if (spawner)
+            spawner.Begin();
     }
 
     void OnDestroy()

@@ -79,9 +79,9 @@ public class FloatingComboPopup : MonoBehaviour
 
         string message = color switch
         {
-            PointColor.Red    => "ORANGE\nCOMBO",
+            PointColor.Pink   => "PINK\nCOMBO",
             PointColor.Green  => "GREEN\nCOMBO",
-            PointColor.Purple => "PURPLE\nCOMBO",
+            PointColor.Blue   => "BLUE\nCOMBO",
             _                 => "COMBO"
         };
 

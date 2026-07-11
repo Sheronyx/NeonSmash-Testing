@@ -14,13 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkinTheme
   tapPointPrefab: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
   swipePointPrefab: {fileID: 723352877289022949, guid: 39c180ab8a9244feba9b34ed6799ae1e, type: 3}
-  slashTrailPrefab: {fileID: 6593613985249772415, guid: 83c4fa8edc21e4524a7684e620195064, type: 3}
+  slashTrailPrefab: {fileID: 6593613985249772415, guid: 1ff9d26894f1940ac9dba87ed231eb7c, type: 3}
   beamProjectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
   gravityPointPrefab: {fileID: 4156307227592253209, guid: a4b82a7a1a5154f708f5d836b0236cad, type: 3}
   fountainPointPrefab: {fileID: 4156307227592253209, guid: 0d9ff2bcbabdd4b84a38d8a758946743, type: 3}
   fakePointPrefab: {fileID: 7634417711000780290, guid: 37444548a828f4baf99a6238e13cc95d, type: 3}
   thunderPointPrefab: {fileID: 7032938748382792654, guid: b64f768a4b1fa4b4e84b730ce566bfcc, type: 3}
   peekCloudPrefab: {fileID: 4189086199399442073, guid: 9b5148faf15904830b19d623f025790a, type: 3}
+  overridePeekFlightPath: 0
+  peekEntryViewport: {x: 0.5, y: 1.3}
+  peekExitViewport: {x: 0.5, y: 1.3}
   overridePortalColor: 1
   portalParticleColor: {r: 18.06036, g: 3.1159215, b: 23.968628, a: 1}
   portalVoronoiColor: {r: 6.885405, g: 0, b: 29.508844, a: 1}

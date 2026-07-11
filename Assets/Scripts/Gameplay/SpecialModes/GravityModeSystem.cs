@@ -12,25 +12,50 @@ public class GravityModeSystem : MonoBehaviour
     [SerializeField] private GameObject gravityShockerPrefab;
     [Tooltip("Bewegtes Fake-Element (GravityPoint-Prefab mit isFake=true). Über fakeChance eingestreut.")]
     [SerializeField] private GameObject gravityFakePrefab;
+    [Tooltip("Bewegtes Diamant-Bonus-Element (GravityPoint-Prefab mit isBonusDiamond=true). Nur in Phasen mit erreichtem Diamant-Bonus.")]
+    [SerializeField] private GameObject gravityDiamondPrefab;
+    [Range(0f, 1f)]
+    [Tooltip("Spawn-Chance des Diamant-Bonus-Elements, wenn der Bonus für diese Special-Phase aktiv ist.")]
+    [SerializeField] private float diamondBonusChance = 0.15f;
+    [Tooltip("Score-Multiplikator eines Diamant-Bonus-Treffers (stapelt mit dem Special-Mode-Multiplikator).")]
+    [SerializeField] private int diamondBonusMultiplier = 5;
+    [Tooltip("Font-Material des Floating-Score-Texts bei Gravity-Treffern (wie materialPink/Green/Blue bei Normal-Mode-Treffern).")]
+    [SerializeField] private Material scoreTextMaterial;
+
+    /// <summary>Vom PhaseManager VOR dem Orb-Spawn gesetzt — vom nächsten Activate()-Aufruf konsumiert
+    /// (egal ob per PhaseManager-Trigger oder automatisch über OnModeStarted, z.B. Tutorial).</summary>
+    [HideInInspector] public int PendingMaxSpawnCount = -1;
+    [HideInInspector] public bool PendingDiamondBonusActive = false;
+    [HideInInspector] public float PendingIntensity = 1f;
+
+    private int _spawnedCount = 0;
+    private float _intensity = 1f;
 
     GameObject ActiveGravityPrefab =>
         SkinManager.Instance?.ActiveTheme?.gravityPointPrefab ?? gravityTapPrefab;
 
-    [Header("Settings")]
-    [Tooltip("Spawn-Abstand = Reaktionszeit des PhaseManagers × Faktor → folgt dem Intensitäts-Curve.")]
-    [SerializeField] private float spawnIntervalFactor = 1f;
-    [Tooltip("Fallback-Spawn-Abstand (s), falls kein PhaseManager vorhanden ist.")]
-    [SerializeField] private float spawnInterval = 2f;
-    [Tooltip("Zusätzliche Fallgeschwindigkeit bei maximaler Intensität (0 = konstant).")]
-    [SerializeField] private float maxExtraSpeed = 0.6f;
+    [Header("Intensität (Wert kommt pro Phase vom PhaseManager)")]
+    [Tooltip("Spawn-Intervall (Sekunden) bei Intensität = 1.0.")]
+    [SerializeField] private float baseSpawnInterval = 1.5f;
+    [Tooltip("Wie stark das Spawn-Intervall pro Intensitäts-Einheit über 1.0 sinkt (höher = schneller bei steigender Intensität).")]
+    [SerializeField] private float spawnIntervalIntensityFactor = 0.3f;
+    [Tooltip("Untere Grenze fürs Spawn-Intervall, damit es bei hoher Intensität nicht unspielbar wird.")]
+    [SerializeField] private float minSpawnInterval = 0.3f;
+    [Tooltip("Fallgeschwindigkeit bei Intensität = 1.0 (überschreibt den Fallback-Wert auf dem Prefab).")]
+    [SerializeField] private float baseFallSpeed = 3f;
+    [Tooltip("Wie stark Fallgeschwindigkeit + Sogkraft pro Intensitäts-Einheit über 1.0 steigen.")]
+    [SerializeField] private float speedIntensityFactor = 1f;
 
     private bool isActive = false;
     private bool spawnLoopActive = false;
 
+    /// <summary>Gefeuert wenn eine anzahl-limitierte Special-Phase (vom PhaseManager gestartet) fertig
+    /// abgespielt ist: Spawn-Limit erreicht UND keine GravityPoints mehr aktiv. Nicht gefeuert bei
+    /// unlimitierten Aktivierungen (z.B. Tutorial).</summary>
+    public static event System.Action OnSpecialPhaseComplete;
+
     private float CurrentSpawnInterval() =>
-        MixedPointSpawner.Instance != null
-            ? MixedPointSpawner.Instance.CurrentReactionTime * spawnIntervalFactor
-            : spawnInterval;
+        Mathf.Max(minSpawnInterval, baseSpawnInterval - (_intensity - 1f) * spawnIntervalIntensityFactor);
 
     public bool IsActive => isActive;
 
@@ -44,10 +69,17 @@ public void Activate()
 {
     if (isActive) return;
 
+    int maxSpawnCount        = PendingMaxSpawnCount;
+    bool diamondBonusActive  = PendingDiamondBonusActive;
+    _intensity               = PendingIntensity;
+    PendingMaxSpawnCount       = -1;
+    PendingDiamondBonusActive = false;
+    PendingIntensity          = 1f;
+
     NeonAnalytics.LogSpecialModeTriggered("gravity");
     AchievementManager.OnSpecialModeTriggered("gravity");
     MissionManager.OnSpecialModeTriggered();
-    StartCoroutine(Co_GravityMode());
+    StartCoroutine(Co_GravityMode(maxSpawnCount, diamondBonusActive));
 }
 
 
@@ -70,33 +102,40 @@ public void Activate()
     }
 
 
-    private IEnumerator Co_GravityMode()
+    private IEnumerator Co_GravityMode(int maxSpawnCount = -1, bool diamondBonusActive = false)
     {
         Debug.Log("🌪️ Gravity Mode START");
 
         isActive = true;
         spawnLoopActive = true;
+        _spawnedCount = 0;
 
         // 👉 normalen Spawner pausieren
         spawner.PauseSpawning(true);
         spawner.ClearAllGameplayPoints();
 
-        // Dauerbasiert: spawnt im Intervall, bis der PhaseManager StopSpawning()/StopMode() ruft.
+        // Anzahl-basiert (vom PhaseManager): spawnt bis maxSpawnCount erreicht ist (-1 = unlimitiert,
+        // z.B. Tutorial — endet dann nur über externes StopSpawning()/StopMode()).
         while (spawnLoopActive)
         {
-            // Pro Tick EIN Element: Shocker / Fake / normal (nicht-überlappende Chancen).
+            // Pro Tick EIN Element: Shocker / Fake / Diamant-Bonus / normal (nicht-überlappende Chancen).
             float r       = Random.value;
             float thunder = spawner != null ? spawner.thunderSpawnChance : 0f;
             float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
+            float diamond = diamondBonusActive && gravityDiamondPrefab != null ? diamondBonusChance : 0f;
 
             bool triggeredThunder = false;
             if (gravityShockerPrefab != null && r < thunder)
             { SpawnGravitySpecial(gravityShockerPrefab); triggeredThunder = true; }
             else if (gravityFakePrefab != null && r < thunder + fake)
                 SpawnGravitySpecial(gravityFakePrefab);
+            else if (diamond > 0f && r < thunder + fake + diamond)
+                SpawnGravitySpecial(gravityDiamondPrefab);
             else
                 SpawnGravityPoint();
 
+            // Portal-Elektrifizierung: spawner.electricPortalChance ist im neuen Redesign fest auf 0
+            // (PhaseManager.ApplyPhaseSettings) — dieser Zweig bleibt daher inaktiv.
             if (!triggeredThunder && spawner != null)
             {
                 var pe = PortalElectrifier.Instance;
@@ -105,7 +144,21 @@ public void Activate()
                     pe.Activate();
             }
 
-            yield return new WaitForSeconds(CurrentSpawnInterval());
+            _spawnedCount++;
+            if (maxSpawnCount > 0 && _spawnedCount >= maxSpawnCount)
+                spawnLoopActive = false;
+
+            if (spawnLoopActive)
+                yield return new WaitForSeconds(CurrentSpawnInterval());
+        }
+
+        // Spawn-Limit erreicht (nur bei anzahl-basierter Aktivierung) → auf Restelemente warten,
+        // dann Mode sauber beenden und den PhaseManager benachrichtigen.
+        if (maxSpawnCount > 0)
+        {
+            yield return new WaitUntil(() => FindObjectsByType<GravityPoint>(FindObjectsSortMode.None).Length == 0);
+            StopMode();
+            OnSpecialPhaseComplete?.Invoke();
         }
     }
 
@@ -132,9 +185,7 @@ public void Activate()
             TutorialManager.Instance.OnElementSpawnedShowOverlay(TutorialPointType.GravityPoint, worldPos);
 
         gp.Init(this);
-
-        float multiplier = GetSpeedMultiplier();
-        gp.SetSpeedMultiplier(multiplier);
+        gp.SetSpeed(baseFallSpeed, GetSpeedMultiplier());
     }
 }
 
@@ -156,15 +207,15 @@ public void Activate()
         if (gp != null)
         {
             gp.Init(this);
-            gp.SetSpeedMultiplier(GetSpeedMultiplier());
+            gp.SetSpeed(baseFallSpeed, GetSpeedMultiplier());
         }
     }
 
-    public void OnPointDestroyed(bool tapped, Vector3 position = default)
+    public void OnPointDestroyed(bool tapped, Vector3 position = default, bool isBonusDiamond = false)
     {
         if (tapped)
         {
-            SpecialModeManager.RegisterSpecialHit();
+            SpecialModeManager.RegisterSpecialHit(isBonusDiamond ? diamondBonusMultiplier : 1, position, scoreTextMaterial);
         }
         else
         {
@@ -200,9 +251,9 @@ public void StopSpawning()
     spawnLoopActive = false;
 }
 
-/// <summary>Vom PhaseManager am Phasenende: Gravity-Spawn-Loop stoppen + Modus beenden.
-/// Die noch aktiven Gravity-Punkte räumt der PhaseManager anschließend positiv (PositiveClearAll).
-/// Das Pause-Flag bleibt gesetzt, bis der nächste Phasen-Banner das Spawning wieder freigibt.</summary>
+/// <summary>Beendet den Gravity Mode. Wird intern aufgerufen, sobald das Spawn-Limit erreicht ist
+/// UND keine GravityPoints mehr aktiv sind (kein manuelles Aufräumen nötig).
+/// Das Pause-Flag des Spawners bleibt gesetzt, bis der PhaseManager die nächste Normal-Phase startet.</summary>
 public void StopMode()
 {
     if (!isActive) return;
@@ -214,5 +265,5 @@ public void StopMode()
     SpecialModeManager.Instance.EndCurrentMode();
 }
 
-private float GetSpeedMultiplier() => 1f;
+private float GetSpeedMultiplier() => 1f + (_intensity - 1f) * speedIntensityFactor;
 }

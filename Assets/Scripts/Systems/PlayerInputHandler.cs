@@ -269,6 +269,17 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
+        // 🌀 Vortex Points — nie per Swipe treffbar
+        if (!fromSwipe)
+        {
+            var vortexPoint = col.GetComponent<VortexPoint>();
+            if (vortexPoint != null)
+            {
+                vortexPoint.TryTap();
+                return;
+            }
+        }
+
         // 💣 Floating Mines — Antippen: kurzer Screen Shake, Mine bleibt
         if (!fromSwipe)
         {
@@ -294,6 +305,17 @@ public class PlayerInputHandler : MonoBehaviour
             if (thunderPoint != null)
             {
                 thunderPoint.TryTap();
+                return;
+            }
+        }
+
+        // 💎 Diamant — nie per Swipe treffbar, Sammeln = Punkte, Verpassen = folgenlos
+        if (!fromSwipe)
+        {
+            var diamondPoint = col.GetComponent<DiamondPoint>();
+            if (diamondPoint != null)
+            {
+                diamondPoint.TryTap();
                 return;
             }
         }
