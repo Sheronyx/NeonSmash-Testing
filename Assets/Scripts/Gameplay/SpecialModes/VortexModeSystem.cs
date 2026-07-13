@@ -201,7 +201,6 @@ public class VortexModeSystem : MonoBehaviour
         float angle  = Mathf.Atan2(offset.y, offset.x);
 
         GameObject obj = Instantiate(prefab, spawnPos, Quaternion.identity);
-        PortalElectrifier.Instance?.ElectrifyElement(obj);
 
         var vp2 = obj.GetComponent<VortexPoint>();
         if (vp2 != null)

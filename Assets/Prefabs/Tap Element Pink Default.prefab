@@ -5416,6 +5416,7 @@ GameObject:
   - component: {fileID: -2735477753363479214}
   - component: {fileID: 2217010074238497214}
   - component: {fileID: 3521705430751656072}
+  - component: {fileID: 4762751918484642601}
   m_Layer: 0
   m_Name: Tap Element Pink Default
   m_TagString: Untagged
@@ -5610,6 +5611,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PointPulse
   pulseAmount: 0.15
   pulseSpeed: 1.5
+--- !u!114 &4762751918484642601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7634417711000780290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 848d36f993be34befa0318e1c346d794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PointFlyIn
+  duration: 0.4
+  startScalePercent: 0.05
+  offsetDistanceMin: 2
+  offsetDistanceMax: 4
+  curveStrengthMin: 0.4
+  curveStrengthMax: 1.1
+  scaleOvershoot: 1.70158
 --- !u!1 &8291624710754787888
 GameObject:
   m_ObjectHideFlags: 0

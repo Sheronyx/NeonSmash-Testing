@@ -294,6 +294,7 @@ GameObject:
   - component: {fileID: 4846515903291178944}
   - component: {fileID: 3929500061767151818}
   - component: {fileID: 5716938831798410758}
+  - component: {fileID: 4117164888615036436}
   m_Layer: 0
   m_Name: Tap Element Blue Default
   m_TagString: Untagged
@@ -488,6 +489,25 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PointPulse
   pulseAmount: 0.15
   pulseSpeed: 1.5
+--- !u!114 &4117164888615036436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5527577656738821339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 848d36f993be34befa0318e1c346d794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PointFlyIn
+  duration: 0.4
+  startScalePercent: 0.05
+  offsetDistanceMin: 2
+  offsetDistanceMax: 4
+  curveStrengthMin: 0.4
+  curveStrengthMax: 1.1
+  scaleOvershoot: 1.70158
 --- !u!1 &5533369968443042588
 GameObject:
   m_ObjectHideFlags: 0

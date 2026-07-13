@@ -20,9 +20,12 @@ public class FuseCountdown : MonoBehaviour
         lr.endWidth = lineWidth;
         lr.startColor = fuseColor;
         lr.endColor = fuseColor;
-        lr.positionCount = 0;
 
         GenerateQuadOutline();
+
+        // Volle (unverbrannte) Zündschnur sofort zeichnen — sichtbar von Anfang an (auch während
+        // PointFlyIn noch einfliegt), das eigentliche "Abbrennen" beginnt erst mit StartBurn().
+        DrawFuse(segments);
     }
 
     private void GenerateQuadOutline()

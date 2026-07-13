@@ -10,6 +10,8 @@ public class BurnSparks : MonoBehaviour
     [SerializeField] private Transform bottomTopEmitter;    // Linear: Unten/Oben oder Rechts/Links
 
     private Coroutine burnRoutine;
+    private ParticleSystem topBottomPS;
+    private ParticleSystem bottomTopPS;
 
     private void Awake()
     {
@@ -31,6 +33,14 @@ public class BurnSparks : MonoBehaviour
                 Debug.LogWarning("[BurnSparks] Linear Mode, aber Emitter nicht im Inspector zugewiesen!");
             }
         }
+
+        // Sollen erst beim Aufpoppen (StartBurn) zu emittieren beginnen, nicht schon ab dem
+        // Spawnen/Einfliegen (PointFlyIn) — Partikelsysteme haben Play On Awake aktiviert,
+        // hier explizit stoppen und leeren.
+        if (topBottomEmitter != null) topBottomPS = topBottomEmitter.GetComponent<ParticleSystem>();
+        if (bottomTopEmitter != null) bottomTopPS = bottomTopEmitter.GetComponent<ParticleSystem>();
+        topBottomPS?.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        bottomTopPS?.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
     private void SetEmitterRotations()
@@ -58,6 +68,9 @@ public class BurnSparks : MonoBehaviour
 
     public void StartBurn(float duration)
     {
+        topBottomPS?.Play();
+        bottomTopPS?.Play();
+
         if (burnRoutine != null) StopCoroutine(burnRoutine);
         burnRoutine = StartCoroutine(Co_Burn(duration));
     }

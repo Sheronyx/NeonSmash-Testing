@@ -58,25 +58,15 @@ public class GravityPoint : BasePoint
         initialScale = transform.localScale;
         previousPosition = transform.position;
 
-        var portal = FindFirstObjectByType<ArcanePortalFlash>();
-        if (portal != null)
-            portalTransform = portal.transform;
+        portalTransform = PortalAnchor.Instance != null ? PortalAnchor.Instance.transform : null;
     }
 
     void Update()
     {
         if (portalTransform == null)
         {
-            var portal = FindFirstObjectByType<ArcanePortalFlash>();
-            if (portal != null)
-            {
-                portalTransform = portal.transform;
-            }
-            else
-            {
-                CheckDestroy();
-                return;
-            }
+            CheckDestroy();
+            return;
         }
 
         // 🔄 Rotation
@@ -144,8 +134,8 @@ public class GravityPoint : BasePoint
 
     private Vector3 GetPortalTarget()
     {
-        // Z auf die Ebene des Punktes setzen, sonst verfälscht der Z-Abstand
-        // (Portal steht bei Z=100) die Distanz und der Sog aktiviert nie.
+        // Z auf die Ebene des Punktes setzen, sonst verfälscht ein evtl. abweichender Z-Abstand
+        // des Ankers die Distanz und der Sog aktiviert nie.
         Vector3 target = portalTransform.position + Vector3.up * portalYOffset;
         target.z = transform.position.z;
         return target;
@@ -194,14 +184,6 @@ private void CheckDestroy()
         if (isShocker)
         {
             // Shocker getappt = Fehler → Strafe (wie der normale Shocker)
-            ApplyShockerPenalty(transform.position);
-            Destroy(gameObject);
-            return;
-        }
-
-        if (PortalElectrifier.IsActive)
-        {
-            SpawnExplosion();
             ApplyShockerPenalty(transform.position);
             Destroy(gameObject);
             return;

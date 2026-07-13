@@ -24,13 +24,11 @@ public class FountainModeActivationPoint : MonoBehaviour
     [SerializeField] private AudioClip slashClip;
     private AudioSource orbAudioSource;
 
-    private ArcanePortalFlash portal;
     private Transform portalTransform;
 
     void Start()
     {
-        var p = FindFirstObjectByType<ArcanePortalFlash>();
-        if (p != null) { portal = p; portalTransform = p.transform; }
+        portalTransform = PortalAnchor.Instance != null ? PortalAnchor.Instance.transform : transform;
 
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
@@ -121,7 +119,6 @@ public class FountainModeActivationPoint : MonoBehaviour
         var sr  = GetComponent<SpriteRenderer>(); if (sr  != null) sr.enabled  = false;
         var col = GetComponent<Collider2D>();      if (col != null) col.enabled = false;
 
-        if (portal != null) { portal.SetMode(SpecialMode.Fountain); portal.FlashParticles(); }
         AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeFountainMode > 0f ? delayBeforeFountainMode : 1.5f;

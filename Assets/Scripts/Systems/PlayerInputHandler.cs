@@ -174,17 +174,6 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     private void ProcessTap(Vector3 worldPos)
     {
-        // ⚡ Portal Elektrifizierung — Antippen deaktiviert sie (kein Collider nötig, Distanzprüfung)
-        if (PortalElectrifier.IsActive && PortalElectrifier.Instance != null)
-        {
-            float dist = Vector2.Distance(worldPos, PortalElectrifier.Instance.transform.position);
-            if (dist <= PortalElectrifier.Instance.TapRadius)
-            {
-                PortalElectrifier.Instance.OnPortalTapped();
-                return;
-            }
-        }
-
         // ✅ SCHRITT 1: ActivationOrbs – nur bei präzisem direktem Tap (kleiner Radius)
         Collider2D[] orbHits = Physics2D.OverlapCircleAll(worldPos, slashRadius * 0.55f, activationOrbLayerMask);
 

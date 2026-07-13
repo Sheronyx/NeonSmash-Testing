@@ -129,14 +129,6 @@ public class VortexPoint : BasePoint
             return;
         }
 
-        if (PortalElectrifier.IsActive)
-        {
-            SpawnExplosion();
-            ApplyShockerPenalty(transform.position);
-            Destroy(gameObject);
-            return;
-        }
-
         SpawnExplosion();
         AudioManager.Instance?.PlayNormalPoint();
 

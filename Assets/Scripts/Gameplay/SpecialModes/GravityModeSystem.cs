@@ -128,7 +128,6 @@ public void Activate()
         // z.B. Tutorial — endet dann nur über externes StopSpawning()/StopMode()).
         while (spawnLoopActive)
         {
-            bool triggeredThunder = false;
             if (bonusTickIndices.Contains(_spawnedCount))
             {
                 SpawnGravitySpecial(gravityDiamondPrefab);
@@ -141,21 +140,11 @@ public void Activate()
                 float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
 
                 if (gravityShockerPrefab != null && r < thunder)
-                { SpawnGravitySpecial(gravityShockerPrefab); triggeredThunder = true; }
+                    SpawnGravitySpecial(gravityShockerPrefab);
                 else if (gravityFakePrefab != null && r < thunder + fake)
                     SpawnGravitySpecial(gravityFakePrefab);
                 else
                     SpawnGravityPoint();
-            }
-
-            // Portal-Elektrifizierung: spawner.electricPortalChance ist im neuen Redesign fest auf 0
-            // (PhaseManager.ApplyPhaseSettings) — dieser Zweig bleibt daher inaktiv.
-            if (!triggeredThunder && spawner != null)
-            {
-                var pe = PortalElectrifier.Instance;
-                if (pe != null && pe.CanActivate() && spawner.electricPortalChance > 0f
-                    && Random.value < spawner.electricPortalChance)
-                    pe.Activate();
             }
 
             _spawnedCount++;
@@ -190,7 +179,6 @@ public void Activate()
     worldPos.z = 0f;
 
     GameObject obj = Instantiate(ActiveGravityPrefab, worldPos, Quaternion.identity);
-    PortalElectrifier.Instance?.ElectrifyElement(obj);
 
     var gp = obj.GetComponent<GravityPoint>();
     if (gp != null)
@@ -216,7 +204,6 @@ public void Activate()
         worldPos.z = 0f;
 
         GameObject obj = Instantiate(prefab, worldPos, Quaternion.identity);
-        PortalElectrifier.Instance?.ElectrifyElement(obj);
         var gp = obj.GetComponent<GravityPoint>();
         if (gp != null)
         {

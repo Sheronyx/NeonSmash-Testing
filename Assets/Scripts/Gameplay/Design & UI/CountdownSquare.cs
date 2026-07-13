@@ -9,6 +9,14 @@ public class CountdownSquare : MonoBehaviour
 
     [SerializeField] private AnimationCurve easingCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
 
+    private void Awake()
+    {
+        // Soll erst beim Aufpoppen (StartCountdown) sichtbar werden, nicht schon während des
+        // Einflugs (PointFlyIn) — Basisgröße einmalig sichern, dann unsichtbar starten.
+        baseScale = transform.localScale;
+        transform.localScale = Vector3.zero;
+    }
+
     private void Update()
     {
         if (!isCountingDown) return;
@@ -32,7 +40,7 @@ public class CountdownSquare : MonoBehaviour
 
     public void StartCountdown(float duration)
     {
-        baseScale = transform.localScale;
+        transform.localScale = baseScale;
 
         totalDuration = duration;
         elapsedTime = 0f;

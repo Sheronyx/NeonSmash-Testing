@@ -7,6 +7,7 @@ public class PointPulse : MonoBehaviour
 
     private Vector3 baseScale;
     private bool isPulsing = false;
+    private float pulseTimer = 0f;
 
     private void Awake()
     {
@@ -21,6 +22,10 @@ public class PointPulse : MonoBehaviour
 
     public void StartPulsing()
     {
+        // Lokale Phase statt Time.time: startet garantiert bei Sinus-Phase 0 (= exakt baseScale),
+        // sonst würde die Skalierung beim Umschalten von Einflug/Pop-In auf Pulsieren auf eine
+        // zufällige Phase springen — sichtbarer Ruckler im Übergang.
+        pulseTimer = 0f;
         isPulsing = true;
     }
 
@@ -34,7 +39,8 @@ public class PointPulse : MonoBehaviour
     {
         if (!isPulsing) return;
 
-        float pulse = 1f + Mathf.Sin(Time.time * Mathf.PI * pulseSpeed) * pulseAmount;
+        pulseTimer += Time.deltaTime;
+        float pulse = 1f + Mathf.Sin(pulseTimer * Mathf.PI * pulseSpeed) * pulseAmount;
         transform.localScale = baseScale * pulse;
     }
 }

@@ -13,9 +13,6 @@ public class SkinTheme : ScriptableObject
     [Tooltip("Ersetzt das Standard Slash-Trail-Prefab (SlashTrail.trailPrefab). Null = Default.")]
     public GameObject slashTrailPrefab;
 
-    [Tooltip("Ersetzt das Standard Beam-Projectile (PortalSpawnBeam, vfx_NeonProjectile). Null = Default.")]
-    public GameObject beamProjectilePrefab;
-
     [Tooltip("Ersetzt das Gravity-Point-Prefab. Null = Default.")]
     public GameObject gravityPointPrefab;
 
@@ -39,19 +36,8 @@ public class SkinTheme : ScriptableObject
     [Tooltip("Viewport-Punkt, wohin es rausfliegt. (0.5, 1.3) = oben mittig.")]
     public Vector2 peekExitViewport = new Vector2(0.5f, 1.3f);
 
-    // Szenen-Objekte (Portal-Plattform, Background, Top Bar) werden NICHT hier
-    // referenziert, sondern per Enable/Disable über SkinObjectSwap /
-    // PortalSkinApplier in der Szene geschaltet (theme-Matching auf dieses Asset).
-
-    [Header("Portal-Farbe (Normal-Modus)")]
-    [Tooltip("Wenn aktiv, werden Particles + Voronoi des Portals im Normal-Modus umgefärbt.")]
-    public bool overridePortalColor;
-
-    [ColorUsage(true, true)]
-    public Color portalParticleColor = Color.green;
-
-    [ColorUsage(true, true)]
-    public Color portalVoronoiColor = Color.green;
+    // Szenen-Objekte (Background, Top Bar) werden NICHT hier referenziert, sondern
+    // per Enable/Disable über SkinObjectSwap in der Szene geschaltet (theme-Matching auf dieses Asset).
 
     [Header("UI Top Bar Neon-Linien")]
     [Tooltip("Wenn aktiv, werden die Neon-Linien der Top Bar umgefärbt.")]

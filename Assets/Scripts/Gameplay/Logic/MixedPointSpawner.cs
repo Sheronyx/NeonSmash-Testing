@@ -26,10 +26,6 @@ public class MixedPointSpawner : MonoBehaviour
     private bool isConvertingPoints = false;
 
 
-    [SerializeField] private ArcanePortalFlash portalFlash;
-
-    [SerializeField] private PortalSpawnBeam portalBeam;
-
     private GameMode CurrentMode =>
         GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity;
 
@@ -123,12 +119,6 @@ public class MixedPointSpawner : MonoBehaviour
 
     /// <summary>Wie viele der in dieser Normal-Phase gespawnten Diamanten bereits eingesammelt wurden.</summary>
     public int DiamondsCollectedThisPhase { get; private set; }
-
-    [Header("Portal Elektrifizierung")]
-    [SerializeField] private PortalElectrifier portalElectrifier;
-    [Range(0f, 1f)]
-    [Tooltip("Wahrscheinlichkeit, dass das Portal zu blitzen beginnt und alle Elemente elektrifiziert.")]
-    public float electricPortalChance = 0f;
 
     [Header("Peek-a-boo (Wolken-Sequenz)")]
     [SerializeField] private PeekABooSystem peekABooSystem;
@@ -244,7 +234,6 @@ public class MixedPointSpawner : MonoBehaviour
             if (_slots[i].point  != null) { Destroy(_slots[i].point); _slots[i].point = null; }
         }
         CurrentSwipePoint = null;
-        portalElectrifier?.ForceDeactivate();
     }
 
     // Räumt alle Slots außer exceptIndex lautlos auf (kein Score, kein Leben-Verlust).
@@ -468,51 +457,53 @@ public class MixedPointSpawner : MonoBehaviour
         // Position sofort reservieren, damit Geschwister-Slots sie in FindSlotPosition vermeiden
         _pendingSlotPositions[i] = worldPos;
 
-        if (portalBeam != null && !IsTutorialMode)
+        var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
+
+        // PointFlyIn sitzt nur auf den normalen Tap/Swipe-Prefabs (Thunder/Fake bewusst ausgenommen,
+        // siehe PointFlyIn.cs) — dadurch entscheidet allein die Prefab-Ausstattung, ob ein Element
+        // einfliegt oder sofort erscheint, ohne Sonderfall-Verzweigung hier.
+        var flyIn = !IsTutorialMode ? visual.GetComponent<PointFlyIn>() : null;
+        if (flyIn != null)
         {
             // Variablen für Closure festhalten
-            int        ci    = i;
-            PointColor cc    = color;
-            bool       cs    = spawnSwipe;
-            bool       ct    = isThunder;
-            Vector3    cpos  = worldPos;
-            GameObject cpref = samplePrefab;
-            portalBeam.FireBeamTo(worldPos, color, () =>
+            int        ci      = i;
+            PointColor cc      = color;
+            bool       cs      = spawnSwipe;
+            bool       ct      = isThunder;
+            Vector3    cpos    = worldPos;
+            GameObject cvisual = visual;
+            flyIn.Play(worldPos, visual.transform.localScale, () =>
             {
                 _pendingSlotPositions[ci] = null;
-                if (!running || gameOver || _slots[ci].point != null) return;
-                FinishSlotSpawn(ci, cpref, cpos, cc, cs, ct);
+                if (!running || gameOver || _slots[ci].point != null) { Destroy(cvisual); return; }
+                FinishSlotSpawn(ci, cvisual, cpos, cc, cs, ct);
             });
         }
         else
         {
             _pendingSlotPositions[i] = null;
-            FinishSlotSpawn(i, samplePrefab, worldPos, color, spawnSwipe, isThunder);
+            FinishSlotSpawn(i, visual, worldPos, color, spawnSwipe, isThunder);
         }
     }
 
-    // Instanziiert das Element und startet Timer/Fuse — nach Beam-Ankunft oder direkt.
-    private void FinishSlotSpawn(int i, GameObject prefab, Vector3 worldPos,
+    // Startet Timer/Fuse/Pulse für ein bereits instanziiertes Element — nach Fly-In-Ankunft oder direkt.
+    private void FinishSlotSpawn(int i, GameObject newPoint, Vector3 worldPos,
                                   PointColor color, bool spawnSwipe, bool isThunder)
     {
         if (isThunder)
         {
             _slots[i].isThunder = true;
-            var thunder = Instantiate(ActiveThunderPrefab, worldPos, Quaternion.identity);
-            var tp = thunder.GetComponent<ThunderPoint>();
+            var tp = newPoint.GetComponent<ThunderPoint>();
             float dynamicTime = CurrentReactionTime;
             if (tp != null) tp.Activate(dynamicTime);
 
-            _slots[i].point   = thunder;
-            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, thunder, dynamicTime));
-            lastPoint = thunder;
-            if (portalFlash != null) portalFlash.FlashParticles();
+            _slots[i].point   = newPoint;
+            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, dynamicTime));
+            lastPoint = newPoint;
             return;
         }
 
         _slots[i].isThunder = false;
-
-        var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
 
         var tap   = newPoint.GetComponent<TapPoint>();
         var swipe = newPoint.GetComponent<SwipePoint>();
@@ -544,9 +535,6 @@ public class MixedPointSpawner : MonoBehaviour
 
             if (tap != null) TrySpawnFake(newPoint, dynamicTime);
         }
-
-        if (portalFlash != null) portalFlash.FlashParticles();
-        portalElectrifier?.ElectrifyElement(newPoint);
     }
 
     // Findet eine Position für Slot i: vermeidet alle anderen belegten Slots + Activation Orb.
@@ -1011,8 +999,6 @@ public class MixedPointSpawner : MonoBehaviour
         {
             if (debugLogs) Debug.Log("[Spawner] Kein Timer gestartet.");
         }
-
-        if (portalFlash != null) portalFlash.FlashParticles();
     }
 
     // Fallback-Adapter für externe Aufrufer (kein Score/Combo, nur Slot freigeben + respawn).
@@ -1349,46 +1335,6 @@ public class MixedPointSpawner : MonoBehaviour
         if (pause) StopPointTimer();
     }
 
-    public void HandleElectrifiedTap(GameObject point)
-    {
-        DismissCurrentFake();
-
-        int idx = FindSlotIndex(point);
-        Vector3 pos = point.transform.position;
-
-        if (idx >= 0)
-        {
-            if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
-            _slots[idx].point = null;
-        }
-        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
-        var bp = point.GetComponent<BasePoint>();
-        if (bp != null) bp.SendMessage("SpawnExplosion");
-        Destroy(point);
-
-        if (idx >= 0) ClearOtherSlots(idx);
-
-        bool stillAlive = LivesManager.Instance.LoseLife(pos);
-        if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
-
-        StartCoroutine(Co_AfterElectrifiedTap(stillAlive));
-    }
-
-    private IEnumerator Co_AfterElectrifiedTap(bool stillAlive)
-    {
-        float delay = LivesManager.Instance?.TotalGameOverAnimDuration ?? 0f;
-        yield return new WaitForSecondsRealtime(delay);
-        yield return null;
-        if (stillAlive)
-        {
-            if (running && !gameOver) StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
-        }
-        else
-        {
-            GameOver();
-        }
-    }
-
     public void HandlePointHit(GameObject point)
     {
         DismissCurrentFake();
@@ -1509,8 +1455,6 @@ public class MixedPointSpawner : MonoBehaviour
     /// </summary>
     public void PositiveClearAll()
     {
-        portalElectrifier?.ForceDeactivate();
-
         // Fake: positiv = ignorieren (lautlos entfernen, kein Schaden)
         foreach (var f in FindObjectsByType<FakePoint>(FindObjectsSortMode.None))
             f.Dismiss();
@@ -1637,26 +1581,9 @@ public class MixedPointSpawner : MonoBehaviour
 
         GameObject prefab = isTap ? ActiveNormalPrefab : ActiveSwipePrefab;
 
-        if (portalBeam != null)
-        {
-            if (lockUntilOverlay)
-            {
-                // Beam feuern → nach Ankunft sperren (Callback)
-                SwipeDirection? dir = forcedDir;
-                portalBeam.SpawnWithBeam(prefab, worldPos, () => LockTutorialPoint(isTap, dir));
-            }
-            else
-            {
-                // Stiller Schritt: Beam feuern, kein Sperren – Point sofort interaktiv
-                portalBeam.SpawnWithBeam(prefab, worldPos);
-            }
-        }
-        else
-        {
-            CreatePoint(prefab, worldPos);
-            if (lockUntilOverlay)
-                LockTutorialPoint(isTap, forcedDir);
-        }
+        CreatePoint(prefab, worldPos);
+        if (lockUntilOverlay)
+            LockTutorialPoint(isTap, forcedDir);
     }
 
     private void LockTutorialPoint(bool isTap, SwipeDirection? forcedDir)

@@ -242,9 +242,6 @@ public class PhaseManager : MonoBehaviour
         if (def == null || spawner == null) return;
 
         spawner.thunderSpawnChance = def.shockerEnabled ? def.shockerChance : 0f;
-        // Portal-Elektrifizierung (Tap-aufs-Portal-zum-Entschärfen) ist im neuen Redesign nicht
-        // gewollt — nur die fliegenden/fallenden Shocker-Elemente sollen als Gefahr existieren.
-        spawner.electricPortalChance = 0f;
 
         bool diamondsThisPhase = def.type == PhaseType.Normal && def.diamondsEnabled;
         // Bei JEDER Normal-Phase zurücksetzen (nicht nur diamant-aktiven) — sonst würde ein alter

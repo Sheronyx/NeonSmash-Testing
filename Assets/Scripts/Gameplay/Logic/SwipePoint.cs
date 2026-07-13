@@ -95,10 +95,7 @@ public class SwipePoint : BasePoint
         if (TutorialManager.Instance != null)
             TutorialManager.Instance.OnActionPerformed(TutorialPointType.SwipePoint);
 
-        if (PortalElectrifier.IsActive)
-            spawner?.HandleElectrifiedTap(gameObject);
-        else
-            spawner?.HandlePointHit(gameObject);
+        spawner?.HandlePointHit(gameObject);
 
         return true;
     }
@@ -169,6 +166,11 @@ public class SwipePoint : BasePoint
 
         return distance <= radius;
     }
+
+    // Vom PointFlyIn aufgerufen, sobald die Zielgröße nach dem Einflug erreicht ist — die
+    // in Start() gecachte Radius-Berechnung würde sonst fälschlich die kleine Einflug-Startgröße
+    // dauerhaft als Trefferzone einbrennen.
+    public void RefreshEffectiveRadius() => CacheEffectiveRadius();
 
     private void CacheEffectiveRadius()
     {

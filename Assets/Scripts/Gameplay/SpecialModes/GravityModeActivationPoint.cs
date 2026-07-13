@@ -24,13 +24,11 @@ public class GravityModeActivationPoint : MonoBehaviour
     [SerializeField] private AudioClip slashClip;
     private AudioSource orbAudioSource;
 
-    private ArcanePortalFlash portal;
     private Transform portalTransform;
 
     void Start()
     {
-        portal = FindFirstObjectByType<ArcanePortalFlash>();
-        if (portal != null) portalTransform = portal.transform;
+        portalTransform = PortalAnchor.Instance != null ? PortalAnchor.Instance.transform : transform;
 
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
@@ -109,7 +107,7 @@ public class GravityModeActivationPoint : MonoBehaviour
             orbAudioSource.Play();
         }
 
-        // ── Phase 3: Smooth Abflug zum Portal ─────────────────────────────────
+        // ── Phase 3: Smooth Abflug zum Anker-Punkt ────────────────────────────
         Vector3 flyTo = portalTransform != null ? portalTransform.position : center;
         elapsed = 0f;
         while (elapsed < flyOutDuration)
@@ -125,8 +123,7 @@ public class GravityModeActivationPoint : MonoBehaviour
         var sr  = GetComponent<SpriteRenderer>(); if (sr  != null) sr.enabled  = false;
         var col = GetComponent<Collider2D>();      if (col != null) col.enabled = false;
 
-        // ── Portal-Flash + Slash ───────────────────────────────────────────────
-        if (portal != null) portal.FlashParticles();
+        // ── Slash ──────────────────────────────────────────────────────────────
         AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeGravityMode > 0f ? delayBeforeGravityMode : 1.5f;

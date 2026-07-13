@@ -19,7 +19,10 @@ public class LineFuse : MonoBehaviour
         lr.endWidth = lineWidth;
         lr.startColor = fuseColor;
         lr.endColor = fuseColor;
-        lr.positionCount = 0;
+
+        // Volle (unverbrannte) Zündschnur sofort zeichnen — sichtbar von Anfang an (auch während
+        // PointFlyIn noch einfliegt), das eigentliche "Abbrennen" beginnt erst mit StartBurn().
+        DrawLine(1f);
     }
 
     public void StartBurn(float duration)

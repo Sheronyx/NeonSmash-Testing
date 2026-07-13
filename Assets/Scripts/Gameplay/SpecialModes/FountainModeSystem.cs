@@ -28,7 +28,6 @@ public class FountainModeSystem : MonoBehaviour
     [SerializeField] private int diamondBonusMultiplier = 5;
     [Tooltip("Font-Material des Floating-Score-Texts bei Fountain-Treffern (wie materialPink/Green/Blue bei Normal-Mode-Treffern).")]
     [SerializeField] private Material scoreTextMaterial;
-    [SerializeField] private Transform portal;
 
     /// <summary>Vom PhaseManager VOR dem Orb-Spawn gesetzt — vom nächsten Activate()-Aufruf konsumiert
     /// (egal ob per PhaseManager-Trigger oder automatisch über OnModeStarted).</summary>
@@ -130,7 +129,6 @@ public class FountainModeSystem : MonoBehaviour
 
         while (spawnLoopActive)
         {
-            bool triggeredThunder = false;
             if (bonusTickIndices.Contains(_spawnedCount))
             {
                 SpawnPoint(fountainDiamondPrefab);
@@ -143,21 +141,11 @@ public class FountainModeSystem : MonoBehaviour
                 float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
 
                 if (fountainShockerPrefab != null && r < thunder)
-                { SpawnPoint(fountainShockerPrefab); triggeredThunder = true; }
+                    SpawnPoint(fountainShockerPrefab);
                 else if (fountainFakePrefab != null && r < thunder + fake)
                     SpawnPoint(fountainFakePrefab);
                 else
                     SpawnPoint(ActiveFountainPrefab);
-            }
-
-            // Portal-Elektrifizierung: spawner.electricPortalChance ist im neuen Redesign fest auf 0
-            // (PhaseManager.ApplyPhaseSettings) — dieser Zweig bleibt daher inaktiv.
-            if (!triggeredThunder && spawner != null)
-            {
-                var pe = PortalElectrifier.Instance;
-                if (pe != null && pe.CanActivate() && spawner.electricPortalChance > 0f
-                    && Random.value < spawner.electricPortalChance)
-                    pe.Activate();
             }
 
             _spawnedCount++;
@@ -180,7 +168,7 @@ public class FountainModeSystem : MonoBehaviour
 
     private void SpawnPoint(GameObject prefab)
     {
-        if (portal == null || prefab == null)
+        if (PortalAnchor.Instance == null || prefab == null)
         {
             Debug.LogError("❌ FountainModeSystem: Missing references!");
             return;
@@ -199,7 +187,7 @@ public class FountainModeSystem : MonoBehaviour
             float vy = Mathf.Clamp01(sideSpawnHeight + Random.Range(-sideSpawnHeightVariance, sideSpawnHeightVariance));
             pos = cam != null
                 ? cam.ViewportToWorldPoint(new Vector3(vx, vy, camZ))
-                : portal.position;
+                : PortalAnchor.Instance.transform.position;
             pos.z = 0f;
 
             float dirX = fromLeft ? sideShootForceX : -sideShootForceX;
@@ -211,8 +199,8 @@ public class FountainModeSystem : MonoBehaviour
         }
         else
         {
-            // Klassischer Schuss von unten (Portal)
-            pos = portal.position;
+            // Klassischer Schuss von unten (Anker-Punkt)
+            pos = PortalAnchor.Instance.transform.position;
             velocity = new Vector3(
                 Random.Range(-shootForceX, shootForceX),
                 shootForceY + Random.Range(-shootForceYVariance, shootForceYVariance),
@@ -223,7 +211,6 @@ public class FountainModeSystem : MonoBehaviour
         velocity *= 1f + (_intensity - 1f) * forceIntensityFactor; // Intensität der aktuellen Special-Phase (PhaseManager)
 
         var go = Instantiate(prefab, pos, Quaternion.identity);
-        PortalElectrifier.Instance?.ElectrifyElement(go);
         var point = go.GetComponent<FountainPoint>();
 
         if (prefab == ActiveFountainPrefab && TutorialManager.Instance != null)

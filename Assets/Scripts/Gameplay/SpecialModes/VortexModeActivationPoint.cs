@@ -27,13 +27,11 @@ public class VortexModeActivationPoint : MonoBehaviour
     [SerializeField] private AudioClip slashClip;
     private AudioSource orbAudioSource;
 
-    private ArcanePortalFlash portal;
     private Transform portalTransform;
 
     void Start()
     {
-        portal = FindFirstObjectByType<ArcanePortalFlash>();
-        if (portal != null) portalTransform = portal.transform;
+        portalTransform = PortalAnchor.Instance != null ? PortalAnchor.Instance.transform : transform;
 
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
@@ -122,8 +120,7 @@ public class VortexModeActivationPoint : MonoBehaviour
         var sr  = GetComponent<SpriteRenderer>(); if (sr  != null) sr.enabled  = false;
         var col = GetComponent<Collider2D>();      if (col != null) col.enabled = false;
 
-        // ── Portal-Flash + Slash ───────────────────────────────────────────────
-        if (portal != null) portal.FlashParticles();
+        // ── Slash ──────────────────────────────────────────────────────────────
         AudioManager.Instance?.PlaySfx(slashClip, slashClipVolume);
 
         float slashDuration = delayBeforeVortexMode > 0f ? delayBeforeVortexMode : 1.5f;
