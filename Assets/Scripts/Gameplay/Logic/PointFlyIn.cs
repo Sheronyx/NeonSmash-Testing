@@ -2,10 +2,10 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-// Lässt ein frisch instanziiertes Element "aus dem Hintergrund in den Vordergrund" einfliegen:
-// startet winzig und leicht versetzt von der Zielposition, fliegt über eine zufällige Bogenkurve
-// (quadratische Bezier, wie die Activation-Orb-Zeremonien) UND wächst dabei in EINER durchgehenden
-// Bewegung auf Originalgröße (Skalierung per Ease-Out-Back — überschwingt von selbst leicht und
+// Lässt ein frisch instanziiertes Element von außerhalb des Bildschirmrands einfliegen: startet
+// winzig an einem zufälligen Punkt knapp außerhalb eines der 4 Ränder, fliegt über eine zufällige
+// Bogenkurve zur Zielposition (quadratische Bezier, wie die Activation-Orb-Zeremonien) UND wächst
+// dabei in EINER durchgehenden Bewegung auf Originalgröße (Skalierung per Ease-Out-Back — überschwingt von selbst leicht und
 // landet exakt bei Zielgröße, keine separate Pop-In-Phase mehr nötig). Danach onArrived-Callback —
 // der Spawner startet dort Timer/Fuse/Pulse. Collider bleibt während der gesamten Bewegung
 // deaktiviert, damit ein noch fliegendes Element nicht antippbar ist.
@@ -15,8 +15,8 @@ public class PointFlyIn : MonoBehaviour
     [SerializeField] private float duration          = 0.38f;
     [Tooltip("Startgröße relativ zur Zielgröße — je kleiner, desto stärker wirkt \"kommt aus der Ferne\".")]
     [SerializeField] private float startScalePercent = 0.05f;
-    [SerializeField] private float offsetDistanceMin = 1.0f;
-    [SerializeField] private float offsetDistanceMax = 2.4f;
+    [Tooltip("Wie weit außerhalb des Bildschirmrands der Startpunkt liegt (Viewport-Einheiten, 0 = genau am Rand).")]
+    [SerializeField] private float offScreenMargin = 0.2f;
     [Tooltip("Wie stark die Flugkurve seitlich ausbeult (zufällige Richtung pro Element).")]
     [SerializeField] private float curveStrengthMin  = 0.4f;
     [SerializeField] private float curveStrengthMax  = 1.1f;
@@ -45,9 +45,7 @@ public class PointFlyIn : MonoBehaviour
 
         if (col != null) col.enabled = false;
 
-        float angle = UnityEngine.Random.value * Mathf.PI * 2f;
-        float dist  = UnityEngine.Random.Range(offsetDistanceMin, offsetDistanceMax);
-        Vector3 startPos   = targetPosition + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * dist;
+        Vector3 startPos   = OffScreenPos();
         Vector3 startScale = targetScale * startScalePercent;
         Vector3 ctrl        = CurveControl(startPos, targetPosition);
 
@@ -94,6 +92,28 @@ public class PointFlyIn : MonoBehaviour
         if (col != null) col.enabled = true;
 
         onArrived?.Invoke();
+    }
+
+    // Zufälliger Punkt knapp außerhalb eines der 4 Bildschirmränder — analog zu
+    // GravityModeActivationPoint.OffScreenPos.
+    private Vector3 OffScreenPos()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return transform.position;
+
+        float camZ = Mathf.Abs(cam.transform.position.z);
+        int   edge = UnityEngine.Random.Range(0, 4);
+        float u    = UnityEngine.Random.Range(0.1f, 0.9f);
+        Vector2 vp = edge switch
+        {
+            0 => new Vector2(u, 1f + offScreenMargin),
+            1 => new Vector2(1f + offScreenMargin, u),
+            2 => new Vector2(u, -offScreenMargin),
+            _ => new Vector2(-offScreenMargin, u),
+        };
+        Vector3 p = cam.ViewportToWorldPoint(new Vector3(vp.x, vp.y, camZ));
+        p.z = 0f;
+        return p;
     }
 
     // Kontrollpunkt für die Bezier-Kurve: Mittelpunkt der Strecke, seitlich versetzt in zufälliger

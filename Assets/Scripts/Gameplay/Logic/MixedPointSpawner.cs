@@ -704,10 +704,18 @@ public class MixedPointSpawner : MonoBehaviour
         _currentDiamond  = Instantiate(diamondPrefab, worldPos, Quaternion.identity);
 
         var dp = _currentDiamond.GetComponent<DiamondPoint>();
-        if (dp != null)
+        if (dp != null) dp.spawner = this;
+
+        float reactionTime = CurrentReactionTime;
+        var flyIn = _currentDiamond.GetComponent<PointFlyIn>();
+        if (flyIn != null)
         {
-            dp.spawner = this;
-            dp.Activate(CurrentReactionTime);
+            Vector3 targetScale = _currentDiamond.transform.localScale;
+            flyIn.Play(worldPos, targetScale, () => dp?.Activate(reactionTime, skipPopIn: true));
+        }
+        else
+        {
+            dp?.Activate(reactionTime);
         }
         _diamondsSpawnedThisPhase++;
     }

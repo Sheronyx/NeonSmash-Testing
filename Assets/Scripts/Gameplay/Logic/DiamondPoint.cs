@@ -28,11 +28,21 @@ public class DiamondPoint : MonoBehaviour
     private Vector3 targetScale;
 
     // Vom Spawner aufrufen: startet die Countdown-Visuals und plant das folgenlose Auslaufen.
-    public void Activate(float reactionTime)
+    // skipPopIn=true: PointFlyIn hat den Diamanten bereits von außerhalb eingeflogen und auf
+    // Zielgröße gepoppt — eigenes Pop-In würde die Skalierung nochmal auf 0 zurücksetzen (doppelter
+    // Pop). Dann nur noch direkt pulsieren, kein erneutes Scale-Reset.
+    public void Activate(float reactionTime, bool skipPopIn = false)
     {
         targetScale = transform.localScale;
-        transform.localScale = Vector3.zero;
-        StartCoroutine(Co_PopInThenPulse());
+        if (skipPopIn)
+        {
+            GetComponent<PointPulse>()?.StartPulsing();
+        }
+        else
+        {
+            transform.localScale = Vector3.zero;
+            StartCoroutine(Co_PopInThenPulse());
+        }
 
         foreach (var cs in GetComponentsInChildren<CountdownSquare>())
             cs.StartCountdown(reactionTime);

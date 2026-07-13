@@ -130,13 +130,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 848d36f993be34befa0318e1c346d794, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PointFlyIn
-  duration: 0.4
+  duration: 0.7
   startScalePercent: 0.05
-  offsetDistanceMin: 2
-  offsetDistanceMax: 4
+  offScreenMargin: 0.2
   curveStrengthMin: 0.4
   curveStrengthMax: 1.1
   scaleOvershoot: 1.70158
+  fastScalePhaseStart: 0.8
+  slowScalePhaseFraction: 0.25
 --- !u!1 &2721856692091979298
 GameObject:
   m_ObjectHideFlags: 0

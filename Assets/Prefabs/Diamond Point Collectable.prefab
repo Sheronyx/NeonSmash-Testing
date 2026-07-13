@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 102453969246968230}
   - component: {fileID: 1417972314846157784}
   - component: {fileID: 7652557792870608448}
+  - component: {fileID: -9008653843091925812}
   m_Layer: 0
   m_Name: Diamond Point Collectable
   m_TagString: Untagged
@@ -106,6 +107,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PointPulse
   pulseAmount: 0.15
   pulseSpeed: 1.5
+--- !u!114 &-9008653843091925812
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3929739218305255235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 848d36f993be34befa0318e1c346d794, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PointFlyIn
+  duration: 0.7
+  startScalePercent: 0.05
+  offScreenMargin: 0.2
+  curveStrengthMin: 0.4
+  curveStrengthMax: 1.1
+  scaleOvershoot: 1.70158
+  fastScalePhaseStart: 0.8
+  slowScalePhaseFraction: 0.25
 --- !u!1 &7017039490558983134
 GameObject:
   m_ObjectHideFlags: 0
