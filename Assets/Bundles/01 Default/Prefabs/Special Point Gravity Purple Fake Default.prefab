@@ -312,7 +312,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.01, y: -2.6, z: 0}
-  m_LocalScale: {x: 0.62, y: 0.62, z: 0.62}
+  m_LocalScale: {x: 0.7, y: 0.7, z: 0.7}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2361879898840430555}
@@ -490,6 +490,7 @@ MonoBehaviour:
   maxOffsetSpeed: 15
   isShocker: 0
   isFake: 1
+  isBonusDiamond: 0
 --- !u!1 &5136132494534807343
 GameObject:
   m_ObjectHideFlags: 0

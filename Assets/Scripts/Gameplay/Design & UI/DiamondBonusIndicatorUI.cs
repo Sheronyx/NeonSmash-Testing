@@ -1,15 +1,13 @@
 using System.Collections;
 using UnityEngine;
 
-// Zeigt an, dass der Diamant-Bonus (5+ in der aktuellen Diamant-Phase gesammelt) einer zufällig
-// gelosten Farbe zugeteilt wurde. Es gibt DREI Instanzen dieses Scripts in der Szene (je eine über
-// jedem der drei ColorProgressUI-Anzeigen "X/20"), jede mit ihrer eigenen myColor. Nur die Instanz,
-// deren Farbe der gelosten Bonus-Farbe entspricht, poppt auf — die anderen beiden ignorieren das Event.
-// Erscheint mit Pop-In sobald der Bonus verdient ist (PhaseManager.OnDiamondBonusEarned).
-// Startet ein ANDERER Special Mode zuerst, ist der Bonus sofort verfallen → Icon verschwindet direkt.
-// Startet GENAU der zur eigenen Farbe passende Special Mode, bleibt das Icon sichtbar/pulsierend,
-// bis dieser Mode wieder endet (SpecialModeManager.OnModeEnded) — der Bonus ist ja während des ganzen
-// Special Mode aktiv, nicht nur im Moment des Auslösens.
+// Zeigt an, dass der Diamant-Bonus (5+ in einer Diamant-Phase gesammelt) einer zufällig unter den
+// noch bonus-losen Farben gelosten Farbe zugeteilt wurde. Es gibt DREI Instanzen dieses Scripts in der
+// Szene (je eine über jedem der drei ColorProgressUI-Anzeigen), jede mit ihrer eigenen myColor. Nur die
+// Instanz, deren Farbe der gelosten Bonus-Farbe entspricht, poppt auf.
+// Der Bonus (und damit das Icon) bleibt bestehen, auch wenn zwischendurch ANDERE Special Modes starten
+// — er verfällt nicht mehr durch fremde Modes. Er verschwindet erst, wenn GENAU der eigene Special Mode
+// startet und wieder endet (SpecialModeManager.OnModeEnded) — der Bonus ist dann verbraucht.
 public class DiamondBonusIndicatorUI : MonoBehaviour
 {
     [Header("Zuordnung")]
@@ -34,7 +32,6 @@ public class DiamondBonusIndicatorUI : MonoBehaviour
         targetScale = transform.localScale;
         pulse = GetComponent<PointPulse>();
         PhaseManager.OnDiamondBonusEarned += HandleBonusEarned;
-        SpecialModeManager.OnModeStarted += HandleModeStarted;
         SpecialModeManager.OnModeEnded += HandleModeEnded;
         gameObject.SetActive(false);
     }
@@ -42,7 +39,6 @@ public class DiamondBonusIndicatorUI : MonoBehaviour
     private void OnDestroy()
     {
         PhaseManager.OnDiamondBonusEarned -= HandleBonusEarned;
-        SpecialModeManager.OnModeStarted -= HandleModeStarted;
         SpecialModeManager.OnModeEnded -= HandleModeEnded;
     }
 
@@ -50,15 +46,6 @@ public class DiamondBonusIndicatorUI : MonoBehaviour
     {
         if (color != myColor) return;
         Show();
-    }
-
-    private void HandleModeStarted(SpecialMode mode)
-    {
-        // Startet der zur eigenen Farbe passende Mode, bleibt der Bonus für dessen Dauer aktiv —
-        // Icon bleibt sichtbar, bis HandleModeEnded für denselben Mode feuert. Jeder ANDERE Mode
-        // bedeutet, der Bonus ist an eine andere Farbe verschwendet worden → sofort ausblenden.
-        if (mode == PhaseManager.SpecialModeForColor(myColor)) return;
-        Hide();
     }
 
     private void HandleModeEnded(SpecialMode mode)

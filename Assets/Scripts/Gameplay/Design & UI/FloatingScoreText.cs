@@ -22,9 +22,10 @@ public class FloatingScoreText : MonoBehaviour
 
     private float _scale = 1f;
 
-    public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f, Material explicitMaterial = null)
+    public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f,
+        Material explicitMaterial = null, bool showPlusPrefix = true, float holdDuration = 0f, string overrideText = null)
     {
-        label.text  = "+" + score;
+        label.text  = overrideText ?? (showPlusPrefix ? "+" + score : score.ToString());
         label.color = color;
         _scale      = scale;
 
@@ -45,10 +46,10 @@ public class FloatingScoreText : MonoBehaviour
             if (mat != null) label.fontMaterial = mat;
         }
 
-        StartCoroutine(Co_Animate());
+        StartCoroutine(Co_Animate(holdDuration));
     }
 
-    private IEnumerator Co_Animate()
+    private IEnumerator Co_Animate(float holdDuration = 0f)
     {
         // Einpoppen: 0 → punchScale*_scale → _scale
         float t = 0f;
@@ -65,7 +66,10 @@ public class FloatingScoreText : MonoBehaviour
         }
         transform.localScale = Vector3.one * _scale;
 
-        // Sofort wegfaden
+        if (holdDuration > 0f)
+            yield return new WaitForSecondsRealtime(holdDuration);
+
+        // Wegfaden
         Color startColor = label.color;
         Color endColor   = new Color(startColor.r, startColor.g, startColor.b, 0f);
         t = 0f;

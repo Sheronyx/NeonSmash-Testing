@@ -683,15 +683,17 @@ MonoBehaviour:
   - label: Phase 1
     type: 0
     reactionTime: 2.2
+    colorTriggerThreshold: 15
     shockerEnabled: 0
     shockerChance: 0
-    diamondsEnabled: 0
+    diamondsEnabled: 1
     specialElementCount: 20
     specialScoreMultiplier: 3
     specialIntensityMultiplier: 1
   - label: Phase 2
     type: 1
     reactionTime: 2.2
+    colorTriggerThreshold: 15
     shockerEnabled: 0
     shockerChance: 0
     diamondsEnabled: 0
@@ -701,15 +703,17 @@ MonoBehaviour:
   - label: Phase 3
     type: 0
     reactionTime: 1.9
+    colorTriggerThreshold: 15
     shockerEnabled: 0
     shockerChance: 0
-    diamondsEnabled: 0
+    diamondsEnabled: 1
     specialElementCount: 20
     specialScoreMultiplier: 3
     specialIntensityMultiplier: 1.05
   - label: Phase 4
     type: 1
     reactionTime: 1.9
+    colorTriggerThreshold: 15
     shockerEnabled: 0
     shockerChance: 0
     diamondsEnabled: 0
@@ -719,15 +723,17 @@ MonoBehaviour:
   - label: Phase 5
     type: 0
     reactionTime: 1.6
+    colorTriggerThreshold: 20
     shockerEnabled: 1
     shockerChance: 0.3
-    diamondsEnabled: 0
+    diamondsEnabled: 1
     specialElementCount: 20
     specialScoreMultiplier: 3
     specialIntensityMultiplier: 1.15
   - label: Phase 6
     type: 1
     reactionTime: 1.6
+    colorTriggerThreshold: 20
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 0
@@ -737,6 +743,7 @@ MonoBehaviour:
   - label: Phase 7
     type: 0
     reactionTime: 1.3
+    colorTriggerThreshold: 20
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 0
@@ -746,6 +753,7 @@ MonoBehaviour:
   - label: Phase 8
     type: 1
     reactionTime: 1.3
+    colorTriggerThreshold: 15
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 0
@@ -755,6 +763,7 @@ MonoBehaviour:
   - label: Phase 9
     type: 0
     reactionTime: 1
+    colorTriggerThreshold: 30
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 1
@@ -764,6 +773,7 @@ MonoBehaviour:
   - label: Phase 10
     type: 1
     reactionTime: 1
+    colorTriggerThreshold: 30
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 0
@@ -773,6 +783,7 @@ MonoBehaviour:
   - label: Phase 11
     type: 0
     reactionTime: 0.8
+    colorTriggerThreshold: 30
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 1
@@ -782,16 +793,16 @@ MonoBehaviour:
   - label: Phase 12
     type: 1
     reactionTime: 0.8
+    colorTriggerThreshold: 30
     shockerEnabled: 1
     shockerChance: 0.3
     diamondsEnabled: 0
     specialElementCount: 20
     specialScoreMultiplier: 3
     specialIntensityMultiplier: 1.5
-  colorTriggerThreshold: 15
   diamondsNeededForBonus: 5
   endlessReactionTimeStep: 0.05
-  endlessMinReactionTime: 0.6
+  endlessMinReactionTime: 0.4
 --- !u!4 &131854442
 Transform:
   m_ObjectHideFlags: 0
@@ -877,6 +888,7 @@ MonoBehaviour:
   spawnDelayAfterHit: 0.3
   floatingScorePrefab: {fileID: 8247571385506089158, guid: c42de2f0571514492a8cfcbc37f7cc70, type: 3}
   floatingScoreSpawnOffsetY: 0.7
+  diamondCountHoldDuration: 0.2
   fakePointPrefab: {fileID: 7634417711000780290, guid: 37444548a828f4baf99a6238e13cc95d, type: 3}
   fakeSpawnChance: 0
   thunderPointPrefab: {fileID: 7032938748382792654, guid: b64f768a4b1fa4b4e84b730ce566bfcc, type: 3}
@@ -3535,7 +3547,7 @@ MonoBehaviour:
   spawnIntervalIntensityFactor: 0.25
   minSpawnInterval: 0.3
   baseTravelDuration: 3
-  speedIntensityFactor: 1
+  speedIntensityFactor: 0.8
   minTravelDuration: 0.5
   totalSweepDegrees: 360
   clockwise: 1
@@ -8370,25 +8382,65 @@ PrefabInstance:
       propertyPath: myColor
       value: 2
       objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: cam
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: canvasOffset.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: anchorUIElement
+      value: 
+      objectReference: {fileID: 5792667915265058985}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: screenOffsetPixels.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: screenOffsetPixels.y
+      value: 120
+      objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.x
+      propertyPath: m_Pivot.x
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.y
+      propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.z
+      propertyPath: m_AnchorMax.x
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.058372576
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.0892024
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.z
@@ -8411,6 +8463,14 @@ PrefabInstance:
       value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
@@ -8425,6 +8485,10 @@ PrefabInstance:
     - target: {fileID: 8206944618878546057, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_Name
       value: Diamond Bonus Indicator Blue
+      objectReference: {fileID: 0}
+    - target: {fileID: 8206944618878546057, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10211,25 +10275,69 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3777515345678215790, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: myColor
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: cam
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: canvasOffset.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: anchorUIElement
+      value: 
+      objectReference: {fileID: 5792667915265058986}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: screenOffsetPixels.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: screenOffsetPixels.y
+      value: 120
+      objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.x
+      propertyPath: m_Pivot.x
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.y
+      propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.z
+      propertyPath: m_AnchorMax.x
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.6427711
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.0892024
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.z
@@ -10252,6 +10360,14 @@ PrefabInstance:
       value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
@@ -10266,6 +10382,10 @@ PrefabInstance:
     - target: {fileID: 8206944618878546057, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_Name
       value: Diamond Bonus Indicator Pink
+      objectReference: {fileID: 0}
+    - target: {fileID: 8206944618878546057, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11670,29 +11790,65 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 3777515345678215790, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: myColor
-      value: 1
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: cam
+      value: 
+      objectReference: {fileID: 519420031}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: canvasOffset.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: anchorUIElement
+      value: 
+      objectReference: {fileID: 5792667915265058984}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: screenOffsetPixels.x
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 4733682490185936247, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: screenOffsetPixels.y
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.x
+      propertyPath: m_Pivot.x
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.y
+      propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
-      propertyPath: m_LocalScale.z
+      propertyPath: m_AnchorMax.x
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.8505718
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.0892024
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalPosition.z
@@ -11715,6 +11871,14 @@ PrefabInstance:
       value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8175016543245917095, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
@@ -11729,6 +11893,10 @@ PrefabInstance:
     - target: {fileID: 8206944618878546057, guid: 24832ef6944d1412db81b017543cc957, type: 3}
       propertyPath: m_Name
       value: Diamond Bonus Indicator Green
+      objectReference: {fileID: 0}
+    - target: {fileID: 8206944618878546057, guid: 24832ef6944d1412db81b017543cc957, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14402,6 +14570,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1967027723}
     m_Modifications:
+    - target: {fileID: 3776831586767542402, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 303
+      objectReference: {fileID: 0}
     - target: {fileID: 3823417195655491274, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
       propertyPath: m_Name
       value: Top Bar Default
@@ -14491,17 +14663,28 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 614854637}
     m_RemovedComponents: []
-    m_RemovedGameObjects:
-    - {fileID: 6364372000960549009, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
-    - {fileID: 253404172433758474, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
-    - {fileID: 2081663577913042306, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
-    - {fileID: 3924278754502379054, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+    m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
 --- !u!1 &5792667915265058983 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3823417195655491274, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+  m_PrefabInstance: {fileID: 5792667915265058982}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &5792667915265058984 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8565122092627352362, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+  m_PrefabInstance: {fileID: 5792667915265058982}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &5792667915265058985 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3096649898214258267, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+  m_PrefabInstance: {fileID: 5792667915265058982}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &5792667915265058986 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3798899687430769667, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
   m_PrefabInstance: {fileID: 5792667915265058982}
   m_PrefabAsset: {fileID: 0}
 --- !u!225 &5836323891617677624

@@ -14,9 +14,10 @@ public class GravityModeSystem : MonoBehaviour
     [SerializeField] private GameObject gravityFakePrefab;
     [Tooltip("Bewegtes Diamant-Bonus-Element (GravityPoint-Prefab mit isBonusDiamond=true). Nur in Phasen mit erreichtem Diamant-Bonus.")]
     [SerializeField] private GameObject gravityDiamondPrefab;
-    [Range(0f, 1f)]
-    [Tooltip("Spawn-Chance des Diamant-Bonus-Elements, wenn der Bonus für diese Special-Phase aktiv ist.")]
-    [SerializeField] private float diamondBonusChance = 0.15f;
+    [Tooltip("Wie viele Diamant-Bonus-Elemente ZUSÄTZLICH zu den normalen maxSpawnCount-Elementen kommen, " +
+             "wenn der Bonus für diese Special-Phase aktiv ist. Fest, kein Zufalls-Roll — nur der Zeitpunkt " +
+             "innerhalb der Phase ist zufällig verteilt.")]
+    [SerializeField] private int diamondBonusCount = 5;
     [Tooltip("Score-Multiplikator eines Diamant-Bonus-Treffers (stapelt mit dem Special-Mode-Multiplikator).")]
     [SerializeField] private int diamondBonusMultiplier = 5;
     [Tooltip("Font-Material des Floating-Score-Texts bei Gravity-Treffern (wie materialPink/Green/Blue bei Normal-Mode-Treffern).")]
@@ -114,25 +115,38 @@ public void Activate()
         spawner.PauseSpawning(true);
         spawner.ClearAllGameplayPoints();
 
-        // Anzahl-basiert (vom PhaseManager): spawnt bis maxSpawnCount erreicht ist (-1 = unlimitiert,
+        // Diamant-Bonus: ZUSÄTZLICH zu maxSpawnCount (z.B. 20+5=25 statt 20 ersetzt), Zeitpunkte
+        // innerhalb der Phase zufällig verteilt — kein Chance-Roll pro Tick mehr, garantiert exakt
+        // diamondBonusCount Treffer, wenn der Bonus aktiv ist.
+        int totalCount = maxSpawnCount > 0 && diamondBonusActive ? maxSpawnCount + diamondBonusCount : maxSpawnCount;
+        var bonusTickIndices = new System.Collections.Generic.HashSet<int>();
+        if (maxSpawnCount > 0 && diamondBonusActive && gravityDiamondPrefab != null)
+            while (bonusTickIndices.Count < diamondBonusCount)
+                bonusTickIndices.Add(Random.Range(0, totalCount));
+
+        // Anzahl-basiert (vom PhaseManager): spawnt bis totalCount erreicht ist (-1 = unlimitiert,
         // z.B. Tutorial — endet dann nur über externes StopSpawning()/StopMode()).
         while (spawnLoopActive)
         {
-            // Pro Tick EIN Element: Shocker / Fake / Diamant-Bonus / normal (nicht-überlappende Chancen).
-            float r       = Random.value;
-            float thunder = spawner != null ? spawner.thunderSpawnChance : 0f;
-            float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
-            float diamond = diamondBonusActive && gravityDiamondPrefab != null ? diamondBonusChance : 0f;
-
             bool triggeredThunder = false;
-            if (gravityShockerPrefab != null && r < thunder)
-            { SpawnGravitySpecial(gravityShockerPrefab); triggeredThunder = true; }
-            else if (gravityFakePrefab != null && r < thunder + fake)
-                SpawnGravitySpecial(gravityFakePrefab);
-            else if (diamond > 0f && r < thunder + fake + diamond)
+            if (bonusTickIndices.Contains(_spawnedCount))
+            {
                 SpawnGravitySpecial(gravityDiamondPrefab);
+            }
             else
-                SpawnGravityPoint();
+            {
+                // Pro Tick EIN Element: Shocker / Fake / normal (nicht-überlappende Chancen).
+                float r       = Random.value;
+                float thunder = spawner != null ? spawner.thunderSpawnChance : 0f;
+                float fake    = spawner != null ? spawner.fakeSpawnChance    : 0f;
+
+                if (gravityShockerPrefab != null && r < thunder)
+                { SpawnGravitySpecial(gravityShockerPrefab); triggeredThunder = true; }
+                else if (gravityFakePrefab != null && r < thunder + fake)
+                    SpawnGravitySpecial(gravityFakePrefab);
+                else
+                    SpawnGravityPoint();
+            }
 
             // Portal-Elektrifizierung: spawner.electricPortalChance ist im neuen Redesign fest auf 0
             // (PhaseManager.ApplyPhaseSettings) — dieser Zweig bleibt daher inaktiv.
@@ -145,7 +159,7 @@ public void Activate()
             }
 
             _spawnedCount++;
-            if (maxSpawnCount > 0 && _spawnedCount >= maxSpawnCount)
+            if (totalCount > 0 && _spawnedCount >= totalCount)
                 spawnLoopActive = false;
 
             if (spawnLoopActive)
@@ -154,7 +168,7 @@ public void Activate()
 
         // Spawn-Limit erreicht (nur bei anzahl-basierter Aktivierung) → auf Restelemente warten,
         // dann Mode sauber beenden und den PhaseManager benachrichtigen.
-        if (maxSpawnCount > 0)
+        if (totalCount > 0)
         {
             yield return new WaitUntil(() => FindObjectsByType<GravityPoint>(FindObjectsSortMode.None).Length == 0);
             StopMode();

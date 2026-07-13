@@ -67,7 +67,7 @@ public class DiamondPoint : MonoBehaviour
         AudioManager.Instance?.PlayNormalPoint();
         SpawnDestroyEffect();
 
-        spawner?.HandleDiamondCollected();
+        spawner?.HandleDiamondCollected(transform.position);
         Destroy(gameObject);
     }
 

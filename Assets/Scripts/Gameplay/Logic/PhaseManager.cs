@@ -14,6 +14,8 @@ public class PhaseDefinition
     public float reactionTime = 3f;
 
     [Header("Nur Normal-Phasen")]
+    [Tooltip("Wie viele Treffer einer Farbe in dieser Phase nötig sind, um deren Special Mode auszulösen.")]
+    public int colorTriggerThreshold = 15;
     [Tooltip("Shocker-Elemente aktiv (ab Phase 5).")]
     public bool shockerEnabled = false;
     [Range(0f, 1f)]
@@ -46,13 +48,11 @@ public class PhaseManager : MonoBehaviour
     [Header("Phasen (Inspector-Feinjustierung)")]
     [SerializeField] private PhaseDefinition[] phases = BuildDefaultPhases();
 
-    [Header("Farb-Trigger")]
-    [Tooltip("Wie viele Treffer einer Farbe in einer Normal-Phase nötig sind, um deren Special Mode auszulösen.")]
-    [SerializeField] private int colorTriggerThreshold = 20;
-
     [Header("Diamant-Bonus")]
     [Tooltip("Wie viele der 7 Diamanten pro Normal-Phase gesammelt werden müssen, damit eine zufällige Farbe den Bonus für ihren NÄCHSTEN Special Mode zugelost bekommt.")]
     [SerializeField] private int diamondsNeededForBonus = 5;
+
+    public int DiamondsNeededForBonus => diamondsNeededForBonus;
 
     [Header("Phase 13 (Endless, grober Platzhalter)")]
     [Tooltip("Wie viel die Reaktionszeit der letzten 2 Phasen pro Endless-Durchlauf zusätzlich sinkt.")]
@@ -64,10 +64,13 @@ public class PhaseManager : MonoBehaviour
     private bool _running = false;
     private int _endlessLoopCount = 0;
     private Coroutine _triggerRoutine;
-    // Sobald die Bonus-Schwelle erreicht ist, wird EINE der 3 Farben zufällig als Bonus-Ziel gelost.
-    // Der Bonus greift nur, wenn GENAU diese Farbe als nächstes ihren Special Mode auslöst — löst eine
-    // andere Farbe zuerst aus, verfällt der Bonus ungenutzt (Risiko/Glücks-Element, siehe OnDiamondBonusEarned).
-    private PointColor? _bonusColor = null;
+    // Pro Farbe unabhängig: true = diese Farbe trägt aktuell einen unverbrauchten Diamant-Bonus.
+    // Mehrere Farben können GLEICHZEITIG einen Bonus tragen — ein fremder Special Mode verbraucht/
+    // verwirft ihn NICHT mehr, nur der eigene Special Mode der jeweiligen Farbe tut das (siehe
+    // Co_TriggerSpecialMode). _bonusRolledThisPhase verhindert nur ein zweites Losen INNERHALB
+    // derselben Diamant-Phase, sobald die Schwelle einmal erreicht wurde.
+    private readonly bool[] _colorHasBonus = new bool[3];
+    private bool _bonusRolledThisPhase = false;
 
     public PhaseDefinition CurrentPhase =>
         (_currentIndex >= 0 && phases != null && _currentIndex < phases.Length) ? phases[_currentIndex] : null;
@@ -76,7 +79,7 @@ public class PhaseManager : MonoBehaviour
     public int CurrentSpecialMultiplier => CurrentPhase != null && CurrentPhase.type == PhaseType.Special ? CurrentPhase.specialScoreMultiplier : 1;
     public bool ShockerEnabledThisPhase => CurrentPhase != null && CurrentPhase.shockerEnabled;
 
-    public int ColorTriggerThreshold => colorTriggerThreshold;
+    public int ColorTriggerThreshold => CurrentPhase != null ? CurrentPhase.colorTriggerThreshold : 15;
     public int GetColorCount(PointColor color) => _destroyedCount[(int)color];
 
     /// <summary>Welcher Special Mode zu welcher Farbe gehört (Pink→Gravity, Green→Vortex, Blue→Fountain).
@@ -92,10 +95,11 @@ public class PhaseManager : MonoBehaviour
     /// Für UI-Anzeigen wie "12/20". Args: Farbe, aktueller Stand, Schwelle.</summary>
     public static event Action<PointColor, int, int> OnColorProgressChanged;
 
-    /// <summary>Gefeuert genau einmal, sobald in einer diamant-aktiven Normal-Phase die Bonus-Schwelle
-    /// (diamondsNeededForBonus) erreicht wird. Übergibt die zufällig geloste Bonus-Farbe — der Bonus
-    /// greift nur, wenn GENAU diese Farbe als nächstes ihren Special Mode auslöst. Für UI: Bonus-Icon
-    /// über der passenden Farb-Anzeige einblenden.</summary>
+    /// <summary>Gefeuert, sobald in einer diamant-aktiven Normal-Phase die Bonus-Schwelle erreicht wird
+    /// UND noch mindestens eine Farbe ohne Bonus übrig ist. Übergibt die zufällig unter den Farben OHNE
+    /// Bonus geloste Farbe — der Bonus bleibt aktiv, bis GENAU diese Farbe ihren eigenen Special Mode
+    /// auslöst (andere Special Modes verbrauchen ihn nicht). Für UI: Bonus-Icon über der passenden
+    /// Farb-Anzeige einblenden.</summary>
     public static event Action<PointColor> OnDiamondBonusEarned;
 
     private bool IsInfinityRun =>
@@ -161,12 +165,38 @@ public class PhaseManager : MonoBehaviour
 
     private void HandleDiamondCollected(int totalThisPhase)
     {
-        if (_bonusColor.HasValue) return; // in dieser Phase schon gelost
+        if (_bonusRolledThisPhase) return; // in dieser Phase schon gelost
         if (totalThisPhase < diamondsNeededForBonus) return;
         if (CurrentPhase == null || CurrentPhase.type != PhaseType.Normal || !CurrentPhase.diamondsEnabled) return;
 
-        _bonusColor = (PointColor)UnityEngine.Random.Range(0, 3);
-        OnDiamondBonusEarned?.Invoke(_bonusColor.Value);
+        _bonusRolledThisPhase = true;
+
+        // Bonus-Schwelle erreicht → für den Rest dieser Normal-Phase spawnen keine weiteren Diamanten
+        // mehr (dismisst auch einen evtl. gerade fliegenden Diamanten). Erst die nächste diamant-aktive
+        // Normal-Phase (via ApplyPhaseSettings) schaltet das Spawning wieder frei.
+        spawner.SetDiamondsEnabled(false);
+
+        // Nur unter den Farben losen, die noch KEINEN Bonus tragen. Haben alle 3 schon einen, bleibt
+        // schlicht nichts mehr zu vergeben (kein Event, kein Fehler).
+        var eligible = new System.Collections.Generic.List<PointColor>(3);
+        for (int i = 0; i < 3; i++)
+            if (!_colorHasBonus[i]) eligible.Add((PointColor)i);
+        if (eligible.Count == 0) return;
+
+        PointColor chosen = eligible[UnityEngine.Random.Range(0, eligible.Count)];
+        _colorHasBonus[(int)chosen] = true;
+
+        // Einzeln statt via ?.Invoke(): sonst würde eine Exception in EINEM Subscriber (z.B. einer der
+        // 3 DiamondBonusIndicatorUI-Instanzen) die Invocation für alle NACHFOLGENDEN Subscriber in der
+        // Liste stillschweigend abbrechen — inklusive evtl. der Farbe, die eigentlich gewonnen hat.
+        if (OnDiamondBonusEarned != null)
+        {
+            foreach (Action<PointColor> handler in OnDiamondBonusEarned.GetInvocationList())
+            {
+                try { handler(chosen); }
+                catch (Exception e) { Debug.LogException(e); }
+            }
+        }
     }
 
     private void OnDestroy()
@@ -189,9 +219,9 @@ public class PhaseManager : MonoBehaviour
         _endlessLoopCount = 0;
         _currentIndex = 0;
 
-        OnColorProgressChanged?.Invoke(PointColor.Pink, 0, colorTriggerThreshold);
-        OnColorProgressChanged?.Invoke(PointColor.Green, 0, colorTriggerThreshold);
-        OnColorProgressChanged?.Invoke(PointColor.Blue, 0, colorTriggerThreshold);
+        OnColorProgressChanged?.Invoke(PointColor.Pink, 0, ColorTriggerThreshold);
+        OnColorProgressChanged?.Invoke(PointColor.Green, 0, ColorTriggerThreshold);
+        OnColorProgressChanged?.Invoke(PointColor.Blue, 0, ColorTriggerThreshold);
 
         spawner.onGameOver.RemoveListener(HandleGameOver); // gegen doppelte Listener bei mehreren Runs (Play Again)
         spawner.onGameOver.AddListener(HandleGameOver);
@@ -222,7 +252,9 @@ public class PhaseManager : MonoBehaviour
         // noch als "Bonus verdient" durchgereicht, obwohl die direkt vorherige Normal-Phase gar keine
         // Diamanten hatte.
         if (def.type == PhaseType.Normal) spawner.ResetDiamondTracking();
-        if (diamondsThisPhase) _bonusColor = null; // neue Diamant-Phase → Bonus darf wieder neu gelost werden
+        // Nur die "schon gelost"-Sperre für DIESE Phase zurücksetzen — _colorHasBonus bleibt unberührt,
+        // bereits vergebene (aber noch nicht verbrauchte) Boni überleben Phasenwechsel unverändert.
+        if (diamondsThisPhase) _bonusRolledThisPhase = false;
         spawner.SetDiamondsEnabled(diamondsThisPhase);
     }
 
@@ -231,9 +263,9 @@ public class PhaseManager : MonoBehaviour
         if (!_running || CurrentPhase == null || CurrentPhase.type != PhaseType.Normal) return;
 
         _destroyedCount[(int)color]++;
-        OnColorProgressChanged?.Invoke(color, _destroyedCount[(int)color], colorTriggerThreshold);
+        OnColorProgressChanged?.Invoke(color, _destroyedCount[(int)color], ColorTriggerThreshold);
 
-        if (_destroyedCount[(int)color] >= colorTriggerThreshold)
+        if (_destroyedCount[(int)color] >= ColorTriggerThreshold)
             _triggerRoutine = StartCoroutine(Co_TriggerSpecialMode(color));
     }
 
@@ -246,14 +278,13 @@ public class PhaseManager : MonoBehaviour
         spawner.ClearAllSlotsSilently();
 
         _destroyedCount[(int)color] = 0;
-        OnColorProgressChanged?.Invoke(color, 0, colorTriggerThreshold);
+        OnColorProgressChanged?.Invoke(color, 0, ColorTriggerThreshold);
 
-        // Diamant-Bonus für die kommende Special-Phase: greift nur, wenn die auslösende Farbe genau
-        // die zufällig geloste Bonus-Farbe ist. Die Gelegenheit ist danach IMMER verbraucht (egal ob
-        // genutzt oder verfallen) — ein anderer Special Mode "verbraucht" den Bonus einer nicht
-        // passenden Farbe ungenutzt.
-        bool diamondBonusActive = _bonusColor.HasValue && _bonusColor.Value == color;
-        _bonusColor = null;
+        // Diamant-Bonus für die kommende Special-Phase: greift, wenn DIESE Farbe gerade einen Bonus
+        // trägt. Nur ihr eigener Bonus wird dabei verbraucht — Boni anderer Farben bleiben unberührt
+        // und warten weiter auf ihren eigenen Special-Mode-Trigger.
+        bool diamondBonusActive = _colorHasBonus[(int)color];
+        if (diamondBonusActive) _colorHasBonus[(int)color] = false;
 
         SpecialMode mode = SpecialModeForColor(color);
 

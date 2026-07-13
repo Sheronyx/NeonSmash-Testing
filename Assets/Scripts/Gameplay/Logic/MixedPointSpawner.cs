@@ -89,6 +89,8 @@ public class MixedPointSpawner : MonoBehaviour
     [Header("Floating Score")]
     [SerializeField] private GameObject floatingScorePrefab;
     [SerializeField] private float floatingScoreSpawnOffsetY = 0.8f;
+    [Tooltip("Wie lange der Diamant-Sammelzähler-Popup sichtbar stehen bleibt, bevor er wegfadet.")]
+    [SerializeField] private float diamondCountHoldDuration = 0.6f;
 
     [Header("Fake Point (Ablenkung)")]
     [Tooltip("Fake-Element-Prefab (FakePoint). Spawnt mit Chance parallel zu Tap-Points.")]
@@ -772,11 +774,19 @@ public class MixedPointSpawner : MonoBehaviour
     public static event System.Action<int> OnDiamondCollected;
 
     /// <summary>Vom DiamondPoint: wurde eingesammelt.</summary>
-    public void HandleDiamondCollected()
+    public void HandleDiamondCollected(Vector3 worldPos)
     {
         DiamondsCollectedThisPhase++;
         _currentDiamond = null;
+        SpawnFloatingDiamondCount(DiamondsCollectedThisPhase, worldPos);
         OnDiamondCollected?.Invoke(DiamondsCollectedThisPhase);
+
+        // Wie ein Farbtreffer: aktuelle Runde lautlos beenden (kein Score/Risiko für die 3 Farbelemente),
+        // dann kommt die nächste Dreier-Reihe — der Diamant löst also genauso wie die Farbelemente die
+        // nächste Runde aus, statt dass der Spieler zusätzlich noch ein Farbelement treffen muss.
+        ClearAllSlotsSilently();
+        if (running && !gameOver && !spawnPausedForBanner)
+            StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
     }
 
     /// <summary>Vom DiamondPoint: ist ausgelaufen/wurde weggeräumt (folgenlos).</summary>
@@ -1432,6 +1442,22 @@ public class MixedPointSpawner : MonoBehaviour
         var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
         var fst = go.GetComponent<FloatingScoreText>();
         fst?.Play(score, Color.white, color);
+    }
+
+    /// <summary>Gleiches Prinzip wie SpawnFloatingScore (Pop-In + Fade an der Trefferposition), aber zeigt
+    /// keine Punktzahl an, sondern den laufenden Diamant-Sammelstand dieser Phase.</summary>
+    private void SpawnFloatingDiamondCount(int count, Vector3 worldPos)
+    {
+        if (floatingScorePrefab == null || count <= 0) return;
+
+        Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
+        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
+        var fst = go.GetComponent<FloatingScoreText>();
+
+        // Bei Erreichen der Bonus-Schwelle statt der Zahl "BONUS" anzeigen.
+        bool bonusJustReached = PhaseManager.Instance != null && count == PhaseManager.Instance.DiamondsNeededForBonus;
+        fst?.Play(count, Color.white, showPlusPrefix: false, holdDuration: diamondCountHoldDuration,
+            overrideText: bonusJustReached ? "BONUS" : null);
     }
 
     /// <summary>Floating-Score für Special-Mode-Treffer (Gravity/Fountain) — die haben keine PointColor,
