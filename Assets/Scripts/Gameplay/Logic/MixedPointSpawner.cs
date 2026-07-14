@@ -1362,6 +1362,9 @@ public class MixedPointSpawner : MonoBehaviour
         var bp = point.GetComponent<BasePoint>();
         if (bp != null) bp.SendMessage("SpawnExplosion");
 
+        // Parallel zur VFX-Explosion: Energiekugel Richtung der farblich passenden Fairy.
+        FairyEnergyManager.Instance?.SpawnEnergyOrb(color, point.transform.position);
+
         if (idx >= 0)
         {
             if (_slots[idx].timeout != null) { StopCoroutine(_slots[idx].timeout); _slots[idx].timeout = null; }
