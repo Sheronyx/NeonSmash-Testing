@@ -704,18 +704,10 @@ public class MixedPointSpawner : MonoBehaviour
         _currentDiamond  = Instantiate(diamondPrefab, worldPos, Quaternion.identity);
 
         var dp = _currentDiamond.GetComponent<DiamondPoint>();
-        if (dp != null) dp.spawner = this;
-
-        float reactionTime = CurrentReactionTime;
-        var flyIn = _currentDiamond.GetComponent<PointFlyIn>();
-        if (flyIn != null)
+        if (dp != null)
         {
-            Vector3 targetScale = _currentDiamond.transform.localScale;
-            flyIn.Play(worldPos, targetScale, () => dp?.Activate(reactionTime, skipPopIn: true));
-        }
-        else
-        {
-            dp?.Activate(reactionTime);
+            dp.spawner = this;
+            dp.Activate(CurrentReactionTime);
         }
         _diamondsSpawnedThisPhase++;
     }
@@ -767,7 +759,7 @@ public class MixedPointSpawner : MonoBehaviour
 
     /// <summary>Gefeuert bei jedem eingesammelten Diamanten, mit dem neuen Gesamtstand dieser Phase.
     /// Vom PhaseManager genutzt, um den Bonus-Freigeschaltet-Moment (5+) zu erkennen.</summary>
-    public static event System.Action<int> OnDiamondCollected;
+    public static event System.Action<int, Vector3> OnDiamondCollected;
 
     /// <summary>Vom DiamondPoint: wurde eingesammelt.</summary>
     public void HandleDiamondCollected(Vector3 worldPos)
@@ -775,7 +767,7 @@ public class MixedPointSpawner : MonoBehaviour
         DiamondsCollectedThisPhase++;
         _currentDiamond = null;
         SpawnFloatingDiamondCount(DiamondsCollectedThisPhase, worldPos);
-        OnDiamondCollected?.Invoke(DiamondsCollectedThisPhase);
+        OnDiamondCollected?.Invoke(DiamondsCollectedThisPhase, worldPos);
 
         // Wie ein Farbtreffer: aktuelle Runde lautlos beenden (kein Score/Risiko für die 3 Farbelemente),
         // dann kommt die nächste Dreier-Reihe — der Diamant löst also genauso wie die Farbelemente die

@@ -163,7 +163,7 @@ public class PhaseManager : MonoBehaviour
         VortexModeSystem.OnSpecialPhaseComplete -= HandleSpecialPhaseComplete;
     }
 
-    private void HandleDiamondCollected(int totalThisPhase)
+    private void HandleDiamondCollected(int totalThisPhase, Vector3 worldPos)
     {
         if (_bonusRolledThisPhase) return; // in dieser Phase schon gelost
         if (totalThisPhase < diamondsNeededForBonus) return;
@@ -185,6 +185,9 @@ public class PhaseManager : MonoBehaviour
 
         PointColor chosen = eligible[UnityEngine.Random.Range(0, eligible.Count)];
         _colorHasBonus[(int)chosen] = true;
+
+        // Energiekugel vom 5. (gerade zerstörten) Diamanten zur Fairy, die den Bonus bekommt.
+        FairyEnergyManager.Instance?.SpawnEnergyOrb(chosen, worldPos);
 
         // Einzeln statt via ?.Invoke(): sonst würde eine Exception in EINEM Subscriber (z.B. einer der
         // 3 DiamondBonusIndicatorUI-Instanzen) die Invocation für alle NACHFOLGENDEN Subscriber in der

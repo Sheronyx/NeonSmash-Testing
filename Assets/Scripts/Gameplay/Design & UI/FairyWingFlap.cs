@@ -20,6 +20,15 @@ public class FairyWingFlap : MonoBehaviour
         [Tooltip("Falls die Bewegung dieses Flügels visuell falsch herum wirkt: hier umkehren, statt " +
                  "Min/Max/Rest neu einzutragen.")]
         public bool invertPhase = false;
+        [Tooltip("Simuliert Nach-hinten-Klappen: wie schmal der Flügel bei voller Auslenkung wird " +
+                 "(1 = kein Effekt, 0.5 = wird halb so breit). Reine Rotation wirkt sonst nur wie ein " +
+                 "flaches Kippen, kein echtes Falten in die Tiefe.")]
+        [Range(0.2f, 1f)]
+        public float foldScaleAtExtreme = 0.55f;
+        [Tooltip("Falls der Flügel lokal 'liegend' ausgerichtet ist: hier auf die Y- statt X-Achse umschalten.")]
+        public bool foldOnYAxis = false;
+
+        [System.NonSerialized] public Vector3 baseScale;
     }
 
     [Header("Flatter-Tempo (Basis, große Flügel)")]
@@ -43,6 +52,12 @@ public class FairyWingFlap : MonoBehaviour
 
     private float timer;
 
+    private void Awake()
+    {
+        foreach (var wing in wings)
+            if (wing.transform != null) wing.baseScale = wing.transform.localScale;
+    }
+
     private void Update()
     {
         timer += Time.deltaTime;
@@ -57,6 +72,14 @@ public class FairyWingFlap : MonoBehaviour
                 ? Mathf.Lerp(wing.restAngle, wing.maxAngle, p)
                 : Mathf.Lerp(wing.restAngle, wing.minAngle, -p);
             wing.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+
+            // "Nach hinten klappen"-Illusion: Flügel wird bei voller Auslenkung schmaler — simuliert
+            // ein Foreshortening/Falten in die Tiefe, das reine Z-Rotation in 2D nicht abbilden kann.
+            float foldK  = Mathf.Abs(p); // 0 = Ruheposition (volle Breite), 1 = volle Auslenkung (schmal)
+            float factor = Mathf.Lerp(1f, wing.foldScaleAtExtreme, foldK);
+            wing.transform.localScale = wing.foldOnYAxis
+                ? new Vector3(wing.baseScale.x, wing.baseScale.y * factor, wing.baseScale.z)
+                : new Vector3(wing.baseScale.x * factor, wing.baseScale.y, wing.baseScale.z);
         }
     }
 }
