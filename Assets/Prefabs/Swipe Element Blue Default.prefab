@@ -103,7 +103,6 @@ GameObject:
   - component: {fileID: 4600683664717929447}
   - component: {fileID: 854640389685737140}
   - component: {fileID: 9043330146226834414}
-  - component: {fileID: 2954402015696334969}
   m_Layer: 0
   m_Name: Swipe Element Blue Default
   m_TagString: Untagged
@@ -209,26 +208,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PointPulse
   pulseAmount: 0.15
   pulseSpeed: 1.5
---- !u!114 &2954402015696334969
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1402947970897902007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 848d36f993be34befa0318e1c346d794, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PointFlyIn
-  duration: 0.7
-  startScalePercent: 0.05
-  offScreenMargin: 0.2
-  curveStrengthMin: 0.4
-  curveStrengthMax: 1.1
-  scaleOvershoot: 1.70158
-  fastScalePhaseStart: 0.8
-  slowScalePhaseFraction: 0.25
 --- !u!1 &2093443118247557205
 GameObject:
   m_ObjectHideFlags: 0

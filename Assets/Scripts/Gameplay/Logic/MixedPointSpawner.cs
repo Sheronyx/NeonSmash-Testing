@@ -459,11 +459,12 @@ public class MixedPointSpawner : MonoBehaviour
 
         var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
 
-        // PointFlyIn sitzt nur auf den normalen Tap/Swipe-Prefabs (Thunder/Fake bewusst ausgenommen,
-        // siehe PointFlyIn.cs) — dadurch entscheidet allein die Prefab-Ausstattung, ob ein Element
-        // einfliegt oder sofort erscheint, ohne Sonderfall-Verzweigung hier.
-        var flyIn = !IsTutorialMode ? visual.GetComponent<PointFlyIn>() : null;
-        if (flyIn != null)
+        // Fly-In gilt für alle normalen Tap/Swipe-Elemente im Normal Mode — Thunder bewusst
+        // ausgenommen (Gefahren-Element soll sofort klar erkennbar sein, kein verzögertes
+        // Einfliegen), Tutorial ebenfalls ausgenommen. PointFlyIn ist ein zentraler Dienst
+        // (ein Objekt in der Szene) statt einer Komponente pro Prefab.
+        bool shouldFlyIn = !IsTutorialMode && !isThunder && PointFlyIn.Instance != null;
+        if (shouldFlyIn)
         {
             // Variablen für Closure festhalten
             int        ci      = i;
@@ -472,7 +473,7 @@ public class MixedPointSpawner : MonoBehaviour
             bool       ct      = isThunder;
             Vector3    cpos    = worldPos;
             GameObject cvisual = visual;
-            flyIn.Play(worldPos, visual.transform.localScale, () =>
+            PointFlyIn.Instance.Play(visual, worldPos, visual.transform.localScale, () =>
             {
                 _pendingSlotPositions[ci] = null;
                 if (!running || gameOver || _slots[ci].point != null) { Destroy(cvisual); return; }
@@ -704,11 +705,20 @@ public class MixedPointSpawner : MonoBehaviour
         _currentDiamond  = Instantiate(diamondPrefab, worldPos, Quaternion.identity);
 
         var dp = _currentDiamond.GetComponent<DiamondPoint>();
-        if (dp != null)
+        if (dp != null) dp.spawner = this;
+
+        float reactionTime = CurrentReactionTime;
+        if (PointFlyIn.Instance != null)
         {
-            dp.spawner = this;
-            dp.Activate(CurrentReactionTime);
+            Vector3 targetScale = _currentDiamond.transform.localScale;
+            PointFlyIn.Instance.Play(_currentDiamond, worldPos, targetScale,
+                () => dp?.Activate(reactionTime, skipPopIn: true));
         }
+        else
+        {
+            dp?.Activate(reactionTime);
+        }
+
         _diamondsSpawnedThisPhase++;
     }
 

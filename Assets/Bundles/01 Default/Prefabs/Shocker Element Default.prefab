@@ -5508,7 +5508,6 @@ GameObject:
   - component: {fileID: 4844057342458101124}
   - component: {fileID: 3949391253667200385}
   - component: {fileID: 8484777983369927201}
-  - component: {fileID: 446222609829948780}
   m_Layer: 0
   m_Name: Shocker Element Default
   m_TagString: Untagged
@@ -5720,26 +5719,6 @@ MonoBehaviour:
   timeoutEffect: {fileID: 8258175887515491696, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
   timeoutEffectScale: 0.2
   shrinkDuration: 0.35
---- !u!114 &446222609829948780
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7032938748382792654}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 848d36f993be34befa0318e1c346d794, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PointFlyIn
-  duration: 0.7
-  startScalePercent: 0.05
-  offScreenMargin: 0.2
-  curveStrengthMin: 0.4
-  curveStrengthMax: 1.1
-  scaleOvershoot: 1.70158
-  fastScalePhaseStart: 0.8
-  slowScalePhaseFraction: 0.25
 --- !u!1001 &7414586575057913758
 PrefabInstance:
   m_ObjectHideFlags: 0
