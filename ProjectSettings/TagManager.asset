@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - FxTemporaire
   layers:
   - Default
   - TransparentFX
@@ -12,8 +13,8 @@ TagManager:
   - Water
   - UI
   - ActivationOrb
-  - 
-  - 
+  - Distortion
+  - CameraSortingLayer
   - 
   - 
   - 
@@ -43,6 +44,9 @@ TagManager:
     locked: 0
   - name: FX
     uniqueID: 106013295
+    locked: 0
+  - name: CameraSortingLayer
+    uniqueID: 409747607
     locked: 0
   m_RenderingLayers:
   - Default
