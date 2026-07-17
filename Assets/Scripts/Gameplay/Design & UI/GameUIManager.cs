@@ -18,6 +18,7 @@ public class GameUIManager : MonoBehaviour
     [SerializeField] private CanvasGroup resultPanel;
     [SerializeField] private TextMeshProUGUI resultHeadlineTMP;
     [SerializeField] private TextMeshProUGUI resultScoreTMP;
+    [SerializeField] private TextMeshProUGUI resultDreamEnergyTMP;
 
     [Header("Buttons")]
     [SerializeField] private Button restartButton;
@@ -41,13 +42,15 @@ public class GameUIManager : MonoBehaviour
     public void BindResultUI(
         CanvasGroup banner, TextMeshProUGUI bannerText,
         CanvasGroup result, TextMeshProUGUI headline, TextMeshProUGUI scoreTMP,
+        TextMeshProUGUI dreamEnergyTMP,
         Button restart, Button back)
     {
-        gameOverBanner    = banner;
-        gameOverTextTMP   = bannerText;
-        resultPanel       = result;
-        resultHeadlineTMP = headline;
-        resultScoreTMP    = scoreTMP;
+        gameOverBanner       = banner;
+        gameOverTextTMP      = bannerText;
+        resultPanel          = result;
+        resultHeadlineTMP    = headline;
+        resultScoreTMP       = scoreTMP;
+        resultDreamEnergyTMP = dreamEnergyTMP;
 
         // Buttons neu verdrahten (alte Listener entfernen, neue setzen)
         if (restartButton != null)    restartButton.onClick.RemoveListener(RestartGame);
@@ -60,12 +63,12 @@ public class GameUIManager : MonoBehaviour
         if (backToMenuButton != null) backToMenuButton.onClick.AddListener(BackToMenu);
     }
 
-    public void ShowGameOver(int score)
+    public void ShowGameOver(int score, int dreamEnergyReward = 0)
     {
-        StartCoroutine(Co_ShowGameOver(score));
+        StartCoroutine(Co_ShowGameOver(score, dreamEnergyReward));
     }
 
-    private IEnumerator Co_ShowGameOver(int score)
+    private IEnumerator Co_ShowGameOver(int score, int dreamEnergyReward)
     {
         if (pauseButton != null)
             pauseButton.SetActive(false);
@@ -93,6 +96,9 @@ public class GameUIManager : MonoBehaviour
         {
             resultHeadlineTMP.text = text;
             resultScoreTMP.text = ScoreManager.Format(score);
+
+            if (resultDreamEnergyTMP != null)
+                resultDreamEnergyTMP.text = "+" + ScoreManager.Format(dreamEnergyReward);
 
             // Buttons sofort klickbar — nicht erst nach der Fade-Animation
             resultPanel.interactable = true;

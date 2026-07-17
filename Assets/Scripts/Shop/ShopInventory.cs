@@ -6,6 +6,12 @@ public static class ShopInventory
     const string PrefKey     = "shop_owned";
     const string EquipPrefix = "shop_equipped_";
 
+    // Feuert bei JEDEM SetEquipped-Aufruf (ein Bundle-Equip ruft es z.B. 3x auf, für
+    // Bundle/Skin/Sound) — für UI, die unabhängig davon aktualisiert werden muss, WER den
+    // Equip ausgelöst hat (z.B. Shop-Grid und Hauptmenü-Portal sollen sich gegenseitig
+    // synchron halten, egal ob über den Shop oder das Portal-Swipe equippt wurde).
+    public static event System.Action OnEquippedChanged;
+
     static HashSet<string> _owned;
 
     static HashSet<string> Owned
@@ -41,6 +47,7 @@ public static class ShopInventory
     {
         PlayerPrefs.SetString(EquipPrefix + (int)type, itemId);
         PlayerPrefs.Save();
+        OnEquippedChanged?.Invoke();
     }
 
     public static void ClaimFree(ShopItem item)

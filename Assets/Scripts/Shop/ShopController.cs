@@ -70,6 +70,7 @@ public class ShopController : MonoBehaviour
     void OnEnable()
     {
         CoinManager.OnCoinsChanged += RefreshCoinDisplay;
+        ShopInventory.OnEquippedChanged += HandleEquippedChanged;
         if (tabSkins         != null) tabSkins.onClick.AddListener(() => SwitchTab(ShopItemType.Skin));
         if (tabSounds        != null) tabSounds.onClick.AddListener(() => SwitchTab(ShopItemType.Sound));
         if (tabCoins         != null) tabCoins.onClick.AddListener(() => SwitchTab(ShopItemType.Currency));
@@ -80,11 +81,21 @@ public class ShopController : MonoBehaviour
     void OnDisable()
     {
         CoinManager.OnCoinsChanged -= RefreshCoinDisplay;
+        ShopInventory.OnEquippedChanged -= HandleEquippedChanged;
         if (tabSkins         != null) tabSkins.onClick.RemoveAllListeners();
         if (tabSounds        != null) tabSounds.onClick.RemoveAllListeners();
         if (tabCoins         != null) tabCoins.onClick.RemoveAllListeners();
         if (tabBundles       != null) tabBundles.onClick.RemoveAllListeners();
         if (dailyClaimButton != null) dailyClaimButton.onClick.RemoveAllListeners();
+    }
+
+    // Reagiert auf Equip-Änderungen egal woher (Shop-Karten selbst, oder z.B. das
+    // Hauptmenü-Portal-Swipe) — hält das Grid synchron, auch wenn nicht der Shop selbst
+    // die Änderung ausgelöst hat. Nur bei offenem Panel nötig, sonst wird beim nächsten
+    // Open() ohnehin frisch befüllt.
+    void HandleEquippedChanged()
+    {
+        if (_open) PopulateGrid();
     }
 
     public void Open()
@@ -180,7 +191,8 @@ public class ShopController : MonoBehaviour
                 SoundThemeManager.Instance?.Apply(item.soundTheme);
         }
 
-        PopulateGrid();
+        // Kein direkter PopulateGrid()-Aufruf mehr nötig — ShopInventory.SetEquipped oben
+        // feuert OnEquippedChanged, HandleEquippedChanged() übernimmt das Refresh.
     }
 
     void OnBuyItem(ShopItem item)

@@ -1107,9 +1107,10 @@ public class MixedPointSpawner : MonoBehaviour
 
         AchievementManager.OnGameFinished(score, CurrentMode);
         MissionManager.OnGameFinished(score);
+        int dreamEnergyReward = DreamEnergyManager.OnGameFinished(score);
 
         onGameOver?.Invoke();
-        uiManager?.ShowGameOver(score);
+        uiManager?.ShowGameOver(score, dreamEnergyReward);
 
         try
         {

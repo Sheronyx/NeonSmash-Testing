@@ -93,6 +93,7 @@ public class UgsBootstrap : MonoBehaviour
             // 2) Fortschritt aus Cloud laden — vor Initialization, damit Scenes direkt korrekte Werte sehen
             await TutorialProgress.LoadFromCloudAsync();
             await CoinManager.LoadFromCloudAsync();
+            await DreamEnergyManager.LoadFromCloudAsync();
             await DailyRewardManager.LoadFromCloudAsync();
             await AchievementManager.LoadFromCloudAsync();
 
@@ -292,6 +293,9 @@ public class UgsBootstrap : MonoBehaviour
 
     var coinsTask = CoinManager.LoadFromCloudAsync();
     while (!coinsTask.IsCompleted) yield return null;
+
+    var dreamEnergyTask = DreamEnergyManager.LoadFromCloudAsync();
+    while (!dreamEnergyTask.IsCompleted) yield return null;
 
     // Highscore-Cache mit Server synchronisieren (Server ist Source of Truth)
     var syncTask = HighscoreUploader.SyncFromServerAsync(LeaderboardApi.InfinityId);
