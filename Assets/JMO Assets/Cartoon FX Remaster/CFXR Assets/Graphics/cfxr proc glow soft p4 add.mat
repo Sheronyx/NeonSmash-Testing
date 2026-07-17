@@ -8,8 +8,9 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: cfxr proc glow soft p4 add
-  m_Shader: {fileID: -6465566751694194690, guid: 67dfcda17071f4a41be79c4049965e67,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 67dfcda17071f4a41be79c4049965e67, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _CFXR_GLOW_POW_P4
   - _FADING_ON
@@ -24,6 +25,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -46,7 +48,7 @@ Material:
     - _GlowMin: 0
     - _Glow_Pow: 2
     - _HdrBoost: 0
-    - _HdrMultiply: 0
+    - _HdrMultiply: 8
     - _InvertDissolveTex: 0
     - _MaxValue: 2
     - _RingTopOffset: 0.05
@@ -62,3 +64,4 @@ Material:
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

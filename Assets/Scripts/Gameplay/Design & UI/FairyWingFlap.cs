@@ -39,6 +39,16 @@ public class FairyWingFlap : MonoBehaviour
     [Tooltip("Zum Testen: Z-Rotation abschalten, um zu sehen, ob die Fold-Skalierung allein die " +
              "Flatter-Illusion trägt. Bei aus bleibt der Flügel auf seinem Rest-Winkel stehen.")]
     [SerializeField] private bool rotationEnabled = true;
+    [Tooltip("Anteil der Zykluszeit für den schnellen Ausschlag zum Extrem (Kraftschlag) — der Rest der " +
+             "Zeit ist der langsamere Rückschlag zurück zur Ruheposition. 0.5 = symmetrisch, kleiner = " +
+             "knackigerer Kraftschlag mit weicherem Rückschlag (wirkt organischer als ein reiner Sinus).")]
+    [Range(0.1f, 0.9f)]
+    [SerializeField] private float strokePhaseFraction = 0.35f;
+    [Tooltip("Wie stark Tempo und Ausschlag von Schlag zu Schlag leicht zufällig schwanken (0 = perfekt " +
+             "gleichförmige Endlosschleife, 1 = deutlich sichtbare Variation). Verhindert den mechanisch " +
+             "wirkenden \"exakt identischer Loop\"-Effekt.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float cycleVariation = 0.25f;
 
     [Header("Flügel-Segmente (Transform pro Eintrag im Editor zuweisen)")]
     [SerializeField] private Wing[] wings = new Wing[]
@@ -56,12 +66,16 @@ public class FairyWingFlap : MonoBehaviour
     public float LiftPhase { get; private set; }
 
     private float timer;
+    private float noiseSeed;
 
     private void Awake()
     {
         // Zufälliger Start-Offset, damit mehrere Fairies (gleiche Geschwindigkeit) nicht im
         // exakt gleichen Takt schlagen, sondern sichtbar versetzt zueinander.
         timer = UnityEngine.Random.Range(0f, 100f);
+        // Eigener Seed pro Fairy, damit die Cycle-Variation (siehe Update) bei mehreren Fairies
+        // nicht synchron "atmet", sondern jede für sich unregelmäßig wirkt.
+        noiseSeed = UnityEngine.Random.Range(0f, 1000f);
 
         foreach (var wing in wings)
             if (wing.transform != null) wing.baseScale = wing.transform.localScale;
@@ -71,19 +85,32 @@ public class FairyWingFlap : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        float basePhase = timer * flapSpeed * Mathf.PI * 2f;
+        // Langsame, sanfte Zufallsschwankung im Tempo (Perlin statt reinem Random, damit sie sich
+        // stetig ändert statt zu springen) — verhindert den "perfekt identischer Loop"-Effekt, der
+        // mechanisch/steif wirkt, weil kein echter Flügelschlag exakt gleich wie der vorherige ist.
+        float jitter      = (Mathf.PerlinNoise(timer * 0.4f, noiseSeed) * 2f - 1f) * cycleVariation;
+        float speedFactor = 1f + jitter * 0.35f;
+
+        float basePhase = timer * flapSpeed * speedFactor * Mathf.PI * 2f;
         LiftPhase = Mathf.Sin(basePhase);
 
         foreach (var wing in wings)
         {
             if (wing.transform == null) continue;
 
-            // (1 - cos(x)) / 2 läuft durchgehend glatt 0→1→0→1... ohne je an einer Position zu
-            // pausieren — im Gegensatz zu einem zweiseitigen Sinus, der bei nur einseitig genutztem
-            // Bereich (maxAngle bzw. minAngle == restAngle) die halbe Zeit auf der Ruheposition
-            // "einfriert", bis der nächste Schlag beginnt.
-            float phase = timer * flapSpeed * wing.speedMultiplier * Mathf.PI * 2f;
-            float t     = (1f - Mathf.Cos(phase)) * 0.5f;
+            float cyclePos = timer * flapSpeed * wing.speedMultiplier * speedFactor;
+            float k = cyclePos - Mathf.Floor(cyclePos); // 0..1 innerhalb des aktuellen Zyklus, läuft durchgehend ohne Pause
+
+            // Asymmetrische Schlag-Kurve statt symmetrischem Kosinus: schneller Ausschlag zum Extrem
+            // (Kraftschlag), langsameres Zurückkehren (Rückschlag) — fühlt sich lebendiger an als eine
+            // perfekt gleichförmige Hin-und-her-Bewegung. SmoothStep sorgt dafür, dass die Geschwindigkeit
+            // an beiden Umkehrpunkten sanft auf 0 geht, kein Ruck beim Richtungswechsel.
+            float t = k < strokePhaseFraction
+                ? Mathf.SmoothStep(0f, 1f, k / strokePhaseFraction)
+                : Mathf.SmoothStep(1f, 0f, (k - strokePhaseFraction) / (1f - strokePhaseFraction));
+
+            // Leichte Ausschlag-Variation pro Zyklus, synchron zum Tempo-Jitter oben.
+            t = Mathf.Clamp01(t * (1f + jitter * 0.15f));
 
             float extremeAngle = wing.foldTowardMaxAngle ? wing.maxAngle : wing.minAngle;
             float angle        = Mathf.Lerp(wing.restAngle, extremeAngle, t);

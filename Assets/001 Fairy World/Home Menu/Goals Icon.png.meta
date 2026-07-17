@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: 7bd3fca2c9d4b4aae97e5804680dca72
+guid: 60af64036f910457cb15d035d94c639a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2146318885694932605
-    second: InfoBadge 1_0
+      213: -7356788449452075832
+    second: Goals Icon_0
+  - first:
+      213: -7891452928885566148
+    second: Goals Icon_1
+  - first:
+      213: -6453426349304478016
+    second: Goals Icon_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +78,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 64
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -126,13 +132,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InfoBadge 1_0
+      name: Goals Icon_0
       rect:
         serializedVersion: 2
-        x: 14
-        y: 14
-        width: 226
-        height: 227
+        x: 247
+        y: 246
+        width: 826
+        height: 793
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +147,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 389f07b585eb632e0800000000000000
-      internalID: -2146318885694932605
+      spriteID: 8c456b612ef67e990800000000000000
+      internalID: -7356788449452075832
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Goals Icon_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 15
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c355f043f5deb7290800000000000000
+      internalID: -7891452928885566148
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Goals Icon_2
+      rect:
+        serializedVersion: 2
+        x: 1249
+        y: 0
+        width: 5
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0c68f815de2d076a0800000000000000
+      internalID: -6453426349304478016
       vertices: []
       indices: 
       edges: []
@@ -161,7 +211,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      InfoBadge 1_0: -2146318885694932605
+      Goals Icon_0: -7356788449452075832
+      Goals Icon_1: -7891452928885566148
+      Goals Icon_2: -6453426349304478016
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

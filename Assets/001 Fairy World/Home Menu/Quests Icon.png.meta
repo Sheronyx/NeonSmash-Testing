@@ -1,10 +1,13 @@
 fileFormatVersion: 2
-guid: 7bd3fca2c9d4b4aae97e5804680dca72
+guid: 22a0d57114c9c488ba459c62bbd7623c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2146318885694932605
-    second: InfoBadge 1_0
+      213: 2276566525794901521
+    second: Quests Icon_0
+  - first:
+      213: 9008141987817230046
+    second: Quests Icon_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +75,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 64
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -126,13 +129,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: InfoBadge 1_0
+      name: Quests Icon_0
       rect:
         serializedVersion: 2
-        x: 14
-        y: 14
-        width: 226
-        height: 227
+        x: 186
+        y: 144
+        width: 939
+        height: 999
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +144,30 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 389f07b585eb632e0800000000000000
-      internalID: -2146318885694932605
+      spriteID: 11edc85813df79f10800000000000000
+      internalID: 2276566525794901521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Quests Icon_1
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 17
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ede80262969530d70800000000000000
+      internalID: 9008141987817230046
       vertices: []
       indices: 
       edges: []
@@ -161,7 +186,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      InfoBadge 1_0: -2146318885694932605
+      Quests Icon_0: 2276566525794901521
+      Quests Icon_1: 9008141987817230046
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
