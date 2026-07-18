@@ -459,11 +459,10 @@ public class MixedPointSpawner : MonoBehaviour
 
         var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
 
-        // Fly-In gilt für alle normalen Tap/Swipe-Elemente im Normal Mode — Thunder bewusst
-        // ausgenommen (Gefahren-Element soll sofort klar erkennbar sein, kein verzögertes
-        // Einfliegen), Tutorial ebenfalls ausgenommen. PointFlyIn ist ein zentraler Dienst
-        // (ein Objekt in der Szene) statt einer Komponente pro Prefab.
-        bool shouldFlyIn = !IsTutorialMode && !isThunder && PointFlyIn.Instance != null;
+        // Fly-In gilt für alle Elemente im Normal Mode (inkl. Thunder/Shocker) — nur im Tutorial
+        // ausgenommen. PointFlyIn ist ein zentraler Dienst (ein Objekt in der Szene) statt einer
+        // Komponente pro Prefab.
+        bool shouldFlyIn = !IsTutorialMode && PointFlyIn.Instance != null;
         if (shouldFlyIn)
         {
             // Variablen für Closure festhalten
@@ -534,7 +533,7 @@ public class MixedPointSpawner : MonoBehaviour
             if (countdownSq != null) countdownSq.StartCountdown(dynamicTime);
             if (pulse       != null) pulse.StartPulsing();
 
-            if (tap != null) TrySpawnFake(newPoint, dynamicTime);
+            if (tap != null) TrySpawnFake(dynamicTime);
         }
     }
 
@@ -611,6 +610,25 @@ public class MixedPointSpawner : MonoBehaviour
             }
 
             return vp; // perfekte Position gefunden
+        }
+
+        // Diagnose: der Fallback greift nur, wenn in 120 Versuchen KEINE Position alle Mindestabstände
+        // erfüllt hat — landet der beste gefundene Abstand deutlich unter dem geforderten Minimum,
+        // war die Aufgabe für den verfügbaren Platz vermutlich geometrisch gar nicht lösbar (z.B. weil
+        // GetAllowedSpawnRect() auf sehr kleinen/schmalen Screens auf ihren 100x100px-Mindestwert
+        // zurückfällt). Bewusst IMMER geloggt (nicht nur bei debugLogs), da der Bug selten/zufällig
+        // auftritt und wir beim nächsten Mal harte Daten dazu brauchen statt zu raten.
+        float requiredDist = GetBaseMinDistancePixels();
+        if (bestFallbackDist < requiredDist)
+        {
+            Rect spawnRectPx = GetAllowedSpawnRect();
+            Debug.LogWarning(
+                $"[Spawner] FindSlotPosition-Fallback für Slot {slotIndex}: erreichter Mindestabstand " +
+                $"{bestFallbackDist:F1}px < gefordert {requiredDist:F1}px. " +
+                $"Screen={Screen.width}x{Screen.height}, SpawnRect={spawnRectPx.width:F0}x{spawnRectPx.height:F0}px " +
+                $"@({spawnRectPx.x:F0},{spawnRectPx.y:F0}), halfSizePx={halfSizePx:F1}, " +
+                $"minDistancePercent={minDistancePercent}, safeArea={Screen.safeArea.width:F0}x{Screen.safeArea.height:F0}."
+            );
         }
 
         return bestFallback; // beste verfügbare Position nach allen Versuchen
@@ -890,6 +908,23 @@ public class MixedPointSpawner : MonoBehaviour
             half = Mathf.Max(half, Vector2.Distance(spC, spE));
         }
 
+        // Bereits gelandete Elemente pulsieren laufend um ±pulseAmount (PointPulse) — eine Live-Messung
+        // würde je nach zufälligem Zeitpunkt im Pulse-Zyklus einen zu kleinen Radius liefern und dadurch
+        // den Sicherheitsabstand zu neu gespawnten Nachbarn gelegentlich unterschätzen (sichtbares
+        // Überlappen, sobald der Pulse wieder aufwächst). Korrektur: gemessene Größe auf die stabile
+        // Basis-Scale hochrechnen statt die live schwankende zu übernehmen.
+        if (!isPrefab)
+        {
+            var pulse = target.GetComponent<PointPulse>();
+            if (pulse != null)
+            {
+                float liveUniformScale = target.transform.lossyScale.x; // Pulse skaliert immer uniform
+                float baseUniformScale = pulse.BaseScale.x;
+                if (liveUniformScale > 0.0001f)
+                    half *= baseUniformScale / liveUniformScale;
+            }
+        }
+
         if (isPrefab) Destroy(target);
 
         return half;
@@ -900,13 +935,13 @@ public class MixedPointSpawner : MonoBehaviour
 
     // Spawnt mit fakeSpawnChance ein Fake-Element parallel zum echten Tap-Point.
     // Nur wenn noch kein Fake existiert und eine Position ohne Overlap gefunden wird.
-    private void TrySpawnFake(GameObject realPoint, float lifetime)
+    private void TrySpawnFake(float lifetime)
     {
         if (ActiveFakePrefab == null) return;
         if (currentFake != null) return;                 // schon ein Fake da
         if (Random.value > fakeSpawnChance) return;      // Chance verfehlt
 
-        if (!TryFindFakePosition(realPoint, out Vector3 worldPos)) return;
+        if (!TryFindFakePosition(out Vector3 worldPos)) return;
 
         currentFake = Instantiate(ActiveFakePrefab, worldPos, Quaternion.identity);
 
@@ -924,18 +959,36 @@ public class MixedPointSpawner : MonoBehaviour
         currentFake = null;
     }
 
-    // Sucht eine Position im erlaubten Spawn-Bereich, die weit genug vom echten
-    // Point entfernt ist (kein optisches Überlappen).
-    private bool TryFindFakePosition(GameObject realPoint, out Vector3 worldPos)
+    // Sucht eine Position im erlaubten Spawn-Bereich, die weit genug von ALLEN aktuell belegten
+    // Slots entfernt ist (kein optisches Überlappen) — nicht nur vom einen zugehörigen realPoint.
+    // realPoint ist zum Aufrufzeitpunkt bereits selbst einer der _slots (siehe FinishSlotSpawn:
+    // _slots[i].point wird VOR dem TrySpawnFake-Aufruf gesetzt), taucht also automatisch mit auf.
+    // Ohne diesen Check gegen die ANDEREN Slots konnte ein Fake ungebremst genau auf einem der
+    // beiden übrigen Farbelemente derselben Runde landen (komplettes Overlap, nicht nur zu knapp).
+    private bool TryFindFakePosition(out Vector3 worldPos)
     {
         worldPos = Vector3.zero;
 
         Rect allowedScreen   = GetAllowedSpawnRect();
         Rect allowedViewport = ScreenRectToViewportRect(allowedScreen);
 
-        float   fakeHalfPx = GetHalfSizePixels(ActiveFakePrefab);
-        Vector2 realVP     = mainCamera.WorldToViewportPoint(realPoint.transform.position);
-        float   realHalfPx = GetHalfSizePixels(realPoint);
+        float fakeHalfPx = GetHalfSizePixels(ActiveFakePrefab);
+
+        var obstacleVPs   = new System.Collections.Generic.List<Vector2>(_slots.Length);
+        var obstacleHalfs = new System.Collections.Generic.List<float>(_slots.Length);
+        for (int j = 0; j < _slots.Length; j++)
+        {
+            if (_slots[j].point != null)
+            {
+                obstacleVPs.Add(mainCamera.WorldToViewportPoint(_slots[j].point.transform.position));
+                obstacleHalfs.Add(GetHalfSizePixels(_slots[j].point));
+            }
+            else if (_pendingSlotPositions[j].HasValue)
+            {
+                obstacleVPs.Add(mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value));
+                obstacleHalfs.Add(fakeHalfPx);
+            }
+        }
 
         for (int i = 0; i < 40; i++)
         {
@@ -944,11 +997,15 @@ public class MixedPointSpawner : MonoBehaviour
                 Random.Range(allowedViewport.yMin, allowedViewport.yMax)
             );
 
-            if (IsFarEnoughFromOrb(vp, realVP, fakeHalfPx, realHalfPx))
+            bool valid = true;
+            for (int k = 0; k < obstacleVPs.Count; k++)
             {
-                worldPos = ViewportToWorldOnZ0(vp);
-                return true;
+                if (!IsFarEnoughFromOrb(vp, obstacleVPs[k], fakeHalfPx, obstacleHalfs[k])) { valid = false; break; }
             }
+            if (!valid) continue;
+
+            worldPos = ViewportToWorldOnZ0(vp);
+            return true;
         }
 
         return false; // keine überlappungsfreie Position → diesmal kein Fake
@@ -1003,7 +1060,7 @@ public class MixedPointSpawner : MonoBehaviour
             var pulse = newPoint.GetComponent<PointPulse>();
             if (pulse) pulse.StartPulsing();
 
-            if (tap != null) TrySpawnFake(newPoint, dynamicTime);
+            if (tap != null) TrySpawnFake(dynamicTime);
         }
         else if (!IsTutorialMode)
         {
@@ -1364,9 +1421,6 @@ public class MixedPointSpawner : MonoBehaviour
 
         var bp = point.GetComponent<BasePoint>();
         if (bp != null) bp.SendMessage("SpawnExplosion");
-
-        // Parallel zur VFX-Explosion: Energiekugel Richtung der farblich passenden Fairy.
-        FairyEnergyManager.Instance?.SpawnEnergyOrb(color, point.transform.position);
 
         if (idx >= 0)
         {

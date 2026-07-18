@@ -9,6 +9,10 @@ public class PointPulse : MonoBehaviour
     private bool isPulsing = false;
     private float pulseTimer = 0f;
 
+    // Für Sicherheitsabstand-Berechnungen (MixedPointSpawner.GetHalfSizePixels): die STABILE
+    // Basisgröße statt der laufend um ±pulseAmount schwankenden Live-Scale.
+    public Vector3 BaseScale => baseScale;
+
     private void Awake()
     {
         baseScale = transform.localScale;

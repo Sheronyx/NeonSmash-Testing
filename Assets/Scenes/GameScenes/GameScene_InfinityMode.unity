@@ -804,7 +804,7 @@ MonoBehaviour:
     colorTriggerThreshold: 15
     shockerEnabled: 0
     shockerChance: 0
-    diamondsEnabled: 1
+    diamondsEnabled: 0
     specialElementCount: 20
     specialScoreMultiplier: 3
     specialIntensityMultiplier: 1
@@ -11317,6 +11317,10 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2669549533155498318, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 93
+      objectReference: {fileID: 0}
     - target: {fileID: 3096649898214258267, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 330
@@ -11363,7 +11367,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3776831586767542402, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -73
+      value: -17
       objectReference: {fileID: 0}
     - target: {fileID: 3776831586767542402, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
       propertyPath: m_ConstrainProportionsScale

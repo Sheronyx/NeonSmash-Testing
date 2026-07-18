@@ -26,9 +26,11 @@ public class MenuPortalSwitcher : MonoBehaviour
     [Header("Wisch-Erkennung")]
     [Tooltip("Ab welcher Distanz (Pixel) ein Wisch als Skin-Wechsel zählt.")]
     [SerializeField] private float swipeThresholdPixels = 100f;
-    [Tooltip("Nur Wische zählen, die in der Nähe dieses Punkts starten (leer = dieses Objekt selbst). " +
-             "Verhindert, dass Wischen über Buttons/Shop/Freunde etc. versehentlich den Skin wechselt.")]
+    [Tooltip("Nur Wische zählen, die vertikal in der Nähe dieses Punkts starten (leer = dieses Objekt " +
+             "selbst) — horizontal ist die gesamte Bildschirmbreite erlaubt (links/rechts vom Portal " +
+             "geht also auch), nur oben/unten (Buttons/Shop/Freunde etc.) soll nicht mit auslösen.")]
     [SerializeField] private Transform touchZoneAnchor;
+    [Tooltip("Erlaubte vertikale Distanz (Pixel) vom Touch Zone Anchor, in der ein Wisch noch zählt.")]
     [SerializeField] private float touchZoneRadius = 320f;
     [Tooltip("Nach dem letzten Skin wieder beim ersten weitermachen (und umgekehrt).")]
     [SerializeField] private bool wrapAround = true;
@@ -46,6 +48,7 @@ public class MenuPortalSwitcher : MonoBehaviour
     private bool           _dragging;
     private float          _dragStartX;
     private Coroutine      _transitionRoutine;
+    private bool           _suppressExternalSync;
 
     // Ursprüngliche (im Editor eingestellte) Position/Skalierung pro Portal-Objekt — jedes Portal
     // darf individuell positioniert/skaliert sein, die Animation lerpt relativ dazu statt sie zu überschreiben.
@@ -82,13 +85,20 @@ public class MenuPortalSwitcher : MonoBehaviour
             if (entry.portalObject != null && !_homeTransforms.ContainsKey(entry.portalObject))
                 _homeTransforms[entry.portalObject] = (entry.portalObject.transform.localPosition, entry.portalObject.transform.localScale);
 
-        SyncToEquippedState();
+        SyncToEquippedState(forceShow: true);
     }
 
     // Liest den aktuell equippten Skin (egal ob per Shop oder per Portal-Swipe gesetzt) und
     // zeigt das passende Portal sofort (ohne Animation) — beim Start UND jedes Mal, wenn
     // ShopInventory.OnEquippedChanged von woanders (z.B. dem Shop) feuert.
-    private void SyncToEquippedState()
+    //
+    // forceShow=false (Standard, für den externen Event-Handler): wenn der aufgelöste Index
+    // bereits dem aktuell angezeigten entspricht, passiert NICHTS — das ist genau der Fall, wenn
+    // die eigene Wisch-Animation gerade erst SetEquipped ausgelöst hat (das hier feuert dann als
+    // Rückkopplung desselben Frames) und sie sonst sofort wieder abgebrochen/zurückgesetzt würde.
+    // forceShow=true (nur beim Start): dort MUSS immer gezeigt werden, auch wenn Index 0 zufällig
+    // schon dem Default-Wert von _index entspricht.
+    private void SyncToEquippedState(bool forceShow = false)
     {
         // Über das Theme statt die Item-Id auflösen: ein equippter Bundle-Skin steht unter der
         // Bundle-Id im Skin-Slot, matcht also nicht zwangsläufig die Id des Eintrags, den wir
@@ -102,14 +112,20 @@ public class MenuPortalSwitcher : MonoBehaviour
             index = 0;
         }
 
+        if (!forceShow && index == _index) return;
+
         _index = index;
         ShowPortal(_index);
     }
 
     // Equip-Änderung kann auch von außerhalb kommen (z.B. der Shop equippt ein Bundle) — dann
     // nur die Anzeige nachziehen, NICHT erneut equippen (sonst Endlosschleife/unnötige Writes).
+    // Während der eigene Swipe gerade selbst equippt (_suppressExternalSync), wird das komplett
+    // ignoriert — sonst würde der erste von drei SetEquipped-Aufrufen (Bundle vor Skin) hier kurz
+    // noch den ALTEN Skin auslesen und die gerade gestartete Animation sofort wieder zurücksetzen.
     private void HandleEquippedChangedExternally()
     {
+        if (_suppressExternalSync) return;
         if (_catalogue == null || _skinItems == null || _skinItems.Length == 0) return;
         SyncToEquippedState();
     }
@@ -144,7 +160,9 @@ public class MenuPortalSwitcher : MonoBehaviour
 
         Transform anchor = touchZoneAnchor != null ? touchZoneAnchor : transform;
         Vector3 anchorScreen = cam.WorldToScreenPoint(anchor.position);
-        return Vector2.Distance(screenPos, anchorScreen) <= touchZoneRadius;
+        // Nur vertikale Distanz prüfen — horizontal ist die volle Bildschirmbreite erlaubt, damit man
+        // auch links/rechts neben dem Portal wischen kann, nicht nur direkt darauf.
+        return Mathf.Abs(screenPos.y - anchorScreen.y) <= touchZoneRadius;
     }
 
     public void Next() => Step(1);
@@ -177,11 +195,16 @@ public class MenuPortalSwitcher : MonoBehaviour
         {
             // Exakt dieselbe Bundle-Equip-Logik wie ShopController.OnEquipItem, damit Shop-Anzeige
             // (aktives Bundle-Badge) und Sound-Theme konsistent zum hier gewählten Skin bleiben.
+            // _suppressExternalSync verhindert, dass die eigenen SetEquipped-Aufrufe über das
+            // OnEquippedChanged-Event zurück in HandleEquippedChangedExternally laufen und die
+            // gerade gestartete Animation sofort wieder abwürgen.
+            _suppressExternalSync = true;
             ShopInventory.SetEquipped(ShopItemType.Bundle, item.itemId);
             ShopInventory.SetEquipped(ShopItemType.Skin,   item.itemId);
             ShopInventory.SetEquipped(ShopItemType.Sound,  item.itemId);
-            SoundThemeManager.Instance?.Apply(item.soundTheme);
+            _suppressExternalSync = false;
 
+            SoundThemeManager.Instance?.Apply(item.soundTheme);
             if (SkinManager.Instance != null) SkinManager.Instance.Apply(item.skinTheme);
         }
         // Nicht besessene Skins: nur die Portal-Vorschau wechselt, es wird absichtlich NICHT
