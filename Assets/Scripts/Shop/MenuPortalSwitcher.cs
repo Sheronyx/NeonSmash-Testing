@@ -23,6 +23,10 @@ public class MenuPortalSwitcher : MonoBehaviour
     [Tooltip("Pro Skin: Theme + zugehöriges, bereits in der Szene platziertes Portal-Objekt.")]
     [SerializeField] private PortalEntry[] portalEntries;
 
+    [Tooltip("Zusätzliches Objekt pro Skin (z.B. ein weiteres Partikelsystem), das synchron mit dem " +
+             "Portal umgeschaltet wird — ohne Slide-Animation, einfach ein-/ausgeblendet.")]
+    [SerializeField] private PortalEntry[] secondaryEffectEntries;
+
     [Header("Wisch-Erkennung")]
     [Tooltip("Ab welcher Distanz (Pixel) ein Wisch als Skin-Wechsel zählt.")]
     [SerializeField] private float swipeThresholdPixels = 100f;
@@ -190,6 +194,8 @@ public class MenuPortalSwitcher : MonoBehaviour
         if (_transitionRoutine != null) StopCoroutine(_transitionRoutine);
         _transitionRoutine = StartCoroutine(Co_Transition(fromPortal, toPortal, direction));
 
+        ShowSecondaryEffect(index);
+
         var item = _skinItems[_index];
         if (ShopInventory.IsOwned(item.itemId))
         {
@@ -299,6 +305,7 @@ public class MenuPortalSwitcher : MonoBehaviour
             Debug.LogWarning($"[MenuPortalSwitcher] ShopItem \"{item.itemId}\" hat kein Skin Theme zugewiesen — kein Portal wird angezeigt.");
             foreach (var entry in portalEntries)
                 if (entry.portalObject != null) { ResetToHome(entry.portalObject); entry.portalObject.SetActive(false); }
+            ShowSecondaryEffect(index);
             return;
         }
 
@@ -316,6 +323,19 @@ public class MenuPortalSwitcher : MonoBehaviour
 
         if (!matched)
             Debug.LogWarning($"[MenuPortalSwitcher] Kein Portal Entry für Theme \"{theme.name}\" (Skin \"{item.itemId}\") gefunden — Portal Entries im Inspector prüfen.");
+
+        ShowSecondaryEffect(index);
+    }
+
+    // Blendet pro Skin ein zusätzliches Objekt (z.B. weiteres Partikelsystem) synchron ein/aus —
+    // ohne Slide-Animation, reines SetActive nach Theme-Treffer, analog zu ShowPortal.
+    private void ShowSecondaryEffect(int index)
+    {
+        if (secondaryEffectEntries == null || secondaryEffectEntries.Length == 0) return;
+
+        SkinTheme theme = _skinItems[index].skinTheme;
+        foreach (var entry in secondaryEffectEntries)
+            if (entry.portalObject != null) entry.portalObject.SetActive(entry.theme == theme);
     }
 
     private void ResetToHome(GameObject portal)
