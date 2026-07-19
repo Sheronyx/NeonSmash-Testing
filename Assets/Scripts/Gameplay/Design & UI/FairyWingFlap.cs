@@ -34,8 +34,15 @@ public class FairyWingFlap : MonoBehaviour
     }
 
     [Header("Flatter-Tempo (Basis, große Flügel)")]
-    [Tooltip("Flatter-Frequenz in Hz (volle Hin-und-Zurück-Bewegung pro Sekunde).")]
-    [SerializeField] private float flapSpeed = 2.2f;
+    [Tooltip("Erlaubter Bereich der Flatter-Frequenz in Hz (volle Hin-und-Zurück-Bewegung pro Sekunde). " +
+             "Die tatsächliche Geschwindigkeit driftet sanft (per Perlin Noise) innerhalb dieses Bereichs " +
+             "hin und her, statt fest auf einem Wert zu bleiben — verhindert den mechanisch wirkenden " +
+             "\"exakt identischer Loop\"-Effekt und ist gleichzeitig deine Kontrolle gegen zu schnelles Flattern.")]
+    [SerializeField] private float minFlapSpeed = 1.8f;
+    [SerializeField] private float maxFlapSpeed = 2.6f;
+    [Tooltip("Wie schnell die Geschwindigkeit innerhalb von Min/Max hin- und herdriftet (höher = schnellere " +
+             "Tempowechsel, niedriger = trägere/langsamere Übergänge zwischen langsam und schnell).")]
+    [SerializeField] private float speedDriftRate = 0.4f;
     [Tooltip("Zum Testen: Z-Rotation abschalten, um zu sehen, ob die Fold-Skalierung allein die " +
              "Flatter-Illusion trägt. Bei aus bleibt der Flügel auf seinem Rest-Winkel stehen.")]
     [SerializeField] private bool rotationEnabled = true;
@@ -44,11 +51,10 @@ public class FairyWingFlap : MonoBehaviour
              "knackigerer Kraftschlag mit weicherem Rückschlag (wirkt organischer als ein reiner Sinus).")]
     [Range(0.1f, 0.9f)]
     [SerializeField] private float strokePhaseFraction = 0.35f;
-    [Tooltip("Wie stark Tempo und Ausschlag von Schlag zu Schlag leicht zufällig schwanken (0 = perfekt " +
-             "gleichförmige Endlosschleife, 1 = deutlich sichtbare Variation). Verhindert den mechanisch " +
-             "wirkenden \"exakt identischer Loop\"-Effekt.")]
+    [Tooltip("Wie stark der Ausschlag (nicht die Geschwindigkeit) zusätzlich von Schlag zu Schlag leicht " +
+             "schwankt (0 = kein Effekt).")]
     [Range(0f, 1f)]
-    [SerializeField] private float cycleVariation = 0.25f;
+    [SerializeField] private float amplitudeVariation = 0.15f;
 
     [Header("Flügel-Segmente (Transform pro Eintrag im Editor zuweisen)")]
     [SerializeField] private Wing[] wings = new Wing[]
@@ -85,20 +91,22 @@ public class FairyWingFlap : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        // Langsame, sanfte Zufallsschwankung im Tempo (Perlin statt reinem Random, damit sie sich
-        // stetig ändert statt zu springen) — verhindert den "perfekt identischer Loop"-Effekt, der
-        // mechanisch/steif wirkt, weil kein echter Flügelschlag exakt gleich wie der vorherige ist.
-        float jitter      = (Mathf.PerlinNoise(timer * 0.4f, noiseSeed) * 2f - 1f) * cycleVariation;
-        float speedFactor = 1f + jitter * 0.35f;
+        // Aktuelle Flatter-Geschwindigkeit driftet sanft zwischen Min/Max (Perlin statt reinem Random,
+        // damit sie sich stetig ändert statt zu springen) — verhindert sowohl den "perfekt identischer
+        // Loop"-Effekt als auch dauerhaft zu schnelles Flattern, da der Bereich direkt im Inspector
+        // begrenzt wird statt nur als Prozent-Abweichung von einem Basiswert.
+        float noiseT          = Mathf.PerlinNoise(timer * speedDriftRate, noiseSeed);
+        float currentFlapSpeed = Mathf.Lerp(minFlapSpeed, maxFlapSpeed, noiseT);
+        float ampJitter        = (noiseT * 2f - 1f) * amplitudeVariation; // -1..1, für die Ausschlag-Variation unten
 
-        float basePhase = timer * flapSpeed * speedFactor * Mathf.PI * 2f;
+        float basePhase = timer * currentFlapSpeed * Mathf.PI * 2f;
         LiftPhase = Mathf.Sin(basePhase);
 
         foreach (var wing in wings)
         {
             if (wing.transform == null) continue;
 
-            float cyclePos = timer * flapSpeed * wing.speedMultiplier * speedFactor;
+            float cyclePos = timer * currentFlapSpeed * wing.speedMultiplier;
             float k = cyclePos - Mathf.Floor(cyclePos); // 0..1 innerhalb des aktuellen Zyklus, läuft durchgehend ohne Pause
 
             // Asymmetrische Schlag-Kurve statt symmetrischem Kosinus: schneller Ausschlag zum Extrem
@@ -109,8 +117,8 @@ public class FairyWingFlap : MonoBehaviour
                 ? Mathf.SmoothStep(0f, 1f, k / strokePhaseFraction)
                 : Mathf.SmoothStep(1f, 0f, (k - strokePhaseFraction) / (1f - strokePhaseFraction));
 
-            // Leichte Ausschlag-Variation pro Zyklus, synchron zum Tempo-Jitter oben.
-            t = Mathf.Clamp01(t * (1f + jitter * 0.15f));
+            // Leichte Ausschlag-Variation pro Zyklus, synchron zur Tempo-Drift oben.
+            t = Mathf.Clamp01(t * (1f + ampJitter));
 
             float extremeAngle = wing.foldTowardMaxAngle ? wing.maxAngle : wing.minAngle;
             float angle        = Mathf.Lerp(wing.restAngle, extremeAngle, t);
