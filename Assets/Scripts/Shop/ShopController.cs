@@ -14,6 +14,8 @@ public class ShopController : MonoBehaviour
     [SerializeField] TextMeshProUGUI coinBalanceLabel;
 
     [Header("Daily Banner")]
+    [Tooltip("Daily Banner erstmal komplett deaktiviert — Feature pausiert, Wiring bleibt erhalten.")]
+    [SerializeField] bool            dailyBannerEnabled = false;
     [SerializeField] GameObject      dailyBannerRoot;
     [SerializeField] Image           dailyBannerThumbnail;
     [SerializeField] TextMeshProUGUI dailyBannerName;
@@ -217,7 +219,7 @@ public class ShopController : MonoBehaviour
     void RefreshDailyBanner()
     {
         if (dailyBannerRoot == null) return;
-        if (dailyItem == null) { dailyBannerRoot.SetActive(false); return; }
+        if (!dailyBannerEnabled || dailyItem == null) { dailyBannerRoot.SetActive(false); return; }
 
         dailyBannerRoot.SetActive(true);
         bool claimed = ShopInventory.IsOwned(dailyItem.itemId);

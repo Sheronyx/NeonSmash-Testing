@@ -87,17 +87,32 @@ public class FairyWingFlap : MonoBehaviour
             if (wing.transform != null) wing.baseScale = wing.transform.localScale;
     }
 
+    private float _debugLogTimer;
+
     private void Update()
     {
         timer += Time.deltaTime;
 
         // Aktuelle Flatter-Geschwindigkeit driftet sanft zwischen Min/Max (Perlin statt reinem Random,
-        // damit sie sich stetig ändert statt zu springen) — verhindert sowohl den "perfekt identischer
-        // Loop"-Effekt als auch dauerhaft zu schnelles Flattern, da der Bereich direkt im Inspector
-        // begrenzt wird statt nur als Prozent-Abweichung von einem Basiswert.
-        float noiseT          = Mathf.PerlinNoise(timer * speedDriftRate, noiseSeed);
+        // damit sie sich stetig ändert statt zu springen) — verhindert den "perfekt identischer Loop"-
+        // Effekt. WICHTIG: Mathf.PerlinNoise bekommt hier bewusst NICHT den unbegrenzt wachsenden
+        // timer direkt, sondern einen auf 0..250 umgewickelten Wert — Unitys Perlin-Implementierung
+        // driftet bei größeren Eingabewerten (schon nach einigen Minuten Spielzeit) zunehmend Richtung
+        // 1, wodurch die Geschwindigkeit über die Zeit immer weiter Richtung maxFlapSpeed gewandert
+        // wäre (Bug: "wird immer schneller"). Der Reset alle ~250s erzeugt höchstens einen winzigen,
+        // kaum wahrnehmbaren Tempo-Sprung, verhindert aber die dauerhafte Drift zuverlässig.
+        float noiseInput      = Mathf.Repeat(timer, 250f) * speedDriftRate;
+        float noiseT          = Mathf.PerlinNoise(noiseInput, noiseSeed);
         float currentFlapSpeed = Mathf.Lerp(minFlapSpeed, maxFlapSpeed, noiseT);
         float ampJitter        = (noiseT * 2f - 1f) * amplitudeVariation; // -1..1, für die Ausschlag-Variation unten
+
+        // TEMPORÄR zur Diagnose des "wird immer schneller"-Bugs — einmal pro Sekunde loggen.
+        _debugLogTimer += Time.unscaledDeltaTime;
+        if (_debugLogTimer >= 1f)
+        {
+            _debugLogTimer = 0f;
+            Debug.Log($"[FairyWingFlap:{name}] timer={timer:F1} noiseInput={noiseInput:F1} noiseT={noiseT:F3} currentFlapSpeed={currentFlapSpeed:F3} timeScale={Time.timeScale:F2}");
+        }
 
         float basePhase = timer * currentFlapSpeed * Mathf.PI * 2f;
         LiftPhase = Mathf.Sin(basePhase);
