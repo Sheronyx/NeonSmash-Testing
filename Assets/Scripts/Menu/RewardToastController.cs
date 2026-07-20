@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 // Attach to a Toast Panel GameObject in MainMenuScene.
 // Drains RewardNotificationQueue and shows one toast at a time.
@@ -8,12 +9,14 @@ public class RewardToastController : MonoBehaviour
 {
     [Header("Toast Panel")]
     [SerializeField] private CanvasGroup  toastPanel;
-    [SerializeField] private RectTransform coinsRow;
+    [FormerlySerializedAs("coinsRow")]
+    [SerializeField] private RectTransform dreamEnergyRow;
 
     [Header("Text")]
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI subtitleText;
-    [SerializeField] private TextMeshProUGUI coinsText;
+    [FormerlySerializedAs("coinsText")]
+    [SerializeField] private TextMeshProUGUI dreamEnergyText;
 
     [Header("Timing")]
     [SerializeField] private float slideInDuration  = 0.25f;
@@ -71,9 +74,9 @@ public class RewardToastController : MonoBehaviour
     {
         _isShowing = true;
 
-        if (titleText    != null) titleText.text    = n.Title;
-        if (subtitleText != null) subtitleText.text  = n.Subtitle;
-        if (coinsText    != null) coinsText.text     = $"+{n.Coins}";
+        if (titleText       != null) titleText.text       = n.Title;
+        if (subtitleText    != null) subtitleText.text    = n.Subtitle;
+        if (dreamEnergyText != null) dreamEnergyText.text = $"+{n.Amount}";
 
         toastPanel.gameObject.SetActive(true);
         toastPanel.alpha = 0f;
@@ -94,9 +97,9 @@ public class RewardToastController : MonoBehaviour
         toastPanel.alpha = 1f;
         if (_rt != null) _rt.anchoredPosition = _shownPos;
 
-        // Coins fly from coins row to coin display
-        Vector3 source = coinsRow != null ? coinsRow.position : toastPanel.transform.position;
-        CoinDisplayUI.Instance?.FlyCoinsFrom(n.Coins, source);
+        // Dream Energy fliegt von der Reihe im Toast zur Header-Anzeige
+        Vector3 source = dreamEnergyRow != null ? dreamEnergyRow.position : toastPanel.transform.position;
+        DreamEnergyDisplayUI.Instance?.FlyDreamEnergyFrom(n.Amount, source);
 
         yield return new WaitForSecondsRealtime(holdDuration);
 

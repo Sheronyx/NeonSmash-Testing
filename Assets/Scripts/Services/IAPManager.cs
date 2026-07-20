@@ -6,7 +6,7 @@ using UnityEngine.Purchasing.Extension;
 /// <summary>
 /// Zentraler IAP-Handler für NeonSmash.
 /// Initialisiert beim Start alle ShopItems mit iapProductId.
-/// Currency-Items = Consumable (Coins), alle anderen = NonConsumable (Unlock).
+/// Currency-Items = Consumable (Diamonds/Diamond Splinters), alle anderen = NonConsumable (Unlock).
 /// </summary>
 public class IAPManager : MonoBehaviour, IDetailedStoreListener
 {
@@ -102,8 +102,14 @@ public class IAPManager : MonoBehaviour, IDetailedStoreListener
         var item = FindItem(productId);
         if (item != null)
         {
-            if (item.type == ShopItemType.Currency && item.coinReward > 0)
-                CoinManager.AddCoins(item.coinReward);
+            if (item.type == ShopItemType.Currency && item.rewardAmount > 0)
+            {
+                switch (item.currencyKind)
+                {
+                    case CurrencyRewardKind.Diamonds:         DiamondManager.AddDiamonds(item.rewardAmount); break;
+                    case CurrencyRewardKind.DiamondSplinters: DiamondSplinterManager.AddSplinters(item.rewardAmount); break;
+                }
+            }
             else
                 ShopInventory.ClaimFree(item);
         }

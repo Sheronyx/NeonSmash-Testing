@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using Unity.Services.CloudSave;
 using UnityEngine;
 
-// Traumenergie: eigene Ressource neben Coins, gleiche Speicher-/Sync-Struktur wie CoinManager
-// (lokal per PlayerPrefs + Cloud Save Backup). Wird nach jeder Infinity-Mode-Session anhand des
+// Traumenergie: kleinste Währung, verdient durchs Spielen (nie gekauft) — gleiche Speicher-/
+// Sync-Struktur wie DiamondManager/DiamondSplinterManager (lokal per PlayerPrefs + Cloud Save
+// Backup). Wird nach jeder Infinity-Mode-Session anhand des
 // Endscores vergeben (siehe CalculateReward/OnGameFinished, aufgerufen von MixedPointSpawner
 // direkt bei Game Over, analog zu AchievementManager/MissionManager.OnGameFinished).
 public static class DreamEnergyManager

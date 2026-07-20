@@ -11,10 +11,10 @@ public static class DailyRewardManager
     const string CloudKeyLast    = "daily_last";
     const string CloudKeyStreak  = "daily_streak";
 
-    // Coins per streak day (Day 1–7, then repeats from Day 1)
+    // Dream Energy per streak day (Day 1–7, then repeats from Day 1)
     static readonly int[] StreakRewards = { 50, 75, 100, 125, 150, 200, 500 };
 
-    public static event Action<int, int, int> OnRewardClaimed; // coins, streak, dayIndex (1-based)
+    public static event Action<int, int, int> OnRewardClaimed; // dreamEnergy, streak, dayIndex (1-based)
 
     public static int  CurrentStreak    => PlayerPrefs.GetInt(PrefKeyStreak, 0);
     public static string LastClaimedDate => PlayerPrefs.GetString(PrefKeyLastDate, "");
@@ -35,7 +35,7 @@ public static class DailyRewardManager
         }
     }
 
-    // Returns coins earned (> 0) or 0 if already claimed today
+    // Returns Dream Energy earned (> 0) or 0 if already claimed today
     public static int ClaimTodayReward()
     {
         if (!CanClaimToday) return 0;
@@ -54,11 +54,11 @@ public static class DailyRewardManager
         PlayerPrefs.SetInt(PrefKeyStreak, newStreak);
         PlayerPrefs.Save();
 
-        CoinManager.AddCoins(reward);
+        DreamEnergyManager.AddDreamEnergy(reward);
         AchievementManager.OnStreakReached(newStreak);
         _ = SaveToCloudAsync(today, newStreak);
 
-        Debug.Log($"[DailyReward] Tag {dayIndex}, Streak {newStreak} → +{reward} Coins");
+        Debug.Log($"[DailyReward] Tag {dayIndex}, Streak {newStreak} → +{reward} Dream Energy");
         OnRewardClaimed?.Invoke(reward, newStreak, dayIndex);
         return reward;
     }

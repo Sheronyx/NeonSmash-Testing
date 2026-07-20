@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class ShopController : MonoBehaviour
@@ -10,8 +11,9 @@ public class ShopController : MonoBehaviour
     [Header("Panel")]
     [SerializeField] CanvasGroup panel;
 
-    [Header("Coin Display")]
-    [SerializeField] TextMeshProUGUI coinBalanceLabel;
+    [Header("Dream Energy Display")]
+    [FormerlySerializedAs("coinBalanceLabel")]
+    [SerializeField] TextMeshProUGUI dreamEnergyBalanceLabel;
 
     [Header("Daily Banner")]
     [Tooltip("Daily Banner erstmal komplett deaktiviert — Feature pausiert, Wiring bleibt erhalten.")]
@@ -33,8 +35,14 @@ public class ShopController : MonoBehaviour
     [SerializeField] Color tabInactiveColor = new Color(1f, 1f, 1f, 0.4f);
 
     [Header("Grid")]
+    [SerializeField] ScrollRect      itemScrollRect;
     [SerializeField] Transform       gridParent;
     [SerializeField] ShopItemCardUI  itemCardPrefab;
+    [Tooltip("Gruppierte Box für Diamonds/Diamond Splinters im Currency-Tab (siehe PopulateCurrencyGrid).")]
+    [SerializeField] ShopItemBoxUI   itemBoxPrefab;
+    [Tooltip("Eigener Container für den Currency-Tab — Karten bleiben dort in voller Standardgröße " +
+             "(kein GridLayoutGroup-Downscale wie bei gridParent). Wird per ScrollRect.content getauscht.")]
+    [SerializeField] Transform       currencyGridParent;
 
     [Header("Items")]
     [SerializeField] ShopCatalogue catalogue;
@@ -71,7 +79,7 @@ public class ShopController : MonoBehaviour
 
     void OnEnable()
     {
-        CoinManager.OnCoinsChanged += RefreshCoinDisplay;
+        DreamEnergyManager.OnDreamEnergyChanged += RefreshDreamEnergyDisplay;
         ShopInventory.OnEquippedChanged += HandleEquippedChanged;
         if (tabSkins         != null) tabSkins.onClick.AddListener(() => SwitchTab(ShopItemType.Skin));
         if (tabSounds        != null) tabSounds.onClick.AddListener(() => SwitchTab(ShopItemType.Sound));
@@ -82,7 +90,7 @@ public class ShopController : MonoBehaviour
 
     void OnDisable()
     {
-        CoinManager.OnCoinsChanged -= RefreshCoinDisplay;
+        DreamEnergyManager.OnDreamEnergyChanged -= RefreshDreamEnergyDisplay;
         ShopInventory.OnEquippedChanged -= HandleEquippedChanged;
         if (tabSkins         != null) tabSkins.onClick.RemoveAllListeners();
         if (tabSounds        != null) tabSounds.onClick.RemoveAllListeners();
@@ -104,7 +112,7 @@ public class ShopController : MonoBehaviour
     {
         if (_open) return;
         _open = true;
-        RefreshCoinDisplay(CoinManager.Balance);
+        RefreshDreamEnergyDisplay(DreamEnergyManager.Balance);
         RefreshDailyBanner();
         SwitchTab(ShopItemType.Bundle);
         DimOverlay.Instance?.Show();
@@ -147,19 +155,60 @@ public class ShopController : MonoBehaviour
 
     void PopulateGrid()
     {
-        if (gridParent == null || itemCardPrefab == null) return;
+        if (itemCardPrefab == null || catalogue == null) return;
 
-        foreach (Transform child in gridParent)
-            Destroy(child.gameObject);
+        // Currency-Tab nutzt einen eigenen Container (currencyGridParent), damit die Karten dort
+        // in voller Standardgröße bleiben, statt von gridParent's GridLayoutGroup auf Zellgröße
+        // heruntergezwungen zu werden. ScrollRect.content wird passend mitgetauscht.
+        bool useCurrencyGrid = _activeTab == ShopItemType.Currency
+            && itemBoxPrefab != null && currencyGridParent != null;
 
-        if (catalogue == null) return;
+        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid);
+        if (currencyGridParent != null) currencyGridParent.gameObject.SetActive(useCurrencyGrid);
+        if (itemScrollRect     != null) itemScrollRect.content = useCurrencyGrid ? (RectTransform)currencyGridParent : (RectTransform)gridParent;
+
         var items = System.Array.FindAll(catalogue.allItems,
             i => i != null && i.type == _activeTab);
+
+        if (useCurrencyGrid)
+        {
+            foreach (Transform child in currencyGridParent)
+                Destroy(child.gameObject);
+            PopulateCurrencyGrid(items);
+            return;
+        }
+
+        if (gridParent == null) return;
+        foreach (Transform child in gridParent)
+            Destroy(child.gameObject);
 
         foreach (var item in items)
         {
             if (item == null) continue;
             var card = Instantiate(itemCardPrefab, gridParent);
+            card.Bind(item, OnBuyItem, OnEquipItem);
+        }
+    }
+
+    // Currency-Tab: Diamonds und Diamond Splinters bekommen jeweils eine eigene beschriftete
+    // Box (2 Karten pro Reihe, siehe Shop Item Box for Cards-Prefab), in voller Kartengröße.
+    void PopulateCurrencyGrid(ShopItem[] items)
+    {
+        SpawnCurrencyBox(items, CurrencyRewardKind.Diamonds,         "DIAMONDS BOX");
+        SpawnCurrencyBox(items, CurrencyRewardKind.DiamondSplinters, "DIAMOND SPLINTERS BOX");
+    }
+
+    void SpawnCurrencyBox(ShopItem[] items, CurrencyRewardKind kind, string title)
+    {
+        var matching = System.Array.FindAll(items, i => i != null && i.currencyKind == kind);
+        if (matching.Length == 0) return;
+
+        var box = Instantiate(itemBoxPrefab, currencyGridParent);
+        box.SetTitle(title);
+
+        foreach (var item in matching)
+        {
+            var card = Instantiate(itemCardPrefab, box.CardsContainer);
             card.Bind(item, OnBuyItem, OnEquipItem);
         }
     }
@@ -206,10 +255,18 @@ public class ShopController : MonoBehaviour
             return;
         }
 
-        // Coin-Kauf (bisheriger Weg)
+        // Currency-Items (Diamonds/Diamond Splinters) sind ein wiederholbarer Tausch gegen
+        // Dream Energy, kein einmaliger Unlock wie Skins/Sounds/Bundles.
+        if (item.type == ShopItemType.Currency)
+        {
+            if (ShopInventory.TryExchangeForCurrency(item))
+                PopulateGrid();
+            return;
+        }
+
+        // Dream-Energy-Kauf (Skins/Sounds/Bundles)
         if (ShopInventory.TryPurchase(item))
         {
-            RefreshCoinDisplay(CoinManager.Balance);
             PopulateGrid();
         }
     }
@@ -239,12 +296,12 @@ public class ShopController : MonoBehaviour
         shopButtonBadge?.Refresh();
     }
 
-    // ── Coin Display ─────────────────────────────────────────────────────────
+    // ── Dream Energy Display ────────────────────────────────────────────────
 
-    void RefreshCoinDisplay(int balance)
+    void RefreshDreamEnergyDisplay(int balance)
     {
-        if (coinBalanceLabel != null)
-            coinBalanceLabel.text = balance.ToString("N0");
+        if (dreamEnergyBalanceLabel != null)
+            dreamEnergyBalanceLabel.text = CurrencyFormat.Format(balance);
     }
 
     // ── Animation ────────────────────────────────────────────────────────────

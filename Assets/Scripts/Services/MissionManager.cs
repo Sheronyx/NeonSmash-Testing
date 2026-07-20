@@ -31,7 +31,7 @@ public static class MissionManager
     const string PrefKeyDate      = "mission_date";
     const int    MissionCount     = 3;
 
-    public static event Action<MissionData, int> OnMissionCompleted; // mission, coinsEarned
+    public static event Action<MissionData, int> OnMissionCompleted; // mission, dreamEnergyEarned
 
     static MissionData[] _missions;
 
@@ -165,9 +165,9 @@ public static class MissionManager
     static void CompleteMission(MissionData m)
     {
         m.IsCompleted = true;
-        CoinManager.AddCoins(m.Reward);
+        DreamEnergyManager.AddDreamEnergy(m.Reward);
         RewardNotificationQueue.Enqueue("Mission Complete", m.Title, m.Reward);
-        Debug.Log($"[Mission] '{m.Title}' completed! +{m.Reward} Coins");
+        Debug.Log($"[Mission] '{m.Title}' completed! +{m.Reward} Dream Energy");
         OnMissionCompleted?.Invoke(m, m.Reward);
     }
 

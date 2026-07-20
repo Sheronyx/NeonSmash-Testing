@@ -10,17 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2f4ea0a69e8345299ca5721f4af44c2, type: 3}
-  m_Name: Currency_200Coins
+  m_Name: Currency_1000Splinters
   m_EditorClassIdentifier: Assembly-CSharp::ShopItem
-  itemId: coins_200
-  displayName: 200 Coins
+  itemId: splinters_1000
+  displayName: 1000
   type: 2
-  thumbnail: {fileID: 21300000, guid: cebcb145dabf94189b6abb130fb775ec, type: 3}
-  coinPrice: 0
-  isDaily: 1
+  thumbnail: {fileID: 21300000, guid: f286bb3f572b046d2976882cd4586ade, type: 3}
+  dreamEnergyPrice: 80000
+  isDaily: 0
   isFeatured: 0
   isDefault: 0
-  iapProductId: coins_200
-  coinReward: 200
+  iapProductId: 
+  currencyKind: 1
+  rewardAmount: 1000
   skinTheme: {fileID: 0}
   soundTheme: {fileID: 0}

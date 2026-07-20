@@ -5,37 +5,35 @@ using System.Threading.Tasks;
 using Unity.Services.CloudSave;
 using UnityEngine;
 
-public static class CoinManager
+public static class DiamondManager
 {
-    const string PrefKey  = "coins_balance";
-    const string CloudKey = "coins";
+    const string PrefKey  = "diamonds_balance";
+    const string CloudKey = "diamonds";
 
-    // Ensures cloud saves are sequential — prevents out-of-order writes
-    // when multiple AddCoins calls fire rapidly (e.g. score + mission + achievement rewards).
     static readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
-    public static event Action<int> OnCoinsChanged;
+    public static event Action<int> OnDiamondsChanged;
 
     public static int Balance => PlayerPrefs.GetInt(PrefKey, 0);
 
-    public static void AddCoins(int amount)
+    public static void AddDiamonds(int amount)
     {
         if (amount <= 0) return;
         int newBalance = Balance + amount;
         PlayerPrefs.SetInt(PrefKey, newBalance);
         PlayerPrefs.Save();
-        OnCoinsChanged?.Invoke(newBalance);
+        OnDiamondsChanged?.Invoke(newBalance);
         _ = SaveToCloudAsync();
-        Debug.Log($"[Coins] +{amount} → {newBalance}");
+        Debug.Log($"[Diamonds] +{amount} → {newBalance}");
     }
 
-    public static bool TrySpendCoins(int amount)
+    public static bool TrySpendDiamonds(int amount)
     {
         if (Balance < amount) return false;
         int newBalance = Balance - amount;
         PlayerPrefs.SetInt(PrefKey, newBalance);
         PlayerPrefs.Save();
-        OnCoinsChanged?.Invoke(newBalance);
+        OnDiamondsChanged?.Invoke(newBalance);
         _ = SaveToCloudAsync();
         return true;
     }
@@ -54,19 +52,17 @@ public static class CoinManager
                 {
                     PlayerPrefs.SetInt(PrefKey, cloudBalance);
                     PlayerPrefs.Save();
-                    OnCoinsChanged?.Invoke(cloudBalance);
-                    Debug.Log($"[Coins] Cloud wiederhergestellt: {cloudBalance}");
+                    OnDiamondsChanged?.Invoke(cloudBalance);
+                    Debug.Log($"[Diamonds] Cloud wiederhergestellt: {cloudBalance}");
                 }
             }
         }
         catch (Exception e)
         {
-            Debug.LogWarning("[Coins] Cloud Load fehlgeschlagen: " + e.Message);
+            Debug.LogWarning("[Diamonds] Cloud Load fehlgeschlagen: " + e.Message);
         }
     }
 
-    // Reads the current balance at the time the lock is acquired, so that even if
-    // multiple saves are queued, the last one always writes the most recent value.
     static async Task SaveToCloudAsync()
     {
         await _saveLock.WaitAsync();
@@ -75,11 +71,11 @@ public static class CoinManager
             int balance = Balance;
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKey, balance } });
-            Debug.Log($"[Coins] Cloud gespeichert: {balance}");
+            Debug.Log($"[Diamonds] Cloud gespeichert: {balance}");
         }
         catch (Exception e)
         {
-            Debug.LogWarning("[Coins] Cloud Save fehlgeschlagen: " + e.Message);
+            Debug.LogWarning("[Diamonds] Cloud Save fehlgeschlagen: " + e.Message);
         }
         finally
         {

@@ -1,16 +1,19 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-public class CoinDisplayUI : MonoBehaviour
+public class DreamEnergyDisplayUI : MonoBehaviour
 {
-    public static CoinDisplayUI Instance { get; private set; }
+    public static DreamEnergyDisplayUI Instance { get; private set; }
 
     [SerializeField] private TextMeshProUGUI amountText;
-    [SerializeField] private RectTransform   coinIconTarget; // coin icon in the header bar — coins fly TO here
-    [SerializeField] private Sprite          coinSprite;     // same sprite as the coin icon
-    [SerializeField] private Canvas          flyCanvas;      // high sort-order canvas to spawn flying coins in
+    [FormerlySerializedAs("coinIconTarget")]
+    [SerializeField] private RectTransform   dreamEnergyIconTarget; // icon in the header bar — orbs fly TO here
+    [FormerlySerializedAs("coinSprite")]
+    [SerializeField] private Sprite          dreamEnergySprite;     // same sprite as the header icon
+    [SerializeField] private Canvas          flyCanvas;             // high sort-order canvas to spawn flying icons in
 
     [Header("Fly Animation")]
     [SerializeField] private int   flyCount     = 7;
@@ -25,19 +28,19 @@ public class CoinDisplayUI : MonoBehaviour
 
     void OnEnable()
     {
-        // Start from the pre-reward balance so each FlyCoinsFrom animation counts up correctly.
-        // Coins for queued notifications are already in CoinManager.Balance — subtract them
+        // Start from the pre-reward balance so each FlyDreamEnergyFrom animation counts up correctly.
+        // Dream Energy for queued notifications is already in DreamEnergyManager.Balance — subtract it
         // so the display shows what the player had before rewards, then animates up to the final value.
-        _displayedBalance = CoinManager.Balance - RewardNotificationQueue.PendingCoins;
+        _displayedBalance = DreamEnergyManager.Balance - RewardNotificationQueue.PendingAmount;
         Refresh();
-        // Do NOT subscribe to OnCoinsChanged — display only updates via FlyCoinsFrom
+        // Do NOT subscribe to OnDreamEnergyChanged — display only updates via FlyDreamEnergyFrom
     }
 
     // Called by toast and popup after showing a reward
-    public void FlyCoinsFrom(int amount, Vector3 worldSourcePos)
+    public void FlyDreamEnergyFrom(int amount, Vector3 worldSourcePos)
     {
-        if (coinIconTarget == null) { Debug.LogWarning("[CoinDisplayUI] coinIconTarget not assigned — coins won't fly!"); return; }
-        if (coinSprite     == null) { Debug.LogWarning("[CoinDisplayUI] coinSprite not assigned — coins would be invisible!"); }
+        if (dreamEnergyIconTarget == null) { Debug.LogWarning("[DreamEnergyDisplayUI] dreamEnergyIconTarget not assigned — nothing will fly!"); return; }
+        if (dreamEnergySprite     == null) { Debug.LogWarning("[DreamEnergyDisplayUI] dreamEnergySprite not assigned — flying icon would be invisible!"); }
         StartCoroutine(Co_FlyAndCount(amount, worldSourcePos));
     }
 
@@ -50,15 +53,15 @@ public class CoinDisplayUI : MonoBehaviour
         var canvasRect = canvas.GetComponent<RectTransform>();
         Camera cam     = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
 
-        // coinIconTarget may be on a different canvas with a different render mode — resolve its camera separately.
-        Camera targetCam = CanvasCamOf(coinIconTarget);
+        // dreamEnergyIconTarget may be on a different canvas with a different render mode — resolve its camera separately.
+        Camera targetCam = CanvasCamOf(dreamEnergyIconTarget);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect, RectTransformUtility.WorldToScreenPoint(cam, worldSourcePos),
             cam, out Vector2 sourceLocal);
 
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvasRect, RectTransformUtility.WorldToScreenPoint(targetCam, coinIconTarget.position),
+            canvasRect, RectTransformUtility.WorldToScreenPoint(targetCam, dreamEnergyIconTarget.position),
             cam, out Vector2 targetLocal);
 
         int arrived = 0;
@@ -66,7 +69,7 @@ public class CoinDisplayUI : MonoBehaviour
         for (int i = 0; i < flyCount; i++)
         {
             Vector2 scatter = new Vector2(Random.Range(-50f, 50f), Random.Range(-40f, 40f));
-            StartCoroutine(Co_OneCoin(canvas, sourceLocal + scatter, targetLocal, i * staggerDelay, () =>
+            StartCoroutine(Co_OneIcon(canvas, sourceLocal + scatter, targetLocal, i * staggerDelay, () =>
             {
                 arrived++;
                 float progress    = (float)arrived / flyCount;
@@ -80,13 +83,13 @@ public class CoinDisplayUI : MonoBehaviour
         Refresh();
     }
 
-    IEnumerator Co_OneCoin(Canvas canvas, Vector2 from, Vector2 to, float delay, System.Action onArrive)
+    IEnumerator Co_OneIcon(Canvas canvas, Vector2 from, Vector2 to, float delay, System.Action onArrive)
     {
         if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
 
-        var go  = new GameObject("FlyingCoin", typeof(Image));
+        var go  = new GameObject("FlyingDreamEnergy", typeof(Image));
         go.transform.SetParent(canvas.transform, false);
-        go.GetComponent<Image>().sprite        = coinSprite;
+        go.GetComponent<Image>().sprite        = dreamEnergySprite;
         go.GetComponent<Image>().raycastTarget = false;
         var rt  = go.GetComponent<RectTransform>();
         rt.sizeDelta        = new Vector2(coinSize, coinSize);

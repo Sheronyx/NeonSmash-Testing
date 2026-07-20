@@ -38,7 +38,7 @@ public static class AchievementManager
     const string CloudKeyCompleted    = "ach_completed";
     const string CloudKeyStats        = "ach_stats";         // JSON
 
-    public static event Action<AchievementData, int> OnAchievementUnlocked; // data, coinsEarned
+    public static event Action<AchievementData, int> OnAchievementUnlocked; // data, dreamEnergyEarned
 
     static readonly List<AchievementData> All = new()
     {
@@ -163,9 +163,9 @@ public static class AchievementManager
         PlayerPrefs.SetString(PrefKeyCompletedSet, string.Join(",", set));
         PlayerPrefs.Save();
 
-        CoinManager.AddCoins(data.Reward);
+        DreamEnergyManager.AddDreamEnergy(data.Reward);
         RewardNotificationQueue.Enqueue(data.Title, data.Description, data.Reward);
-        Debug.Log($"[Achievement] '{data.Title}' unlocked! +{data.Reward} Coins");
+        Debug.Log($"[Achievement] '{data.Title}' unlocked! +{data.Reward} Dream Energy");
         OnAchievementUnlocked?.Invoke(data, data.Reward);
 
         _ = SaveCompletedToCloudAsync();

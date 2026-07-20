@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 // Combined Tasks popup: Daily Reward + Missions in one 80%-panel.
@@ -15,11 +16,13 @@ public class TasksPopupController : MonoBehaviour
 
     [Header("Daily Reward")]
     [SerializeField] private TextMeshProUGUI dailyDayLabel;
-    [SerializeField] private TextMeshProUGUI dailyCoinsLabel;
+    [FormerlySerializedAs("dailyCoinsLabel")]
+    [SerializeField] private TextMeshProUGUI dailyDreamEnergyLabel;
     [SerializeField] private Image[]         dailyStreakIcons;   // 7 icons, left to right = Day 1–7
     [SerializeField] private Button          claimButton;
     [SerializeField] private GameObject      claimedState;       // "Already claimed" label/icon
-    [SerializeField] private RectTransform   dailyCoinsRow;      // source position for coin fly animation
+    [FormerlySerializedAs("dailyCoinsRow")]
+    [SerializeField] private RectTransform   dailyDreamEnergyRow; // source position for fly animation
 
     [Header("Mission Rows")]
     [SerializeField] private MissionRowUI[] missionRows;         // exactly 3 elements
@@ -71,8 +74,8 @@ public class TasksPopupController : MonoBehaviour
     {
         int earned = DailyRewardManager.ClaimTodayReward();
         if (earned <= 0) return;
-        Vector3 src = dailyCoinsRow != null ? dailyCoinsRow.position : panel.transform.position;
-        CoinDisplayUI.Instance?.FlyCoinsFrom(earned, src);
+        Vector3 src = dailyDreamEnergyRow != null ? dailyDreamEnergyRow.position : panel.transform.position;
+        DreamEnergyDisplayUI.Instance?.FlyDreamEnergyFrom(earned, src);
         RefreshDaily();
     }
 
@@ -98,10 +101,10 @@ public class TasksPopupController : MonoBehaviour
         // Active day index: if already claimed today, streak is the just-claimed day
         int activeDay  = canClaim ? Mathf.Clamp(streak + 1, 1, 7) : Mathf.Clamp(streak, 1, 7);
 
-        if (dailyDayLabel   != null) dailyDayLabel.text   = $"Day {activeDay}";
-        if (dailyCoinsLabel != null) dailyCoinsLabel.text  = $"+{reward}";
-        if (claimButton     != null) claimButton.gameObject.SetActive(canClaim);
-        if (claimedState    != null) claimedState.SetActive(!canClaim);
+        if (dailyDayLabel        != null) dailyDayLabel.text        = $"Day {activeDay}";
+        if (dailyDreamEnergyLabel != null) dailyDreamEnergyLabel.text = $"+{reward}";
+        if (claimButton          != null) claimButton.gameObject.SetActive(canClaim);
+        if (claimedState         != null) claimedState.SetActive(!canClaim);
 
         if (dailyStreakIcons == null) return;
         for (int i = 0; i < dailyStreakIcons.Length; i++)

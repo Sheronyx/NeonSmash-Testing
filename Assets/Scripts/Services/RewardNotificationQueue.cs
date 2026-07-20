@@ -4,28 +4,28 @@ public struct RewardNotification
 {
     public string Title;
     public string Subtitle;
-    public int    Coins;
+    public int    Amount;
 }
 
 public static class RewardNotificationQueue
 {
     static readonly Queue<RewardNotification> _queue = new();
-    static int _pendingCoins;
+    static int _pendingAmount;
 
-    public static int Count        => _queue.Count;
-    // Total coins waiting to be animated — used by CoinDisplayUI to start from the pre-reward balance.
-    public static int PendingCoins => _pendingCoins;
+    public static int Count         => _queue.Count;
+    // Total Dream Energy waiting to be animated — used by DreamEnergyDisplayUI to start from the pre-reward balance.
+    public static int PendingAmount => _pendingAmount;
 
-    public static void Enqueue(string title, string subtitle, int coins)
+    public static void Enqueue(string title, string subtitle, int amount)
     {
-        _pendingCoins += coins;
-        _queue.Enqueue(new RewardNotification { Title = title, Subtitle = subtitle, Coins = coins });
+        _pendingAmount += amount;
+        _queue.Enqueue(new RewardNotification { Title = title, Subtitle = subtitle, Amount = amount });
     }
 
     public static bool TryDequeue(out RewardNotification notification)
     {
         bool result = _queue.TryDequeue(out notification);
-        if (result) _pendingCoins -= notification.Coins;
+        if (result) _pendingAmount -= notification.Amount;
         return result;
     }
 }

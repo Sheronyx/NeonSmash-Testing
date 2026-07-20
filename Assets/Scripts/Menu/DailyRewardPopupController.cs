@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class DailyRewardPopupController : MonoBehaviour
@@ -11,14 +12,16 @@ public class DailyRewardPopupController : MonoBehaviour
     [Header("Text")]
     [SerializeField] private TextMeshProUGUI dayLabel;     // e.g. "Day 3"
     [SerializeField] private TextMeshProUGUI streakLabel;  // e.g. "3-Day Streak!"
-    [SerializeField] private TextMeshProUGUI coinsLabel;   // e.g. "+100 Coins"
+    [FormerlySerializedAs("coinsLabel")]
+    [SerializeField] private TextMeshProUGUI dreamEnergyLabel;   // e.g. "+100"
 
     [Header("Streak Day Icons (optional, 7 total)")]
     [Tooltip("One Image per streak day — active day gets full alpha, past days half, future days dim")]
     [SerializeField] private Image[] dayIcons;
 
-    [Header("Coins")]
-    [SerializeField] private RectTransform coinsRow;
+    [Header("Dream Energy")]
+    [FormerlySerializedAs("coinsRow")]
+    [SerializeField] private RectTransform dreamEnergyRow;
 
     [Header("Claim Button")]
     [SerializeField] private Button claimButton;
@@ -53,8 +56,8 @@ public class DailyRewardPopupController : MonoBehaviour
         int earned = DailyRewardManager.ClaimTodayReward();
         if (earned > 0)
         {
-            Vector3 source = coinsRow != null ? coinsRow.position : panel.transform.position;
-            CoinDisplayUI.Instance?.FlyCoinsFrom(earned, source);
+            Vector3 source = dreamEnergyRow != null ? dreamEnergyRow.position : panel.transform.position;
+            DreamEnergyDisplayUI.Instance?.FlyDreamEnergyFrom(earned, source);
             StartCoroutine(Co_Hide());
         }
     }
@@ -115,9 +118,9 @@ public class DailyRewardPopupController : MonoBehaviour
         int streak  = DailyRewardManager.CurrentStreak + 1; // next claimed streak
         int reward  = DailyRewardManager.TodayRewardAmount;
 
-        if (dayLabel    != null) dayLabel.text    = $"Day {streak}";
-        if (streakLabel != null) streakLabel.text = streak > 1 ? $"{streak}-Day Streak!" : "Daily Reward";
-        if (coinsLabel  != null) coinsLabel.text  = $"+{reward}";
+        if (dayLabel         != null) dayLabel.text         = $"Day {streak}";
+        if (streakLabel      != null) streakLabel.text      = streak > 1 ? $"{streak}-Day Streak!" : "Daily Reward";
+        if (dreamEnergyLabel != null) dreamEnergyLabel.text = $"+{reward}";
 
         RefreshDayIcons(streak);
     }

@@ -16,7 +16,7 @@ public class AdManager : MonoBehaviour
     public static bool IsInitialized { get; private set; }
 
     // ----- Tuning -----
-    public const int   RewardedCoinAmount          = 50;   // Coins pro Free-Coins-Video
+    public const int   RewardedDreamEnergyAmount    = 50;   // Dream Energy pro Free-Video
     const int          InterstitialEveryNGameOvers = 3;    // jedes N-te Game Over
     const float        InterstitialMinIntervalSec  = 60f;  // Mindestabstand zwischen Interstitials
 
@@ -117,7 +117,7 @@ public class AdManager : MonoBehaviour
         }
 
         _initStarted = true;
-        // Ad-Events auf dem Unity-Mainthread → wir dürfen in Callbacks Unity/CoinManager anfassen.
+        // Ad-Events auf dem Unity-Mainthread → wir dürfen in Callbacks Unity/DreamEnergyManager anfassen.
         MobileAds.RaiseAdEventsOnUnityMainThread = true;
 
         MobileAds.Initialize(_ =>
@@ -162,11 +162,11 @@ public class AdManager : MonoBehaviour
         _rewardedAd.Show(_ => onReward?.Invoke());
     }
 
-    /// <summary>Free-Coins-Button: Video → RewardedCoinAmount Coins gutschreiben.</summary>
-    public void ShowRewardedForCoins(Action<int> onGranted = null, Action onUnavailable = null)
+    /// <summary>Free-Dream-Energy-Button: Video → RewardedDreamEnergyAmount Dream Energy gutschreiben.</summary>
+    public void ShowRewardedForDreamEnergy(Action<int> onGranted = null, Action onUnavailable = null)
     {
         ShowRewarded(
-            () => { CoinManager.AddCoins(RewardedCoinAmount); onGranted?.Invoke(RewardedCoinAmount); },
+            () => { DreamEnergyManager.AddDreamEnergy(RewardedDreamEnergyAmount); onGranted?.Invoke(RewardedDreamEnergyAmount); },
             onUnavailable);
     }
 

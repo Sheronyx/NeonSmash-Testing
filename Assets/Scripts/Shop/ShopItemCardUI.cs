@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class ShopItemCardUI : MonoBehaviour
@@ -10,7 +11,8 @@ public class ShopItemCardUI : MonoBehaviour
     [SerializeField] TextMeshProUGUI priceLabel;
     [SerializeField] Button          actionButton;
     [SerializeField] GameObject      ownedBadge;
-    [SerializeField] GameObject      coinIcon;
+    [FormerlySerializedAs("coinIcon")]
+    [SerializeField] GameObject      dreamEnergyIcon;
 
     [Header("Sound Preview")]
     [SerializeField] GameObject previewOverlay;  // über dem Thumbnail, nur für Sound-Items
@@ -85,7 +87,7 @@ public class ShopItemCardUI : MonoBehaviour
         bool hasPreview = _item.soundTheme != null && _item.soundTheme.previewClip != null;
 
         if (ownedBadge     != null) ownedBadge.SetActive(owned);
-        if (coinIcon       != null) coinIcon.SetActive(!owned && _item.coinPrice > 0);
+        if (dreamEnergyIcon != null) dreamEnergyIcon.SetActive(!owned && _item.dreamEnergyPrice > 0);
         if (previewOverlay != null) previewOverlay.SetActive(hasPreview);
 
         if (actionButton != null)
@@ -102,10 +104,10 @@ public class ShopItemCardUI : MonoBehaviour
                 priceLabel.text = "EQUIP";
             else if (!string.IsNullOrEmpty(_item.iapProductId))
                 priceLabel.text = IAPManager.Instance?.GetLocalizedPrice(_item.iapProductId) ?? "...";
-            else if (_item.coinPrice == 0)
+            else if (_item.dreamEnergyPrice == 0)
                 priceLabel.text = "FREE";
             else
-                priceLabel.text = $"{_item.coinPrice:N0}";
+                priceLabel.text = CurrencyFormat.Format(_item.dreamEnergyPrice);
         }
 
         SetPreviewIcons(isPlaying: _playingCard == this);

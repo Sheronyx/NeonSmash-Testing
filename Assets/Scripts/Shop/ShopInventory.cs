@@ -33,10 +33,26 @@ public static class ShopInventory
     public static bool TryPurchase(ShopItem item)
     {
         if (IsOwned(item.itemId)) return false;
-        if (item.coinPrice > 0 && !CoinManager.TrySpendCoins(item.coinPrice)) return false;
+        if (item.dreamEnergyPrice > 0 && !DreamEnergyManager.TrySpendDreamEnergy(item.dreamEnergyPrice)) return false;
 
         Owned.Add(item.itemId);
         Save();
+        return true;
+    }
+
+    // Currency-Items (Diamonds/Diamond Splinters) sind ein wiederholbarer Tausch gegen Dream
+    // Energy, kein einmaliger Unlock wie Skins/Sounds/Bundles — deshalb eigener Pfad OHNE
+    // Owned-Tracking (sonst ließe sich das Item nur genau einmal kaufen).
+    public static bool TryExchangeForCurrency(ShopItem item)
+    {
+        if (item.dreamEnergyPrice <= 0) return false;
+        if (!DreamEnergyManager.TrySpendDreamEnergy(item.dreamEnergyPrice)) return false;
+
+        switch (item.currencyKind)
+        {
+            case CurrencyRewardKind.Diamonds:         DiamondManager.AddDiamonds(item.rewardAmount); break;
+            case CurrencyRewardKind.DiamondSplinters: DiamondSplinterManager.AddSplinters(item.rewardAmount); break;
+        }
         return true;
     }
 

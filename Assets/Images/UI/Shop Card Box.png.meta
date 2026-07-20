@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: f5024cbc377464a2b8fdb9f529c80889
+guid: 38388de897fa4469ca15f337c891c41b
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 3934608414547045051
-    second: Dream Energy Status Icon_0
-  - first:
-      213: -338342919588470212
-    second: Dream Energy Status Icon_1
+      213: 7102435937163779817
+    second: Shop Card Box_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -55,7 +52,7 @@ TextureImporter:
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 100
-  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteBorder: {x: 395, y: 308, z: 336, w: 204}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -75,7 +72,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 128
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 1
@@ -129,45 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Dream Energy Status Icon_0
+      name: Shop Card Box_0
       rect:
         serializedVersion: 2
-        x: 171
-        y: 173
-        width: 908
-        height: 925
+        x: 122
+        y: 85
+        width: 780
+        height: 854
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: bbae65fa1898a9630800000000000000
-      internalID: 3934608414547045051
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Dream Energy Status Icon_1
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 0
-        width: 15
-        height: 14
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c3229a148e6fd4bf0800000000000000
-      internalID: -338342919588470212
+      spriteID: 9ee9d92cadbe09260800000000000000
+      internalID: 7102435937163779817
       vertices: []
       indices: 
       edges: []
@@ -177,7 +152,7 @@ TextureImporter:
     physicsShape: []
     bones: []
     spriteID: 5e97eb03825dee720800000000000000
-    internalID: 0
+    internalID: 1537655665
     vertices: []
     indices: 
     edges: []
@@ -186,8 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Dream Energy Status Icon_0: 3934608414547045051
-      Dream Energy Status Icon_1: -338342919588470212
+      Shop Card Box_0: 7102435937163779817
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
