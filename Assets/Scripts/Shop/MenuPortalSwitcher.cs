@@ -136,6 +136,15 @@ public class MenuPortalSwitcher : MonoBehaviour
 
     private void Update()
     {
+        // Sobald ein Overlay offen ist (Shop, Tasks, Daily Reward, ...), Wisch-Erkennung komplett
+        // aussetzen — DimOverlay.blocksRaycasts blockiert nur UI-Events, nicht diese rohe
+        // Pointer-Abfrage, deshalb der eigene Check hier.
+        if (DimOverlay.Instance != null && DimOverlay.Instance.IsShowing)
+        {
+            _dragging = false;
+            return;
+        }
+
         Pointer pointer = Pointer.current;
         if (pointer == null) return;
 

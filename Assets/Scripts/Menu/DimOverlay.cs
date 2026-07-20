@@ -10,6 +10,11 @@ public class DimOverlay : MonoBehaviour
 {
     public static DimOverlay Instance { get; private set; }
 
+    // Solange irgendein Popup/Overlay offen ist (Shop, Tasks, Daily Reward, ...) — nutzbar als
+    // generisches "blockiere Hintergrund-Eingaben"-Signal für Dinge, die das UI-Event-System
+    // umgehen (z.B. rohe Pointer-Abfragen wie MenuPortalSwitcher).
+    public bool IsShowing => _cg != null && _cg.blocksRaycasts;
+
     [SerializeField] private float targetAlpha  = 0.55f;
     [SerializeField] private float fadeDuration = 0.25f;
 
