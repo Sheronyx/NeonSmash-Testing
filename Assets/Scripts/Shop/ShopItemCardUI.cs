@@ -99,9 +99,9 @@ public class ShopItemCardUI : MonoBehaviour
         if (priceLabel != null)
         {
             if (equipped)
-                priceLabel.text = "EQUIPPED";
+                priceLabel.text = "USED";
             else if (owned)
-                priceLabel.text = "EQUIP";
+                priceLabel.text = "USE";
             else if (!string.IsNullOrEmpty(_item.iapProductId))
                 priceLabel.text = IAPManager.Instance?.GetLocalizedPrice(_item.iapProductId) ?? "...";
             else if (_item.dreamEnergyPrice == 0)

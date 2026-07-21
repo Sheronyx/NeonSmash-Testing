@@ -43,6 +43,12 @@ public class ShopController : MonoBehaviour
     [Tooltip("Eigener Container für den Currency-Tab — Karten bleiben dort in voller Standardgröße " +
              "(kein GridLayoutGroup-Downscale wie bei gridParent). Wird per ScrollRect.content getauscht.")]
     [SerializeField] Transform       currencyGridParent;
+    [Tooltip("Eigener Container für den Bundle-Tab — einspaltige Liste mit breiteren, boxlosen Karten " +
+             "(siehe bundleItemPrefab). Wird per ScrollRect.content getauscht.")]
+    [SerializeField] Transform       bundleGridParent;
+    [Tooltip("Boxlose, breitere Karten-Variante speziell für den Bundle-Tab (kein Rahmen, großes " +
+             "Bild als Hintergrund) — siehe 'Shop Item Card Bundle.prefab'.")]
+    [SerializeField] ShopItemCardUI  bundleItemPrefab;
 
     [Header("Items")]
     [SerializeField] ShopCatalogue catalogue;
@@ -157,15 +163,23 @@ public class ShopController : MonoBehaviour
     {
         if (itemCardPrefab == null || catalogue == null) return;
 
-        // Currency-Tab nutzt einen eigenen Container (currencyGridParent), damit die Karten dort
-        // in voller Standardgröße bleiben, statt von gridParent's GridLayoutGroup auf Zellgröße
-        // heruntergezwungen zu werden. ScrollRect.content wird passend mitgetauscht.
+        // Jeder Tab kann seinen eigenen Container haben, damit Karten dort nicht von gridParent's
+        // GridLayoutGroup auf dessen Zellgröße/Spaltenzahl heruntergezwungen werden. ScrollRect.content
+        // wird passend mitgetauscht.
         bool useCurrencyGrid = _activeTab == ShopItemType.Currency
             && itemBoxPrefab != null && currencyGridParent != null;
+        bool useBundleGrid = _activeTab == ShopItemType.Bundle
+            && bundleItemPrefab != null && bundleGridParent != null;
 
-        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid);
+        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid);
         if (currencyGridParent != null) currencyGridParent.gameObject.SetActive(useCurrencyGrid);
-        if (itemScrollRect     != null) itemScrollRect.content = useCurrencyGrid ? (RectTransform)currencyGridParent : (RectTransform)gridParent;
+        if (bundleGridParent   != null) bundleGridParent.gameObject.SetActive(useBundleGrid);
+        if (itemScrollRect     != null)
+        {
+            itemScrollRect.content = useCurrencyGrid ? (RectTransform)currencyGridParent
+                : useBundleGrid     ? (RectTransform)bundleGridParent
+                : (RectTransform)gridParent;
+        }
 
         var items = System.Array.FindAll(catalogue.allItems,
             i => i != null && i.type == _activeTab);
@@ -175,6 +189,19 @@ public class ShopController : MonoBehaviour
             foreach (Transform child in currencyGridParent)
                 Destroy(child.gameObject);
             PopulateCurrencyGrid(items);
+            return;
+        }
+
+        if (useBundleGrid)
+        {
+            foreach (Transform child in bundleGridParent)
+                Destroy(child.gameObject);
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                var card = Instantiate(bundleItemPrefab, bundleGridParent);
+                card.Bind(item, OnBuyItem, OnEquipItem);
+            }
             return;
         }
 

@@ -13,6 +13,8 @@ using UnityEngine.InputSystem;
 // Slide+Scale-Übergang, an die Wisch-Richtung gekoppelt (altes Portal raus, neues rein).
 public class MenuPortalSwitcher : MonoBehaviour
 {
+    public static MenuPortalSwitcher Instance { get; private set; }
+
     [System.Serializable]
     public struct PortalEntry
     {
@@ -57,6 +59,16 @@ public class MenuPortalSwitcher : MonoBehaviour
     // Ursprüngliche (im Editor eingestellte) Position/Skalierung pro Portal-Objekt — jedes Portal
     // darf individuell positioniert/skaliert sein, die Animation lerpt relativ dazu statt sie zu überschreiben.
     private readonly Dictionary<GameObject, (Vector3 pos, Vector3 scale)> _homeTransforms = new();
+
+    /// <summary>Transform des aktuell angezeigten Portal-Objekts (passend zum equippten/gerade
+    /// angeschauten Skin) — z.B. für das Play-Intro (Feen fliegen rein, Kamera zoomt dorthin).
+    /// Null, solange der Switcher noch nicht initialisiert ist (siehe Start/_skinItems).</summary>
+    public Transform ActivePortalTransform =>
+        (_skinItems != null && _index >= 0 && _index < _skinItems.Length)
+            ? GetPortalObject(_index)?.transform
+            : null;
+
+    private void Awake() => Instance = this;
 
     private void OnEnable()  => ShopInventory.OnEquippedChanged += HandleEquippedChangedExternally;
     private void OnDisable() => ShopInventory.OnEquippedChanged -= HandleEquippedChangedExternally;
