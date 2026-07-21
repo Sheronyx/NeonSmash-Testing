@@ -69,7 +69,13 @@ if (!spawner)
     {
         MultiplayerGameSession.OnGameStarted -= StartCountdown;
 
-        if (countdownUI)
+        // Statt Zahlen-Countdown: die Feen fliegen vom Portal-Anker zu ihrer Ruheposition, danach
+        // startet das Spiel genau wie sonst nach Ablauf des Countdowns (siehe HandleCountdownFinished).
+        if (FairyArrivalSequence.Instance != null)
+        {
+            FairyArrivalSequence.Instance.Play(HandleCountdownFinished);
+        }
+        else if (countdownUI)
         {
             countdownUI.OnCountdownFinished += HandleCountdownFinished;
             countdownUI.StartCountdown();

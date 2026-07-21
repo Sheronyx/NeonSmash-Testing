@@ -165,20 +165,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FairyWingFlap
   flapSpeed: 1
-  rotationEnabled: 0
+  rotationEnabled: 1
   strokePhaseFraction: 0.45
   cycleVariation: 0.065
   wings:
   - transform: {fileID: 962888017199392123}
     minAngle: -20
-    maxAngle: 0
+    maxAngle: 60
     restAngle: 40
     speedMultiplier: 1
     foldTowardMaxAngle: 1
     foldScaleAtExtreme: 0.55
     foldOnYAxis: 0
   - transform: {fileID: 8282648375295909065}
-    minAngle: 0
+    minAngle: -60
     maxAngle: 20
     restAngle: -40
     speedMultiplier: 1
@@ -186,7 +186,7 @@ MonoBehaviour:
     foldScaleAtExtreme: 0.55
     foldOnYAxis: 0
   - transform: {fileID: 620455331013177784}
-    minAngle: 0
+    minAngle: -60
     maxAngle: -20
     restAngle: -40
     speedMultiplier: 1
@@ -194,7 +194,7 @@ MonoBehaviour:
     foldScaleAtExtreme: 0.55
     foldOnYAxis: 0
   - transform: {fileID: 5654676722523375183}
-    minAngle: 0
+    minAngle: 60
     maxAngle: 20
     restAngle: 40
     speedMultiplier: 1

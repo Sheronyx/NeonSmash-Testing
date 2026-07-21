@@ -4,9 +4,19 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
+// Header-Währungsanzeige — trotz des (historisch gewachsenen) Klassennamens generisch für alle
+// drei Währungen nutzbar (siehe currencyKind). Für Dream Energy bleibt die Instance-Singleton-
+// Fly-Animation exakt wie bisher (RewardToast/DailyReward/Tasks/RewardedButton rufen
+// DreamEnergyDisplayUI.Instance.FlyDreamEnergyFrom(...) auf); Diamonds/Splinters-Instanzen sind
+// KEIN Fly-Ziel (registrieren sich bewusst nicht als Instance), sondern zeigen ihren Kontostand
+// direkt an und aktualisieren sich live über den jeweiligen OnXChanged-Event.
+public enum DisplayedCurrency { DreamEnergy, Diamonds, DiamondSplinters }
+
 public class DreamEnergyDisplayUI : MonoBehaviour
 {
     public static DreamEnergyDisplayUI Instance { get; private set; }
+
+    [SerializeField] private DisplayedCurrency currencyKind = DisplayedCurrency.DreamEnergy;
 
     [SerializeField] private TextMeshProUGUI amountText;
     [FormerlySerializedAs("coinIconTarget")]
@@ -15,7 +25,7 @@ public class DreamEnergyDisplayUI : MonoBehaviour
     [SerializeField] private Sprite          dreamEnergySprite;     // same sprite as the header icon
     [SerializeField] private Canvas          flyCanvas;             // high sort-order canvas to spawn flying icons in
 
-    [Header("Fly Animation")]
+    [Header("Fly Animation (nur Dream Energy)")]
     [SerializeField] private int   flyCount     = 7;
     [SerializeField] private float flyDuration  = 0.6f;
     [SerializeField] private float staggerDelay = 0.07f;
@@ -24,16 +34,51 @@ public class DreamEnergyDisplayUI : MonoBehaviour
 
     int _displayedBalance;
 
-    void Awake() => Instance = this;
+    int CurrentBalance => currencyKind switch
+    {
+        DisplayedCurrency.Diamonds        => DiamondManager.Balance,
+        DisplayedCurrency.DiamondSplinters => DiamondSplinterManager.Balance,
+        _                                  => DreamEnergyManager.Balance,
+    };
+
+    void Awake()
+    {
+        // Nur die Dream-Energy-Variante ist das Fly-Animation-Ziel der Reward-Systeme — Diamonds/
+        // Splinters-Instanzen dürfen den gemeinsamen Singleton nicht überschreiben.
+        if (currencyKind == DisplayedCurrency.DreamEnergy) Instance = this;
+    }
 
     void OnEnable()
     {
-        // Start from the pre-reward balance so each FlyDreamEnergyFrom animation counts up correctly.
-        // Dream Energy for queued notifications is already in DreamEnergyManager.Balance — subtract it
-        // so the display shows what the player had before rewards, then animates up to the final value.
-        _displayedBalance = DreamEnergyManager.Balance - RewardNotificationQueue.PendingAmount;
+        if (currencyKind == DisplayedCurrency.DreamEnergy)
+        {
+            // Start from the pre-reward balance so each FlyDreamEnergyFrom animation counts up correctly.
+            // Dream Energy for queued notifications is already in DreamEnergyManager.Balance — subtract it
+            // so the display shows what the player had before rewards, then animates up to the final value.
+            _displayedBalance = DreamEnergyManager.Balance - RewardNotificationQueue.PendingAmount;
+            Refresh();
+            // Do NOT subscribe to OnDreamEnergyChanged — display only updates via FlyDreamEnergyFrom
+            return;
+        }
+
+        // Diamonds/Splinters: kein Fly-Trigger existiert dafür — direkt anzeigen und bei Änderungen
+        // (z.B. Shop-Tausch, Reward-Track-Meilenstein) live nachziehen.
+        _displayedBalance = CurrentBalance;
         Refresh();
-        // Do NOT subscribe to OnDreamEnergyChanged — display only updates via FlyDreamEnergyFrom
+        if (currencyKind == DisplayedCurrency.Diamonds) DiamondManager.OnDiamondsChanged += HandleBalanceChanged;
+        else                                            DiamondSplinterManager.OnSplintersChanged += HandleBalanceChanged;
+    }
+
+    void OnDisable()
+    {
+        if (currencyKind == DisplayedCurrency.Diamonds) DiamondManager.OnDiamondsChanged -= HandleBalanceChanged;
+        else if (currencyKind == DisplayedCurrency.DiamondSplinters) DiamondSplinterManager.OnSplintersChanged -= HandleBalanceChanged;
+    }
+
+    void HandleBalanceChanged(int newBalance)
+    {
+        _displayedBalance = newBalance;
+        Refresh();
     }
 
     // Called by toast and popup after showing a reward

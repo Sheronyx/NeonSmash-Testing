@@ -81,6 +81,13 @@ public class FairyWingFlap : MonoBehaviour
     private bool  poseOverride;              // true = normale Flatter-Animation pausiert, siehe SetPose
     private float poseAmount;                // 0 = Ruheposition, 1 = volle Auslenkung (bei poseOverride)
 
+    // Für ReleasePoseSmoothly: blendet nach Freigabe der Pose sanft zum automatischen Zyklus über,
+    // statt hart auf dessen aktuellen (beliebigen) Zyklus-Wert zu springen — siehe dort.
+    private bool  _releasingPose;
+    private float _releaseElapsed;
+    private float _releaseDuration;
+    private float _releaseFromT;
+
     // Temporär die Flatter-Geschwindigkeit skalieren (z.B. für ein Tap-Gimmick, das die Fee
     // kurz schneller flattern lässt). 1 = normales Tempo. Baut sich in Update() sanft auf/ab statt
     // schlagartig zu springen — ein harter Sprung würde die Flügel-Phase (timer * currentFlapSpeed)
@@ -94,13 +101,40 @@ public class FairyWingFlap : MonoBehaviour
     // über die Zeit sanft zu ändern (z.B. per SmoothStep) statt springen zu lassen.
     public void SetPose(float amount)
     {
-        poseOverride = true;
-        poseAmount   = Mathf.Clamp01(amount);
+        poseOverride   = true;
+        poseAmount     = Mathf.Clamp01(amount);
+        _releasingPose = false; // eine neue manuell gesetzte Pose bricht einen evtl. laufenden Release ab
     }
 
-    // Gibt die Flügel wieder frei — die normale Flatter-Animation läuft ab dem aktuellen Timer-
-    // Stand weiter, kein Sprung, da der Timer währenddessen einfach weitergelaufen ist.
+    // Gibt die Flügel HART frei — der automatische Zyklus übernimmt sofort mit seinem eigenen,
+    // zu diesem Zeitpunkt völlig beliebigen Zwischenstand (timer lief ja während der Pose einfach
+    // weiter). Das erzeugt fast immer einen sichtbaren Sprung im Flügel-Winkel. Für einen normalen
+    // Übergang IMMER ReleasePoseSmoothly verwenden — diese Methode nur falls ein sofortiger,
+    // unanimierter Reset explizit gewünscht ist.
     public void ClearPose() => poseOverride = false;
+
+    // Gibt die Flügel sanft frei: blendet über 'duration' vom zuletzt gehaltenen Pose-Wert zum
+    // jeweils aktuellen automatischen Zyklus-Wert über (SmoothStep), statt hart dorthin zu springen.
+    // So sieht der Übergang IMMER smooth aus, egal in welchem Zustand die Flügel gerade waren (z.B.
+    // mitten in einer unterbrochenen Gimmick-Animation) — genau das macht den Unterschied zwischen
+    // "man sieht manchmal keinen Flügelschlag" (harter Sprung wirkt wie ein Freeze-Frame) und einem
+    // garantiert glatten Übergang in den Flatterzustand.
+    public void ReleasePoseSmoothly(float duration = 0.25f)
+    {
+        if (poseOverride)
+        {
+            _releaseFromT = poseAmount;
+        }
+        else if (!_releasingPose)
+        {
+            return; // schon voll automatisch, nichts zu tun
+        }
+
+        poseOverride     = false;
+        _releasingPose   = true;
+        _releaseElapsed  = 0f;
+        _releaseDuration = Mathf.Max(0.0001f, duration);
+    }
 
     private void Awake()
     {
@@ -141,6 +175,16 @@ public class FairyWingFlap : MonoBehaviour
         float basePhase = timer * currentFlapSpeed * Mathf.PI * 2f;
         LiftPhase = Mathf.Sin(basePhase);
 
+        // Blend-Faktor für ReleasePoseSmoothly: 0 = noch beim eingefrorenen Pose-Wert, 1 = voll beim
+        // automatischen Zyklus. Einmal pro Frame berechnet (nicht pro Wing), da für alle Flügel gleich.
+        float releaseBlend = 1f;
+        if (_releasingPose)
+        {
+            _releaseElapsed += Time.deltaTime;
+            releaseBlend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(_releaseElapsed / _releaseDuration));
+            if (releaseBlend >= 1f) _releasingPose = false;
+        }
+
         foreach (var wing in wings)
         {
             if (wing.transform == null) continue;
@@ -167,6 +211,11 @@ public class FairyWingFlap : MonoBehaviour
 
                 // Leichte Ausschlag-Variation pro Zyklus, synchron zur Tempo-Drift oben.
                 t = Mathf.Clamp01(t * (1f + ampJitter));
+
+                // Frisch freigegebene Pose: sanft vom eingefrorenen Wert zu diesem automatischen t
+                // überblenden statt sofort zu springen (siehe ReleasePoseSmoothly).
+                if (_releasingPose || releaseBlend < 1f)
+                    t = Mathf.Lerp(_releaseFromT, t, releaseBlend);
             }
 
             float extremeAngle = wing.foldTowardMaxAngle ? wing.maxAngle : wing.minAngle;

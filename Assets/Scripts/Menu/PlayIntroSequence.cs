@@ -131,14 +131,14 @@ public class PlayIntroSequence : MonoBehaviour
         fairy.GetComponent<FairyLoopFlight>()?.StopAllCoroutines();
         fairy.GetComponent<FairyBubbleBurst>()?.StopAllCoroutines();
 
-        // ClearPose löst eine evtl. hängende gehaltene Flügel-Pose (z.B. während der Vibrationsphase
-        // von Blau) — sonst würden die Flügel während des ganzen Flugs regungslos in dieser Pose
-        // stecken bleiben, statt zu flattern. SetSpeedBoost fährt den Flügelschlag sanft hoch (gleiche
-        // exponentielle Ease-Logik wie bei den Tap-Gimmicks), kein ruckartiger Sprung.
+        // ReleasePoseSmoothly blendet sanft aus einer evtl. hängenden gehaltenen Flügel-Pose (z.B.
+        // während der Vibrationsphase von Blau) in den automatischen Takt über — kein Sprung, egal
+        // in welchem Zustand die Flügel gerade waren. SetSpeedBoost fährt den Flügelschlag zusätzlich
+        // sanft hoch (gleiche exponentielle Ease-Logik wie bei den Tap-Gimmicks).
         var wingFlap = fairy.GetComponent<FairyWingFlap>();
         if (wingFlap != null)
         {
-            wingFlap.ClearPose();
+            wingFlap.ReleasePoseSmoothly();
             wingFlap.SetSpeedBoost(fairyFlapSpeedBoost);
         }
 

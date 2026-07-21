@@ -185,7 +185,7 @@ public class FairyBubbleBurst : MonoBehaviour
         _wingFlap.SetPose(0f);
         transform.localScale = baseScale;
 
-        _wingFlap.ClearPose();
+        _wingFlap.ReleasePoseSmoothly();
         _fairyFloat.enabled = true;
         _routine = null;
     }

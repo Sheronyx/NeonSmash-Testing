@@ -10389,6 +10389,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1618122601}
   - component: {fileID: 1618122600}
+  - component: {fileID: 1196942229879164658}
   m_Layer: 0
   m_Name: GameStartCoordinator
   m_TagString: Untagged
@@ -10432,6 +10433,26 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1196942229879164658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1618122599}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d8422c3ae2940808f4db8658132053e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FairyArrivalSequence
+  fairies:
+  - {fileID: 326070009}
+  - {fileID: 1743421463}
+  - {fileID: 1866657590}
+  fairyFlightDuration: 1
+  fairyStagger: 0.12
+  fairyCurveStrength: 1.2
+  fairyFlapSpeedBoost: 1.6
 --- !u!1 &1672877100
 GameObject:
   m_ObjectHideFlags: 0

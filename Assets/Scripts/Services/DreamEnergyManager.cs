@@ -15,13 +15,22 @@ public static class DreamEnergyManager
     const string PrefKey  = "dream_energy_balance";
     const string CloudKey = "dreamEnergy";
 
+    // Separater, nie sinkender Zähler für "insgesamt jemals verdient" — anders als Balance (die
+    // beim Ausgeben im Shop sinkt), treibt dieser den Dream-Energy-Fortschrittsbalken im
+    // Hauptmenü (siehe DreamEnergyProgressUI). Wird NUR in AddDreamEnergy erhöht, nie in
+    // TrySpendDreamEnergy angefasst.
+    const string LifetimePrefKey  = "dream_energy_lifetime_earned";
+    const string LifetimeCloudKey = "dreamEnergyLifetimeEarned";
+
     // Ensures cloud saves are sequential — prevents out-of-order writes
     // when multiple AddDreamEnergy calls fire rapidly.
     static readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
     public static event Action<int> OnDreamEnergyChanged;
+    public static event Action<int> OnLifetimeEarnedChanged;
 
-    public static int Balance => PlayerPrefs.GetInt(PrefKey, 0);
+    public static int Balance        => PlayerPrefs.GetInt(PrefKey, 0);
+    public static int LifetimeEarned => PlayerPrefs.GetInt(LifetimePrefKey, 0);
 
     // Design-Tabelle: Score (0..10000, 10er-Schritte) -> Traumenergie-Gesamtbetrag
     // (48 Fix + stufenweise wachsender variabler Anteil). Index i entspricht Score i*10.
@@ -105,12 +114,15 @@ public static class DreamEnergyManager
     public static void AddDreamEnergy(int amount)
     {
         if (amount <= 0) return;
-        int newBalance = Balance + amount;
+        int newBalance  = Balance + amount;
+        int newLifetime = LifetimeEarned + amount;
         PlayerPrefs.SetInt(PrefKey, newBalance);
+        PlayerPrefs.SetInt(LifetimePrefKey, newLifetime);
         PlayerPrefs.Save();
         OnDreamEnergyChanged?.Invoke(newBalance);
+        OnLifetimeEarnedChanged?.Invoke(newLifetime);
         _ = SaveToCloudAsync();
-        Debug.Log($"[DreamEnergy] +{amount} → {newBalance}");
+        Debug.Log($"[DreamEnergy] +{amount} → {newBalance} (lifetime {newLifetime})");
     }
 
     public static bool TrySpendDreamEnergy(int amount)
@@ -129,7 +141,7 @@ public static class DreamEnergyManager
         try
         {
             var result = await CloudSaveService.Instance.Data.Player.LoadAsync(
-                new HashSet<string> { CloudKey });
+                new HashSet<string> { CloudKey, LifetimeCloudKey });
 
             if (result.TryGetValue(CloudKey, out var item))
             {
@@ -137,11 +149,21 @@ public static class DreamEnergyManager
                 if (cloudBalance > Balance)
                 {
                     PlayerPrefs.SetInt(PrefKey, cloudBalance);
-                    PlayerPrefs.Save();
                     OnDreamEnergyChanged?.Invoke(cloudBalance);
                     Debug.Log($"[DreamEnergy] Cloud wiederhergestellt: {cloudBalance}");
                 }
             }
+            if (result.TryGetValue(LifetimeCloudKey, out var lifetimeItem))
+            {
+                int cloudLifetime = lifetimeItem.Value.GetAs<int>();
+                if (cloudLifetime > LifetimeEarned)
+                {
+                    PlayerPrefs.SetInt(LifetimePrefKey, cloudLifetime);
+                    OnLifetimeEarnedChanged?.Invoke(cloudLifetime);
+                    Debug.Log($"[DreamEnergy] Cloud Lifetime wiederhergestellt: {cloudLifetime}");
+                }
+            }
+            PlayerPrefs.Save();
         }
         catch (Exception e)
         {
@@ -156,10 +178,11 @@ public static class DreamEnergyManager
         await _saveLock.WaitAsync();
         try
         {
-            int balance = Balance;
+            int balance  = Balance;
+            int lifetime = LifetimeEarned;
             await CloudSaveService.Instance.Data.Player.SaveAsync(
-                new Dictionary<string, object> { { CloudKey, balance } });
-            Debug.Log($"[DreamEnergy] Cloud gespeichert: {balance}");
+                new Dictionary<string, object> { { CloudKey, balance }, { LifetimeCloudKey, lifetime } });
+            Debug.Log($"[DreamEnergy] Cloud gespeichert: {balance} (lifetime {lifetime})");
         }
         catch (Exception e)
         {
