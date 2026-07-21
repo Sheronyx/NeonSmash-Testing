@@ -195,6 +195,8 @@ GameObject:
   - component: {fileID: 6933579395902109172}
   - component: {fileID: 7455347278792666687}
   - component: {fileID: 4440661351040859757}
+  - component: {fileID: 201168287351779761}
+  - component: {fileID: 1648252542340411114}
   m_Layer: 0
   m_Name: Fairy Pink
   m_TagString: Untagged
@@ -700,3 +702,55 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7053385775836331393, guid: 354b6251e950209409c75ab984acf000, type: 3}
   m_PrefabInstance: {fileID: 1804463565855237403}
   m_PrefabAsset: {fileID: 0}
+--- !u!58 &201168287351779761
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6001283917693325561}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 1
+--- !u!114 &1648252542340411114
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6001283917693325561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8dcdbb81814496cbbc08d5e3f7d7986, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FairyTapGimmick
+  pushDownDistance: 1
+  pushDownDuration: 0.35
+  flyBackDuration: 0.5
+  flapSpeedBoost: 2.5

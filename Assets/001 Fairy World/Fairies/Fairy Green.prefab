@@ -468,6 +468,8 @@ GameObject:
   - component: {fileID: 5099372332076632297}
   - component: {fileID: 1745747070774088934}
   - component: {fileID: 5146866917060294005}
+  - component: {fileID: 711354923121744124}
+  - component: {fileID: 3700419272194774149}
   m_Layer: 0
   m_Name: Fairy Green
   m_TagString: Untagged
@@ -700,3 +702,56 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7909250533478703700, guid: 354b6251e950209409c75ab984acf000, type: 3}
   m_PrefabInstance: {fileID: 1394065371837985399}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &711354923121744124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8166409859547418163}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 888a12493233489eb9cbf6d1f7381c14, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FairyLoopFlight
+  figureDuration: 1.6
+  figureRadius: 0.8
+  flapSpeedBoost: 1.8
+  windUpAngle: 0.5
+  windUpDuration: 0.3
+--- !u!58 &3700419272194774149
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8166409859547418163}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 1

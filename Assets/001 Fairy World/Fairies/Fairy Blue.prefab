@@ -104,6 +104,8 @@ GameObject:
   - component: {fileID: 3870786036655860395}
   - component: {fileID: 6536412450145884902}
   - component: {fileID: 9188966007106408908}
+  - component: {fileID: 4333758402444789683}
+  - component: {fileID: 2022043649680334501}
   m_Layer: 0
   m_Name: Fairy Blue
   m_TagString: Untagged
@@ -946,3 +948,60 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8620588918006998812, guid: 7f906c77905876d488e88e99d13c3d7d, type: 3}
   m_PrefabInstance: {fileID: 7444260968055642995}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &4333758402444789683
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666862814018976444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4d7478c1e8b451e837f6ce750b38de2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::FairyBubbleBurst
+  shrinkDuration: 0.4
+  shrinkScaleMultiplier: 0.8
+  returnDuration: 0.4
+  burstDuration: 2
+  boostedRateOverTime: 100
+  boostedMaxParticles: 300
+  sidewaysForce: 0.6
+  vibrationAmount: 0.04
+  vibrationFrequency: 6
+--- !u!58 &2022043649680334501
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1666862814018976444}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 1

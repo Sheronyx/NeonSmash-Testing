@@ -55,6 +55,9 @@ public class FairyWingFlap : MonoBehaviour
              "schwankt (0 = kein Effekt).")]
     [Range(0f, 1f)]
     [SerializeField] private float amplitudeVariation = 0.15f;
+    [Tooltip("Wie schnell sich ein Speed-Boost (z.B. von einem Tap-Gimmick) sanft auf- und wieder " +
+             "abbaut, statt schlagartig zu springen — höher = schnellerer Übergang.")]
+    [SerializeField] private float speedBoostEaseRate = 8f;
 
     [Header("Flügel-Segmente (Transform pro Eintrag im Editor zuweisen)")]
     [SerializeField] private Wing[] wings = new Wing[]
@@ -73,6 +76,31 @@ public class FairyWingFlap : MonoBehaviour
 
     private float timer;
     private float noiseSeed;
+    private float speedBoostMultiplier = 1f; // sanft interpolierter Ist-Wert, siehe Update()
+    private float speedBoostTarget     = 1f; // Ziel-Wert, den SetSpeedBoost setzt
+    private bool  poseOverride;              // true = normale Flatter-Animation pausiert, siehe SetPose
+    private float poseAmount;                // 0 = Ruheposition, 1 = volle Auslenkung (bei poseOverride)
+
+    // Temporär die Flatter-Geschwindigkeit skalieren (z.B. für ein Tap-Gimmick, das die Fee
+    // kurz schneller flattern lässt). 1 = normales Tempo. Baut sich in Update() sanft auf/ab statt
+    // schlagartig zu springen — ein harter Sprung würde die Flügel-Phase (timer * currentFlapSpeed)
+    // in einem Frame springen lassen, was wie ein Ruckler aussieht.
+    public void SetSpeedBoost(float multiplier) => speedBoostTarget = multiplier;
+
+    // Hält die Flügel manuell in einer bestimmten Auslenkung (0 = Ruheposition, 1 = voll
+    // ausgeklappt) und pausiert dabei die normale Flatter-Animation — für Gimmicks, die die
+    // Flügel gezielt öffnen/schließen wollen (z.B. "aufplustern"), statt nur schneller/langsamer
+    // im normalen Zyklus zu flattern. Der Aufrufer ist selbst dafür verantwortlich, poseAmount
+    // über die Zeit sanft zu ändern (z.B. per SmoothStep) statt springen zu lassen.
+    public void SetPose(float amount)
+    {
+        poseOverride = true;
+        poseAmount   = Mathf.Clamp01(amount);
+    }
+
+    // Gibt die Flügel wieder frei — die normale Flatter-Animation läuft ab dem aktuellen Timer-
+    // Stand weiter, kein Sprung, da der Timer währenddessen einfach weitergelaufen ist.
+    public void ClearPose() => poseOverride = false;
 
     private void Awake()
     {
@@ -87,11 +115,15 @@ public class FairyWingFlap : MonoBehaviour
             if (wing.transform != null) wing.baseScale = wing.transform.localScale;
     }
 
-    private float _debugLogTimer;
-
     private void Update()
     {
         timer += Time.deltaTime;
+
+        // Exponentielle Annäherung an den Ziel-Boost statt hartem Sprung — sonst würde die Phase
+        // unten (timer * currentFlapSpeed) in einem einzigen Frame springen und wie ein Ruckler
+        // in der Flügelbewegung aussehen.
+        speedBoostMultiplier = Mathf.Lerp(speedBoostMultiplier, speedBoostTarget,
+            1f - Mathf.Exp(-speedBoostEaseRate * Time.deltaTime));
 
         // Aktuelle Flatter-Geschwindigkeit driftet sanft zwischen Min/Max (Perlin statt reinem Random,
         // damit sie sich stetig ändert statt zu springen) — verhindert den "perfekt identischer Loop"-
@@ -103,16 +135,8 @@ public class FairyWingFlap : MonoBehaviour
         // kaum wahrnehmbaren Tempo-Sprung, verhindert aber die dauerhafte Drift zuverlässig.
         float noiseInput      = Mathf.Repeat(timer, 250f) * speedDriftRate;
         float noiseT          = Mathf.PerlinNoise(noiseInput, noiseSeed);
-        float currentFlapSpeed = Mathf.Lerp(minFlapSpeed, maxFlapSpeed, noiseT);
+        float currentFlapSpeed = Mathf.Lerp(minFlapSpeed, maxFlapSpeed, noiseT) * speedBoostMultiplier;
         float ampJitter        = (noiseT * 2f - 1f) * amplitudeVariation; // -1..1, für die Ausschlag-Variation unten
-
-        // TEMPORÄR zur Diagnose des "wird immer schneller"-Bugs — einmal pro Sekunde loggen.
-        _debugLogTimer += Time.unscaledDeltaTime;
-        if (_debugLogTimer >= 1f)
-        {
-            _debugLogTimer = 0f;
-            Debug.Log($"[FairyWingFlap:{name}] timer={timer:F1} noiseInput={noiseInput:F1} noiseT={noiseT:F3} currentFlapSpeed={currentFlapSpeed:F3} timeScale={Time.timeScale:F2}");
-        }
 
         float basePhase = timer * currentFlapSpeed * Mathf.PI * 2f;
         LiftPhase = Mathf.Sin(basePhase);
@@ -121,19 +145,29 @@ public class FairyWingFlap : MonoBehaviour
         {
             if (wing.transform == null) continue;
 
-            float cyclePos = timer * currentFlapSpeed * wing.speedMultiplier;
-            float k = cyclePos - Mathf.Floor(cyclePos); // 0..1 innerhalb des aktuellen Zyklus, läuft durchgehend ohne Pause
+            float t;
+            if (poseOverride)
+            {
+                // Manuell gehaltene Pose statt normalem Flatter-Zyklus — z.B. für ein langsames
+                // Aufklappen/Zusammenlegen der Flügel unabhängig vom automatischen Takt.
+                t = poseAmount;
+            }
+            else
+            {
+                float cyclePos = timer * currentFlapSpeed * wing.speedMultiplier;
+                float k = cyclePos - Mathf.Floor(cyclePos); // 0..1 innerhalb des aktuellen Zyklus, läuft durchgehend ohne Pause
 
-            // Asymmetrische Schlag-Kurve statt symmetrischem Kosinus: schneller Ausschlag zum Extrem
-            // (Kraftschlag), langsameres Zurückkehren (Rückschlag) — fühlt sich lebendiger an als eine
-            // perfekt gleichförmige Hin-und-her-Bewegung. SmoothStep sorgt dafür, dass die Geschwindigkeit
-            // an beiden Umkehrpunkten sanft auf 0 geht, kein Ruck beim Richtungswechsel.
-            float t = k < strokePhaseFraction
-                ? Mathf.SmoothStep(0f, 1f, k / strokePhaseFraction)
-                : Mathf.SmoothStep(1f, 0f, (k - strokePhaseFraction) / (1f - strokePhaseFraction));
+                // Asymmetrische Schlag-Kurve statt symmetrischem Kosinus: schneller Ausschlag zum Extrem
+                // (Kraftschlag), langsameres Zurückkehren (Rückschlag) — fühlt sich lebendiger an als eine
+                // perfekt gleichförmige Hin-und-her-Bewegung. SmoothStep sorgt dafür, dass die Geschwindigkeit
+                // an beiden Umkehrpunkten sanft auf 0 geht, kein Ruck beim Richtungswechsel.
+                t = k < strokePhaseFraction
+                    ? Mathf.SmoothStep(0f, 1f, k / strokePhaseFraction)
+                    : Mathf.SmoothStep(1f, 0f, (k - strokePhaseFraction) / (1f - strokePhaseFraction));
 
-            // Leichte Ausschlag-Variation pro Zyklus, synchron zur Tempo-Drift oben.
-            t = Mathf.Clamp01(t * (1f + ampJitter));
+                // Leichte Ausschlag-Variation pro Zyklus, synchron zur Tempo-Drift oben.
+                t = Mathf.Clamp01(t * (1f + ampJitter));
+            }
 
             float extremeAngle = wing.foldTowardMaxAngle ? wing.maxAngle : wing.minAngle;
             float angle        = Mathf.Lerp(wing.restAngle, extremeAngle, t);
