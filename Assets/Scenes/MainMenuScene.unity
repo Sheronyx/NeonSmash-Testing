@@ -172584,13 +172584,14 @@ GameObject:
   - component: {fileID: 1941529700}
   - component: {fileID: 1941529699}
   - component: {fileID: 1941529698}
+  - component: {fileID: 1929021192217557750}
   m_Layer: 5
   m_Name: DimPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1941529697
 RectTransform:
   m_ObjectHideFlags: 0
@@ -172622,6 +172623,20 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &1929021192217557750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1941529696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 962d89d15ab3c4b96a707d24d57c0194, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimOverlay
+  targetAlpha: 0.55
+  fadeDuration: 0.25
 --- !u!114 &1941529699
 MonoBehaviour:
   m_ObjectHideFlags: 0
