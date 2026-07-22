@@ -171,32 +171,32 @@ MonoBehaviour:
   wings:
   - transform: {fileID: 962888017199392123}
     minAngle: -20
-    maxAngle: 60
-    restAngle: 40
+    maxAngle: 0
+    restAngle: -10
     speedMultiplier: 1
     foldTowardMaxAngle: 1
     foldScaleAtExtreme: 0.55
     foldOnYAxis: 0
   - transform: {fileID: 8282648375295909065}
-    minAngle: -60
+    minAngle: 0
     maxAngle: 20
-    restAngle: -40
+    restAngle: 10
     speedMultiplier: 1
     foldTowardMaxAngle: 0
     foldScaleAtExtreme: 0.55
     foldOnYAxis: 0
   - transform: {fileID: 620455331013177784}
-    minAngle: -60
+    minAngle: 0
     maxAngle: -20
-    restAngle: -40
+    restAngle: -10
     speedMultiplier: 1
     foldTowardMaxAngle: 0
     foldScaleAtExtreme: 0.55
     foldOnYAxis: 0
   - transform: {fileID: 5654676722523375183}
-    minAngle: 60
+    minAngle: 0
     maxAngle: 20
-    restAngle: 40
+    restAngle: 10
     speedMultiplier: 1
     foldTowardMaxAngle: 0
     foldScaleAtExtreme: 0.55
