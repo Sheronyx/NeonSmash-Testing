@@ -108,7 +108,7 @@ ParticleSystem:
       m_RotationOrder: 4
   moveWithTransform: 0
   moveWithCustomTransform: {fileID: 0}
-  scalingMode: 1
+  scalingMode: 0
   randomSeed: 0
   InitialModule:
     serializedVersion: 3
@@ -4846,6 +4846,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2966543627553598919}
   - component: {fileID: 2332964885322457425}
+  - component: {fileID: 8469921607430252470}
   m_Layer: 0
   m_Name: innerRect_0
   m_TagString: Untagged
@@ -4927,6 +4928,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &8469921607430252470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140120825469043653}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1 &2759920450975784076
 GameObject:
   m_ObjectHideFlags: 0
@@ -4939,6 +4952,7 @@ GameObject:
   - component: {fileID: 7717775394899769457}
   - component: {fileID: 4260226160786853213}
   - component: {fileID: 3445201416840381109}
+  - component: {fileID: 7159395330764593740}
   m_Layer: 0
   m_Name: FuseVisual
   m_TagString: Untagged
@@ -5105,6 +5119,18 @@ MonoBehaviour:
   isQuadMode: 1
   topBottomEmitter: {fileID: 637674351262081611}
   bottomTopEmitter: {fileID: 0}
+--- !u!114 &7159395330764593740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2759920450975784076}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1 &3401645466293136933
 GameObject:
   m_ObjectHideFlags: 0
@@ -5322,6 +5348,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5879770878378590852}
   - component: {fileID: 5145849084945414597}
+  - component: {fileID: 2644756477736106196}
   m_Layer: 0
   m_Name: middleRect_0
   m_TagString: Untagged
@@ -5370,7 +5397,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0ac3305d2f420456eadcf64af10557c8, type: 2}
+  - {fileID: 2100000, guid: 02dcc5d23c97d412ea15e0d98c9a8b63, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5403,6 +5430,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &2644756477736106196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7246482246777819776}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0780a482d0f2414e955cb2f2aa109ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnDissolveTarget
 --- !u!1 &7634417711000780290
 GameObject:
   m_ObjectHideFlags: 0

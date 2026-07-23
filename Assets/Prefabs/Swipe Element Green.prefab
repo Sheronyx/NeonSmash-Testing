@@ -218,6 +218,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7005883438181381471}
   - component: {fileID: 8361660417456772782}
+  - component: {fileID: 7131737768503316634}
   m_Layer: 0
   m_Name: NeonSlideElementOuterRectGlow
   m_TagString: Untagged
@@ -299,6 +300,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &7131737768503316634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2905771271400922483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1 &3056856675277317620
 GameObject:
   m_ObjectHideFlags: 0
@@ -311,6 +324,7 @@ GameObject:
   - component: {fileID: 2032947737130714759}
   - component: {fileID: 8704539522509905877}
   - component: {fileID: 5391852499044950626}
+  - component: {fileID: 5218965701116096799}
   m_Layer: 0
   m_Name: FuseVisual
   m_TagString: Untagged
@@ -478,6 +492,18 @@ MonoBehaviour:
   isQuadMode: 0
   topBottomEmitter: {fileID: 2602361332385755489}
   bottomTopEmitter: {fileID: 5272872561256123617}
+--- !u!114 &5218965701116096799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3056856675277317620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1 &3456541772149796090
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,6 +514,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6548327430491315478}
   - component: {fileID: 1199589062275926903}
+  - component: {fileID: 2036436804374196408}
   m_Layer: 0
   m_Name: NeonSlideElementInnerRect
   m_TagString: Untagged
@@ -536,7 +563,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: bec3782ba645e4d30a9ea808933fab7f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -569,6 +596,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &2036436804374196408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3456541772149796090}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0780a482d0f2414e955cb2f2aa109ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnDissolveTarget
 --- !u!1 &5307048160416660260
 GameObject:
   m_ObjectHideFlags: 0

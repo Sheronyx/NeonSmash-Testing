@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class CountdownSquare : MonoBehaviour
@@ -8,6 +9,10 @@ public class CountdownSquare : MonoBehaviour
     private bool isCountingDown = false;
 
     [SerializeField] private AnimationCurve easingCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
+    [Tooltip("Wie lange das Quadrat beim Start smooth von 0 auf volle Größe wächst, bevor der eigentliche Countdown (Schrumpfen) beginnt. Wird von der Reaktionszeit ABGEZOGEN, damit die Skalierung exakt zum tatsächlichen Timeout bei 0 ankommt.")]
+    [SerializeField] private float growInDuration = 0.35f;
+
+    private Coroutine growInRoutine;
 
     private void Awake()
     {
@@ -40,9 +45,26 @@ public class CountdownSquare : MonoBehaviour
 
     public void StartCountdown(float duration)
     {
+        if (growInRoutine != null) StopCoroutine(growInRoutine);
+        growInRoutine = StartCoroutine(Co_GrowInThenCountdown(duration));
+    }
+
+    // Wächst zuerst smooth von 0 auf Basisgröße (statt wie früher hart auf Basisgröße zu springen),
+    // dann startet die bestehende Schrumpf-Logik — verkürzt um growInDuration, damit die Skalierung
+    // exakt zum selben Zeitpunkt bei 0 ankommt, zu dem Co_SlotTimeout (identische reactionTime)
+    // tatsächlich auslöst.
+    private IEnumerator Co_GrowInThenCountdown(float duration)
+    {
+        float t = 0f;
+        while (t < growInDuration)
+        {
+            t += Time.deltaTime;
+            transform.localScale = baseScale * Mathf.Clamp01(t / growInDuration);
+            yield return null;
+        }
         transform.localScale = baseScale;
 
-        totalDuration = duration;
+        totalDuration = Mathf.Max(0.01f, duration - growInDuration);
         elapsedTime = 0f;
         isCountingDown = true;
     }

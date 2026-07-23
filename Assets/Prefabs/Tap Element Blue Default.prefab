@@ -115,6 +115,7 @@ GameObject:
   - component: {fileID: 7908999192001769282}
   - component: {fileID: 6638721544101100156}
   - component: {fileID: 6348653755576770890}
+  - component: {fileID: 1297549795169833021}
   m_Layer: 0
   m_Name: FuseVisual
   m_TagString: Untagged
@@ -281,6 +282,18 @@ MonoBehaviour:
   isQuadMode: 1
   topBottomEmitter: {fileID: 5056574483457943053}
   bottomTopEmitter: {fileID: 0}
+--- !u!114 &1297549795169833021
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2508326442421321878}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1 &5527577656738821339
 GameObject:
   m_ObjectHideFlags: 0
@@ -498,6 +511,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2795520038616498124}
   - component: {fileID: 8014397714425581298}
+  - component: {fileID: 8231804506170212459}
   m_Layer: 0
   m_Name: innerRect_0
   m_TagString: Untagged
@@ -579,6 +593,18 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &8231804506170212459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5533369968443042588}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1 &5660644805886512591
 GameObject:
   m_ObjectHideFlags: 0
@@ -5620,6 +5646,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6118914335428717055}
   - component: {fileID: 1067200983117009100}
+  - component: {fileID: 1515033935179384257}
   m_Layer: 0
   m_Name: middleRect_0
   m_TagString: Untagged
@@ -5668,7 +5695,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0ac3305d2f420456eadcf64af10557c8, type: 2}
+  - {fileID: 2100000, guid: cc743d3e9da4a42abad63abdefda9abf, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5701,3 +5728,15 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &1515033935179384257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8514847176523724926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0780a482d0f2414e955cb2f2aa109ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnDissolveTarget

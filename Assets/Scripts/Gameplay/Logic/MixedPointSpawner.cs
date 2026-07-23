@@ -79,7 +79,7 @@ public class MixedPointSpawner : MonoBehaviour
     [SerializeField] private GameObject swipePrefab_Blue;
 
     [Header("Spawn Delay nach Treffer")]
-    [SerializeField] private float spawnDelayAfterHit = 0.25f;
+    [SerializeField] private float spawnDelayAfterHit = 0.05f;
 
 
     [Header("Floating Score")]
@@ -366,6 +366,7 @@ public class MixedPointSpawner : MonoBehaviour
         // Alle Slots leer → neuen Rundentyp würfeln.
         bool allEmpty = true;
         foreach (var s in _slots) { if (s.point != null) { allEmpty = false; break; } }
+
         if (allEmpty)
         {
             bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
@@ -459,10 +460,13 @@ public class MixedPointSpawner : MonoBehaviour
 
         var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
 
-        // Fly-In gilt für alle Elemente im Normal Mode (inkl. Thunder/Shocker) — nur im Tutorial
-        // ausgenommen. PointFlyIn ist ein zentraler Dienst (ein Objekt in der Szene) statt einer
-        // Komponente pro Prefab.
-        bool shouldFlyIn = !IsTutorialMode && PointFlyIn.Instance != null;
+        // Farbelemente bekommen den Dissolve-Spawn ("Zaubermaterie" entsteht an Ort und Stelle, siehe
+        // PointFlyIn); Thunder ist kein Farbelement und bleibt beim einfachen Pop-in-place. Beides
+        // entfällt im Tutorial. reactionTime wird HIER EINMAL berechnet und exakt so an
+        // FinishSlotSpawn durchgereicht, damit Fuse/Countdown-Optik und Co_SlotTimeout synchron sind.
+        bool   shouldFlyIn   = !IsTutorialMode && PointFlyIn.Instance != null;
+        float  reactionTime  = CurrentReactionTime;
+
         if (shouldFlyIn)
         {
             // Variablen für Closure festhalten
@@ -472,33 +476,41 @@ public class MixedPointSpawner : MonoBehaviour
             bool       ct      = isThunder;
             Vector3    cpos    = worldPos;
             GameObject cvisual = visual;
-            PointFlyIn.Instance.Play(visual, worldPos, visual.transform.localScale, () =>
+            float      crt     = reactionTime;
+            System.Action onArrived = () =>
             {
                 _pendingSlotPositions[ci] = null;
                 if (!running || gameOver || _slots[ci].point != null) { Destroy(cvisual); return; }
-                FinishSlotSpawn(ci, cvisual, cpos, cc, cs, ct);
-            });
+                FinishSlotSpawn(ci, cvisual, cpos, cc, cs, ct, crt);
+            };
+
+            if (isThunder)
+                PointFlyIn.Instance.Play(visual, worldPos, visual.transform.localScale, onArrived);
+            else
+                PointFlyIn.Instance.PlayDissolveSpawn(visual, worldPos, visual.transform.localScale, onArrived);
         }
         else
         {
             _pendingSlotPositions[i] = null;
-            FinishSlotSpawn(i, visual, worldPos, color, spawnSwipe, isThunder);
+            FinishSlotSpawn(i, visual, worldPos, color, spawnSwipe, isThunder, reactionTime);
         }
     }
 
-    // Startet Timer/Fuse/Pulse für ein bereits instanziiertes Element — nach Fly-In-Ankunft oder direkt.
+    // Startet Timer/Fuse/Pulse für ein bereits instanziiertes Element — nach Puls-Countdown-Stufe 1
+    // (Materialisierung) bzw. Pop-in-Ankunft, oder direkt im Tutorial. reactionTime kommt vom
+    // Aufrufer (SpawnSlot) statt hier neu berechnet zu werden, damit sie exakt dem Wert entspricht,
+    // den PointFlyIn für die Puls-Optik verwendet hat.
     private void FinishSlotSpawn(int i, GameObject newPoint, Vector3 worldPos,
-                                  PointColor color, bool spawnSwipe, bool isThunder)
+                                  PointColor color, bool spawnSwipe, bool isThunder, float reactionTime)
     {
         if (isThunder)
         {
             _slots[i].isThunder = true;
             var tp = newPoint.GetComponent<ThunderPoint>();
-            float dynamicTime = CurrentReactionTime;
-            if (tp != null) tp.Activate(dynamicTime);
+            if (tp != null) tp.Activate(reactionTime);
 
             _slots[i].point   = newPoint;
-            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, dynamicTime));
+            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, reactionTime));
             lastPoint = newPoint;
             return;
         }
@@ -518,8 +530,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (IsInfinityMode && !IsTutorialMode)
         {
-            float dynamicTime = CurrentReactionTime;
-            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, dynamicTime));
+            _slots[i].timeout = StartCoroutine(Co_SlotTimeout(i, newPoint, reactionTime));
 
             var fuse        = newPoint.GetComponentInChildren<FuseCountdown>();
             var lineFuse    = newPoint.GetComponentInChildren<LineFuse>();
@@ -527,13 +538,13 @@ public class MixedPointSpawner : MonoBehaviour
             var countdownSq = newPoint.GetComponentInChildren<CountdownSquare>();
             var pulse       = newPoint.GetComponent<PointPulse>();
 
-            if (fuse        != null) fuse.StartBurn(dynamicTime);
-            if (lineFuse    != null) lineFuse.StartBurn(dynamicTime);
-            if (sparks      != null) { sparks.SetQuadMode(tap != null); sparks.StartBurn(dynamicTime); }
-            if (countdownSq != null) countdownSq.StartCountdown(dynamicTime);
+            if (fuse        != null) fuse.StartBurn(reactionTime);
+            if (lineFuse    != null) lineFuse.StartBurn(reactionTime);
+            if (sparks      != null) { sparks.SetQuadMode(tap != null); sparks.StartBurn(reactionTime); }
+            if (countdownSq != null) countdownSq.StartCountdown(reactionTime);
             if (pulse       != null) pulse.StartPulsing();
 
-            if (tap != null) TrySpawnFake(dynamicTime);
+            if (tap != null) TrySpawnFake(reactionTime);
         }
     }
 
@@ -1421,6 +1432,9 @@ public class MixedPointSpawner : MonoBehaviour
 
         var bp = point.GetComponent<BasePoint>();
         if (bp != null) bp.SendMessage("SpawnExplosion");
+
+        // Parallel zur VFX-Explosion: Energiekugel Richtung der farblich passenden Fairy.
+        FairyEnergyManager.Instance?.SpawnEnergyOrb(color, point.transform.position);
 
         if (idx >= 0)
         {

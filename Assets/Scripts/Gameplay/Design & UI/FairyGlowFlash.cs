@@ -29,8 +29,6 @@ public class FairyGlowFlash : MonoBehaviour
 
     private void Awake()
     {
-        baseScale = transform.localScale;
-
         if (glowRenderers == null || glowRenderers.Length == 0)
             glowRenderers = GetComponentsInChildren<SpriteRenderer>(true);
 
@@ -53,6 +51,14 @@ public class FairyGlowFlash : MonoBehaviour
 
     public void Flash()
     {
+        // Erst HIER (statt in Awake()) erfassen: die Fee wird beim Spielstart erst von
+        // FairyArrivalSequence auf ihre eigentliche Ruheposition/-größe gebracht — ein in Awake()
+        // gecachter Wert würde noch die (kleine/unsichtbare) Startgröße vor dieser Sequenz erwischen,
+        // und Co_Flash() würde die Fee später fälschlich darauf zurücksetzen ("verschwindet").
+        // Energiekugeln treffen ohnehin erst lange nach Abschluss der Ankunfts-Sequenz ein, daher ist
+        // die aktuelle Skalierung zu diesem Zeitpunkt garantiert die richtige.
+        baseScale = transform.localScale;
+
         if (flashRoutine != null) StopCoroutine(flashRoutine);
         flashRoutine = StartCoroutine(Co_Flash());
     }
