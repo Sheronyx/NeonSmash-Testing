@@ -3,18 +3,14 @@ using System.Collections;
 using UnityEngine;
 
 // Zentraler Dienst (Singleton, EIN Objekt in der Szene): lässt frisch instanziierte Elemente
-// erscheinen. Zwei Modi:
-//
-// Play() — einfacher Pop-in-place (klein → Zielgröße mit Überschwingen), für Thunder/Diamant.
-//
-// PlayDissolveSpawn() — für die drei normalen Farbelemente: "Zaubermaterie" entsteht an Ort und
-// Stelle. Das per SpawnDissolveTarget markierte Kind-Objekt blendet per Dissolve-Shader
-// (_DissolveAmount 1→0) smooth ein. Parallel wachsen alle per SpawnGrowTarget markierten Kind-
-// Objekte von Skalierung 0 auf ihre Originalgröße (z.B. innerRect/outerRect/FuseVisual — Name und
-// Anzahl variieren pro Skin, deshalb Marker-Komponenten statt fester Namenssuche). Collider bleibt
-// bis zum Ende der Materialisierung (dissolveDuration) deaktiviert — erst dann feuert onArrived,
-// worüber der Aufrufer die Reaktionszeit startet. Das Element ist also erst "da" (antippbar, Uhr
-// läuft), sobald es fertig sichtbar gespawnt ist, nicht schon während des Entstehens.
+// erscheinen — "Zaubermaterie" entsteht an Ort und Stelle. Das per SpawnDissolveTarget markierte
+// Kind-Objekt blendet per Dissolve-Shader (_DissolveAmount 1→0) smooth ein. Parallel wachsen alle
+// per SpawnGrowTarget markierten Kind-Objekte von Skalierung 0 auf ihre Originalgröße (z.B.
+// innerRect/outerRect/FuseVisual — Name und Anzahl variieren pro Skin, deshalb Marker-Komponenten
+// statt fester Namenssuche). Collider bleibt bis zum Ende der Materialisierung (dissolveDuration)
+// deaktiviert — erst dann feuert onArrived, worüber der Aufrufer die Reaktionszeit startet. Das
+// Element ist also erst "da" (antippbar, Uhr läuft), sobald es fertig sichtbar gespawnt ist, nicht
+// schon während des Entstehens. Gilt für alle Elemente (Farbe, Thunder/Shocker, Diamant).
 //
 // Liegt EINMAL in der Szene (z.B. auf dem MixedPointSpawner-Objekt) statt auf jedem einzelnen
 // Prefab — die Tuning-Werte gelten damit automatisch identisch für alle Normal-Mode-Elemente, ohne
@@ -23,66 +19,13 @@ public class PointFlyIn : MonoBehaviour
 {
     public static PointFlyIn Instance { get; private set; }
 
-    [Header("Pop-In (Thunder/Diamant — einfaches Wachstum mit Überschwingen)")]
-    [SerializeField] private float duration          = 0.32f;
-    [SerializeField] private float startScalePercent = 0.35f;
-    [SerializeField] private float scaleOvershoot    = 1.70158f;
-
-    [Header("Dissolve-Spawn (Farbelemente — \"Zaubermaterie\" entsteht an Ort und Stelle)")]
+    [Header("Dissolve-Spawn (\"Zaubermaterie\" entsteht an Ort und Stelle)")]
     [Tooltip("Dauer bis _DissolveAmount von 1 (unsichtbar) auf 0 (voll sichtbar) animiert ist — Shader Graphs/2D Dissolve Shader.")]
     [SerializeField] private float dissolveDuration = 0.35f;
 
     private static readonly int DissolveAmountId = Shader.PropertyToID("_DissolveAmount");
 
     private void Awake() => Instance = this;
-
-    // target = das bereits instanziierte Element, das erscheinen soll.
-    // targetPosition/targetScale = die vom Aufrufer bereits berechnete finale Spawn-Pose.
-    public void Play(GameObject target, Vector3 targetPosition, Vector3 targetScale, Action onArrived)
-    {
-        if (target == null) { onArrived?.Invoke(); return; }
-
-        target.GetComponentInChildren<SpawnPulse>()?.Cancel();
-
-        var col = target.GetComponent<Collider2D>();
-        if (col != null) col.enabled = false;
-
-        Vector3 startScale = targetScale * startScalePercent;
-
-        target.transform.position   = targetPosition;
-        target.transform.localScale = startScale;
-
-        StartCoroutine(Co_PopIn(target, col, startScale, targetPosition, targetScale, onArrived));
-    }
-
-    private IEnumerator Co_PopIn(GameObject target, Collider2D col, Vector3 startScale, Vector3 targetPos,
-                                  Vector3 targetScale, Action onArrived)
-    {
-        Transform tr = target.transform;
-
-        float t = 0f;
-        while (t < duration)
-        {
-            if (target == null) yield break;
-
-            t += Time.deltaTime;
-            float k = Mathf.Clamp01(t / duration);
-            float scaleK = EaseOutBack(k, scaleOvershoot);
-            tr.localScale = Vector3.LerpUnclamped(startScale, targetScale, scaleK);
-
-            yield return null;
-        }
-
-        if (target == null) yield break;
-
-        tr.position   = targetPos;
-        tr.localScale = targetScale;
-
-        target.GetComponent<SwipePoint>()?.RefreshEffectiveRadius();
-        if (col != null) col.enabled = true;
-
-        onArrived?.Invoke();
-    }
 
     public void PlayDissolveSpawn(GameObject target, Vector3 targetPosition, Vector3 targetScale, Action onArrived)
     {
@@ -165,12 +108,5 @@ public class PointFlyIn : MonoBehaviour
             yield return null;
         }
         if (tr != null) tr.localScale = target;
-    }
-
-    // Robert-Penner-Style Ease-Out-Back: 0→1, überschwingt kurz über 1 hinaus, landet exakt bei 1.
-    private static float EaseOutBack(float t, float overshoot)
-    {
-        t -= 1f;
-        return t * t * ((overshoot + 1f) * t + overshoot) + 1f;
     }
 }

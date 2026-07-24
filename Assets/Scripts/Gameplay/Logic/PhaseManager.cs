@@ -52,17 +52,15 @@ public class PhaseManager : MonoBehaviour
     [Tooltip("Wie viele der 7 Diamanten pro Normal-Phase gesammelt werden müssen, damit eine zufällige Farbe den Bonus für ihren NÄCHSTEN Special Mode zugelost bekommt.")]
     [SerializeField] private int diamondsNeededForBonus = 5;
 
-    public int DiamondsNeededForBonus => diamondsNeededForBonus;
+    [Header("Übergang Special Mode → Normal Mode")]
+    [Tooltip("Pause nach Ende eines Special Modes, bevor der nächste Normal Mode zu spawnen beginnt.")]
+    [SerializeField] private float postSpecialModePause = 2f;
 
-    [Header("Phase 13 (Endless, grober Platzhalter)")]
-    [Tooltip("Wie viel die Reaktionszeit der letzten 2 Phasen pro Endless-Durchlauf zusätzlich sinkt.")]
-    [SerializeField] private float endlessReactionTimeStep = 0.05f;
-    [SerializeField] private float endlessMinReactionTime = 0.6f;
+    public int DiamondsNeededForBonus => diamondsNeededForBonus;
 
     private int _currentIndex = -1;
     private readonly int[] _destroyedCount = new int[3]; // indiziert per PointColor
     private bool _running = false;
-    private int _endlessLoopCount = 0;
     private Coroutine _triggerRoutine;
     // Pro Farbe unabhängig: true = diese Farbe trägt aktuell einen unverbrauchten Diamant-Bonus.
     // Mehrere Farben können GLEICHZEITIG einen Bonus tragen — ein fremder Special Mode verbraucht/
@@ -219,7 +217,6 @@ public class PhaseManager : MonoBehaviour
 
         _running = true;
         Array.Clear(_destroyedCount, 0, _destroyedCount.Length);
-        _endlessLoopCount = 0;
         _currentIndex = 0;
 
         OnColorProgressChanged?.Invoke(PointColor.Pink, 0, ColorTriggerThreshold);
@@ -326,6 +323,15 @@ public class PhaseManager : MonoBehaviour
     // (StopAllCoroutines) bevor der Spawn-Count-Loop das Event auslösen kann.
     private void HandleSpecialPhaseComplete()
     {
+        StartCoroutine(Co_DelayedAdvanceToNormalPhase());
+    }
+
+    // spawner.SetBannerPause(true) läuft seit Beginn des Special Modes (Co_TriggerSpecialMode)
+    // bereits durchgehend — das Spawning bleibt also während dieser Pause automatisch angehalten,
+    // ohne dass hier zusätzlich etwas gesetzt werden muss.
+    private IEnumerator Co_DelayedAdvanceToNormalPhase()
+    {
+        yield return new WaitForSeconds(postSpecialModePause);
         AdvanceToNextNormalPhase();
     }
 
@@ -337,12 +343,12 @@ public class PhaseManager : MonoBehaviour
 
         if (_currentIndex >= phases.Length)
         {
-            // Phase 13 (Endless-Platzhalter): letzte 2 Phasen wiederholen, Intensität leicht steigern.
-            _endlessLoopCount++;
-            _currentIndex = Mathf.Max(0, phases.Length - 2);
-            var loopDef = phases[_currentIndex];
-            if (loopDef != null)
-                loopDef.reactionTime = Mathf.Max(endlessMinReactionTime, loopDef.reactionTime - endlessReactionTimeStep * _endlessLoopCount);
+            // Alle regulären Phasen durchlaufen → finale Kristall-Endphase statt endlosem
+            // Weiterlaufen. spawner.SetBannerPause(false) bleibt hier bewusst aus — die
+            // Kristallphase pausiert das normale Spawning ohnehin komplett selbst.
+            _running = false;
+            CrystalEndPhaseSystem.Instance?.Begin(spawner);
+            return;
         }
 
         ApplyPhaseSettings();

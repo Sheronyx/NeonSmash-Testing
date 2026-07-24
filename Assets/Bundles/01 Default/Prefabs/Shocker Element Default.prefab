@@ -5508,6 +5508,7 @@ GameObject:
   - component: {fileID: 4844057342458101124}
   - component: {fileID: 3949391253667200385}
   - component: {fileID: 8484777983369927201}
+  - component: {fileID: 6861116835989615681}
   m_Layer: 0
   m_Name: Shocker Element Default
   m_TagString: Untagged
@@ -5525,7 +5526,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.51382, y: 3.06633, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 2558214056815270373}
@@ -5719,6 +5720,18 @@ MonoBehaviour:
   timeoutEffect: {fileID: 8258175887515491696, guid: 663ba0d388def47a3b1f667e95bd2999, type: 3}
   timeoutEffectScale: 0.2
   shrinkDuration: 0.35
+--- !u!114 &6861116835989615681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7032938748382792654}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41358eb4e6fd4ccbbb4525c0214a6b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnGrowTarget
 --- !u!1001 &7414586575057913758
 PrefabInstance:
   m_ObjectHideFlags: 0

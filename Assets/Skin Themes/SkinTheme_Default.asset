@@ -12,10 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d1a3137d94eb494abd3fd955ab16ed1, type: 3}
   m_Name: SkinTheme_Default
   m_EditorClassIdentifier: Assembly-CSharp::SkinTheme
-  tapPointPrefab: {fileID: 7634417711000780290, guid: eea7e480bc63c4665a7e386e5b9b0152, type: 3}
+  tapPointPrefab: {fileID: 3313974807727074257, guid: a6ca555d594bb4172a324a577b9034ea, type: 3}
   swipePointPrefab: {fileID: 723352877289022949, guid: 39c180ab8a9244feba9b34ed6799ae1e, type: 3}
   slashTrailPrefab: {fileID: 6593613985249772415, guid: 1ff9d26894f1940ac9dba87ed231eb7c, type: 3}
-  beamProjectilePrefab: {fileID: 6237600531714503956, guid: 79480b7f0ac244dd29066af69577e8df, type: 3}
   gravityPointPrefab: {fileID: 4156307227592253209, guid: a4b82a7a1a5154f708f5d836b0236cad, type: 3}
   fountainPointPrefab: {fileID: 4156307227592253209, guid: 0d9ff2bcbabdd4b84a38d8a758946743, type: 3}
   fakePointPrefab: {fileID: 7634417711000780290, guid: 37444548a828f4baf99a6238e13cc95d, type: 3}
@@ -24,8 +23,5 @@ MonoBehaviour:
   overridePeekFlightPath: 0
   peekEntryViewport: {x: 0.5, y: 1.3}
   peekExitViewport: {x: 0.5, y: 1.3}
-  overridePortalColor: 1
-  portalParticleColor: {r: 18.06036, g: 3.1159215, b: 23.968628, a: 1}
-  portalVoronoiColor: {r: 6.885405, g: 0, b: 29.508844, a: 1}
   overrideTopBarColor: 1
   topBarColor: {r: 4.106609, g: 1.4429684, b: 9.269978, a: 1}
