@@ -309,6 +309,17 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
+        // ❓ Zufallsbox — nie per Swipe treffbar, Sammeln = zufälliger Effekt, Verpassen = folgenlos
+        if (!fromSwipe)
+        {
+            var mysteryBoxPoint = col.GetComponent<MysteryBoxPoint>();
+            if (mysteryBoxPoint != null)
+            {
+                mysteryBoxPoint.TryTap();
+                return;
+            }
+        }
+
         // 🔵 Normale Tap Points — nie per Swipe treffbar
         if (!fromSwipe)
         {

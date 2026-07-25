@@ -211,6 +211,7 @@ public class FountainModeSystem : MonoBehaviour
         velocity *= 1f + (_intensity - 1f) * forceIntensityFactor; // Intensität der aktuellen Special-Phase (PhaseManager)
 
         var go = Instantiate(prefab, pos, Quaternion.identity);
+        MysteryBoxEffectSystem.ApplySizeMultiplier(go);
         var point = go.GetComponent<FountainPoint>();
 
         if (prefab == ActiveFountainPrefab && TutorialManager.Instance != null)

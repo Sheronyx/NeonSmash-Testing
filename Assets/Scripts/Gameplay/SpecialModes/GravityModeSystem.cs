@@ -179,6 +179,7 @@ public void Activate()
     worldPos.z = 0f;
 
     GameObject obj = Instantiate(ActiveGravityPrefab, worldPos, Quaternion.identity);
+    MysteryBoxEffectSystem.ApplySizeMultiplier(obj);
 
     var gp = obj.GetComponent<GravityPoint>();
     if (gp != null)
@@ -204,6 +205,7 @@ public void Activate()
         worldPos.z = 0f;
 
         GameObject obj = Instantiate(prefab, worldPos, Quaternion.identity);
+        MysteryBoxEffectSystem.ApplySizeMultiplier(obj);
         var gp = obj.GetComponent<GravityPoint>();
         if (gp != null)
         {

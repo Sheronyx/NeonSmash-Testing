@@ -25,7 +25,9 @@ public class FloatingScoreText : MonoBehaviour
     public void Play(int score, Color color, PointColor? pointColor = null, float scale = 1f,
         Material explicitMaterial = null, bool showPlusPrefix = true, float holdDuration = 0f, string overrideText = null)
     {
-        label.text  = overrideText ?? (showPlusPrefix ? "+" + score : score.ToString());
+        // Negative Werte (z.B. Zufallsbox-Minuspunkte-Effekt) tragen ihr Minuszeichen schon selbst über
+        // ToString() — ein "+" davor würde ein falsches "+-10" ergeben.
+        label.text  = overrideText ?? (showPlusPrefix && score >= 0 ? "+" + score : score.ToString());
         label.color = color;
         _scale      = scale;
 

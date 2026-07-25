@@ -81,6 +81,23 @@ public class LivesManager : MonoBehaviour
         if (health <= 0f) return false;
         if (IsLifeLostAnimating) return health > 0f;
 
+        // Zufallsbox-Effekt: eine ungenutzte Extra-Life-Ladung verzeiht diesen Fehler komplett — kein
+        // Lebensverlust, aber trotzdem eine eigene Verbrauchs-Animation + Spielpause (siehe
+        // Co_ExtraLifeConsumed). Zentral hier statt an jeder einzelnen LoseLife-Aufrufstelle (Special
+        // Modes, Shocker-Antippen, Peek-a-boo, ...), damit es überall automatisch greift. Der Normal-
+        // Mode-Timeout-Pfad in MixedPointSpawner läuft NICHT über LoseLife (direktes Game Over ohne
+        // Leben-System) und prüft die Ladung deshalb weiterhin separat selbst.
+        if (MysteryBoxEffectSystem.Instance != null && MysteryBoxEffectSystem.Instance.ConsumeExtraLifeIfActive())
+        {
+            if (_rampUpRoutine != null)
+            {
+                StopCoroutine(_rampUpRoutine);
+                _rampUpRoutine = null;
+            }
+            StartCoroutine(Co_ExtraLifeConsumed());
+            return true;
+        }
+
         if (_rampUpRoutine != null)
         {
             StopCoroutine(_rampUpRoutine);
@@ -138,6 +155,23 @@ public class LivesManager : MonoBehaviour
         IsLifeLostAnimating = false;
         UpdateHeartFills();
         StartCoroutine(PopHeart(heart));
+        _rampUpRoutine = StartCoroutine(RampUpTimeScale());
+    }
+
+    // Extraleben-Ladung verbraucht (außerhalb des Normal-Mode-Timeout-Pfads, siehe LoseLife oben):
+    // eigene Ankündigungs-Animation, Gameplay pausiert über dasselbe Time.timeScale/IsLifeLostAnimating-
+    // Prinzip wie beim echten Lebensverlust — nur ohne Herzverlust/Pop.
+    private IEnumerator Co_ExtraLifeConsumed()
+    {
+        IsLifeLostAnimating = true;
+        Time.timeScale = 0f;
+
+        float dur = MysteryBoxEffectSystem.Instance != null
+            ? MysteryBoxEffectSystem.Instance.PlayExtraLifeConsumedAnnouncement()
+            : 0f;
+        yield return new WaitForSecondsRealtime(dur);
+
+        IsLifeLostAnimating = false;
         _rampUpRoutine = StartCoroutine(RampUpTimeScale());
     }
 

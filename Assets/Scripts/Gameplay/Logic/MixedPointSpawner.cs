@@ -120,6 +120,16 @@ public class MixedPointSpawner : MonoBehaviour
     /// <summary>Wie viele der in dieser Normal-Phase gespawnten Diamanten bereits eingesammelt wurden.</summary>
     public int DiamondsCollectedThisPhase { get; private set; }
 
+    [Header("Zufallsbox (Normal Mode)")]
+    [Tooltip("Zufallsbox-Prefab (MysteryBoxPoint). Sammeln = zufälliger Effekt (positiv oder negativ), Verpassen = folgenlos.")]
+    public GameObject mysteryBoxPrefab;
+    [Range(0f, 1f)]
+    [Tooltip("Wahrscheinlichkeit pro Runde (parallel zu den 3 Farb-Slots), dass zusätzlich eine Zufallsbox spawnt — nur, solange gerade kein Zufalls-Effekt aktiv ist.")]
+    public float mysteryBoxSpawnChance = 0.15f;
+
+    private bool _roundHasMysteryBox = false;
+    private GameObject _currentMysteryBox;
+
     [Header("Peek-a-boo (Wolken-Sequenz)")]
     [SerializeField] private PeekABooSystem peekABooSystem;
     [Range(0f, 1f)]
@@ -253,8 +263,9 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         // Ein Element der Runde wurde aufgelöst → frische Dreier-Reihe kommt. Ein evtl. noch aktiver
-        // Diamant aus der ALTEN Runde muss mit weg (gleiches Prinzip wie früher beim Extra-Shocker).
+        // Diamant/Zufallsbox aus der ALTEN Runde muss mit weg (gleiches Prinzip wie früher beim Extra-Shocker).
         DismissCurrentDiamond();
+        DismissCurrentMysteryBox();
     }
 
     // Räumt den aktuell aktiven Diamanten lautlos/folgenlos weg (Puff, kein Score, keine Strafe).
@@ -264,6 +275,16 @@ public class MixedPointSpawner : MonoBehaviour
         var dp = _currentDiamond.GetComponent<DiamondPoint>();
         if (dp != null) dp.Dismiss(); else Destroy(_currentDiamond);
         _currentDiamond = null;
+    }
+
+    // Räumt die aktuell aktive Zufallsbox lautlos/folgenlos weg (Puff, kein Effekt, keine Strafe) —
+    // z.B. wenn stattdessen ein Farbelement der Runde getroffen/aufgelöst wurde.
+    private void DismissCurrentMysteryBox()
+    {
+        if (_currentMysteryBox == null) return;
+        var mb = _currentMysteryBox.GetComponent<MysteryBoxPoint>();
+        if (mb != null) mb.Dismiss(); else Destroy(_currentMysteryBox);
+        _currentMysteryBox = null;
     }
 
     // Hilfsmethoden für farbige Prefabs (Fallback auf Default)
@@ -385,6 +406,13 @@ public class MixedPointSpawner : MonoBehaviour
             // Phasen-Quote (diamondsPerPhase) noch nicht ausgeschöpft ist.
             bool diamondsAvailable = _diamondsEnabledThisPhase && _diamondsSpawnedThisPhase < diamondsPerPhase;
             _roundHasDiamond = diamondsAvailable && _currentDiamond == null && Random.value < diamondSpawnChance;
+
+            // Zufallsbox: mit Chance zusätzlich zu den 3 Farb-Slots — aber nur, solange gerade kein
+            // Zufalls-Effekt aktiv ist (Design: keine zweite Box, während noch eine wirkt) UND nicht
+            // gleichzeitig zum Diamant (Design: die beiden sollen sich nie überschneiden).
+            bool mysteryBoxBlocked = (MysteryBoxEffectSystem.Instance != null && MysteryBoxEffectSystem.Instance.IsEffectActive)
+                                      || _roundHasDiamond || _currentDiamond != null;
+            _roundHasMysteryBox = !mysteryBoxBlocked && _currentMysteryBox == null && Random.value < mysteryBoxSpawnChance;
         }
 
         for (int i = 0; i < _slots.Length; i++)
@@ -402,6 +430,17 @@ public class MixedPointSpawner : MonoBehaviour
                 if (_slots[i].point == null && !_pendingSlotPositions[i].HasValue) { allPositioned = false; break; }
             }
             if (allPositioned) SpawnDiamond();
+        }
+
+        // Zufallsbox ebenso erst, wenn alle 3 Slots eine Zielposition haben (gleiches Muster wie beim Diamant).
+        if (_roundHasMysteryBox && _currentMysteryBox == null)
+        {
+            bool allPositioned = true;
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                if (_slots[i].point == null && !_pendingSlotPositions[i].HasValue) { allPositioned = false; break; }
+            }
+            if (allPositioned) SpawnMysteryBox();
         }
     }
 
@@ -459,6 +498,7 @@ public class MixedPointSpawner : MonoBehaviour
         _pendingSlotPositions[i] = worldPos;
 
         var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
+        ApplyMysteryBoxVisualEffects(visual);
 
         // ALLE Elemente (Farbe wie Thunder/Shocker) bekommen denselben Dissolve-Spawn ("Zaubermaterie"
         // entsteht an Ort und Stelle, siehe PointFlyIn) — entfällt nur im Tutorial. reactionTime wird
@@ -491,6 +531,22 @@ public class MixedPointSpawner : MonoBehaviour
             _pendingSlotPositions[i] = null;
             FinishSlotSpawn(i, visual, worldPos, color, spawnSwipe, isThunder, reactionTime);
         }
+    }
+
+    // Wendet aktive Zufallsbox-Effekte (Farblos-Tint, Größen-Multiplikator) auf ein frisch
+    // instanziiertes Element an — betrifft Farbelemente, Thunder, Diamant UND die Zufallsbox selbst.
+    // Direkt nach jedem Instantiate() aufrufen, BEVOR PointFlyIn die Zielgröße für den Dissolve-Spawn
+    // ausliest (sonst würde der Größen-Effekt ignoriert).
+    private void ApplyMysteryBoxVisualEffects(GameObject visual)
+    {
+        var fx = MysteryBoxEffectSystem.Instance;
+        if (fx != null && fx.IsColorlessActive)
+        {
+            foreach (var sr in visual.GetComponentsInChildren<SpriteRenderer>())
+                sr.color *= fx.ColorlessTint;
+        }
+
+        MysteryBoxEffectSystem.ApplySizeMultiplier(visual);
     }
 
     // Startet Timer/Fuse/Pulse für ein bereits instanziiertes Element — nach Puls-Countdown-Stufe 1
@@ -682,6 +738,25 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (!running || gameOver || _slots[i].point != point) yield break;
 
+        // Extraleben-Ladung (Zufallsbox-Effekt)? Dann wird dieser eigentlich tödliche Fehler
+        // einmalig verziehen — Element wird nur normal weggeräumt, kein Game Over. Statt sofort
+        // weiterzuspawnen: Spawning pausieren, Verbrauchs-Animation abspielen, erst danach freigeben.
+        if (MysteryBoxEffectSystem.Instance != null && MysteryBoxEffectSystem.Instance.ConsumeExtraLifeIfActive())
+        {
+            DismissCurrentFake();
+
+            _slots[i].timeout = null;
+            _slots[i].point   = null;
+            if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
+            Destroy(point);
+
+            ClearOtherSlots(i);
+
+            SetBannerPause(true);
+            MysteryBoxEffectSystem.Instance.PlayExtraLifeConsumedSequence(this);
+            yield break;
+        }
+
         // Timeout: sofortiges Game Over (kein Leben-System mehr)
         DismissCurrentFake();
 
@@ -726,9 +801,10 @@ public class MixedPointSpawner : MonoBehaviour
     {
         if (diamondPrefab == null) return;
 
-        Vector2 vp       = FindDiamondPosition();
+        Vector2 vp       = FindDiamondPosition(diamondPrefab);
         Vector3 worldPos = ViewportToWorldOnZ0(vp);
         _currentDiamond  = Instantiate(diamondPrefab, worldPos, Quaternion.identity);
+        ApplyMysteryBoxVisualEffects(_currentDiamond);
 
         var dp = _currentDiamond.GetComponent<DiamondPoint>();
         if (dp != null) dp.spawner = this;
@@ -748,23 +824,45 @@ public class MixedPointSpawner : MonoBehaviour
         _diamondsSpawnedThisPhase++;
     }
 
-    // Tastet viele Kandidatenpunkte im erlaubten Bereich ab und nimmt den mit dem GRÖSSTEN
-    // Mindestabstand zu allen 3 Farbelementen — kein Schwellenwert, der scheitern kann, sondern
-    // immer die objektiv beste verfügbare Position. (Kein Activation-Orb-Check: der Orb erscheint
-    // erst NACHDEM der PhaseManager alles pausiert/geräumt hat, existiert also nie parallel zum
-    // Diamant-Spawning.)
-    private Vector2 FindDiamondPosition()
+    // Tastet viele Kandidatenpunkte im erlaubten Bereich ab und nimmt die ERSTE Position, die von allen
+    // Hindernissen einen größenbasierten Mindestabstand einhält (Radius + Radius + Gap, exakt wie
+    // IsFarEnoughFromOrb es auch für den Activation Orb/Fake-Elemente nutzt) — kein reines "bester von
+    // N Versuchen ohne Schwelle" mehr, das konnte Überlappungen mit den Farbelementen durchrutschen
+    // lassen. (Kein zusätzlicher Activation-Orb-Check: der Orb erscheint erst NACHDEM der PhaseManager
+    // alles pausiert/geräumt hat, existiert also nie parallel zum Diamant-/Box-Spawning.)
+    private Vector2 FindDiamondPosition(GameObject placingPrefab)
     {
-        Rect allowedVP    = ScreenRectToViewportRect(GetAllowedSpawnRect());
-        int  sampleCount  = 200;
+        Rect  allowedVP    = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        int   sampleCount  = 200;
+        float placingHalfPx = GetHalfSizePixels(placingPrefab);
 
-        var obstacles = new System.Collections.Generic.List<Vector2>(3);
+        var obstacleVPs   = new System.Collections.Generic.List<Vector2>(5);
+        var obstacleHalfs = new System.Collections.Generic.List<float>(5);
         for (int j = 0; j < _slots.Length; j++)
         {
             if (_slots[j].point != null)
-                obstacles.Add(mainCamera.WorldToViewportPoint(_slots[j].point.transform.position));
+            {
+                obstacleVPs.Add(mainCamera.WorldToViewportPoint(_slots[j].point.transform.position));
+                obstacleHalfs.Add(GetHalfSizePixels(_slots[j].point));
+            }
             else if (_pendingSlotPositions[j].HasValue)
-                obstacles.Add(mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value));
+            {
+                obstacleVPs.Add(mainCamera.WorldToViewportPoint(_pendingSlotPositions[j].Value));
+                obstacleHalfs.Add(placingHalfPx);
+            }
+        }
+
+        // Diamant und Zufallsbox spawnen laut Design nie gleichzeitig (siehe SpawnNextPoint) — diese
+        // Prüfung bleibt trotzdem als Absicherung für den kurzen Übergang beim Einsammeln/Verpuffen.
+        if (_currentDiamond != null)
+        {
+            obstacleVPs.Add(mainCamera.WorldToViewportPoint(_currentDiamond.transform.position));
+            obstacleHalfs.Add(GetHalfSizePixels(_currentDiamond));
+        }
+        if (_currentMysteryBox != null)
+        {
+            obstacleVPs.Add(mainCamera.WorldToViewportPoint(_currentMysteryBox.transform.position));
+            obstacleHalfs.Add(GetHalfSizePixels(_currentMysteryBox));
         }
 
         Vector2 best        = new Vector2(0.5f, 0.5f);
@@ -777,11 +875,18 @@ public class MixedPointSpawner : MonoBehaviour
                 Random.Range(allowedVP.yMin, allowedVP.yMax)
             );
 
+            bool  valid   = true;
             float minDist = float.MaxValue;
-            foreach (var obstacleVP in obstacles)
-                minDist = Mathf.Min(minDist, PixelDistance(vp, obstacleVP));
+            for (int o = 0; o < obstacleVPs.Count; o++)
+            {
+                minDist = Mathf.Min(minDist, PixelDistance(vp, obstacleVPs[o]));
+                if (!IsFarEnoughFromOrb(vp, obstacleVPs[o], placingHalfPx, obstacleHalfs[o]))
+                    valid = false;
+            }
 
-            if (obstacles.Count == 0) minDist = 0f; // keine Hindernisse → jede Position gleich gut
+            if (obstacleVPs.Count == 0) minDist = 0f; // keine Hindernisse → jede Position gleich gut
+
+            if (valid) return vp; // erste Position, die ALLE Mindestabstände einhält
 
             if (minDist > bestMinDist)
             {
@@ -817,6 +922,60 @@ public class MixedPointSpawner : MonoBehaviour
     public void HandleDiamondResolved()
     {
         _currentDiamond = null;
+    }
+
+    // ─── Zufallsbox (Normal Mode) ──────────────────────────────────────────────
+
+    // Position/Abstandslogik identisch zum Diamant (generische "vermeide die 3 Slots + Orb"-Suche,
+    // nichts Diamant-Spezifisches darin) — daher direkt FindDiamondPosition() wiederverwendet.
+    private void SpawnMysteryBox()
+    {
+        if (mysteryBoxPrefab == null) return;
+
+        Vector2 vp       = FindDiamondPosition(mysteryBoxPrefab);
+        Vector3 worldPos = ViewportToWorldOnZ0(vp);
+        _currentMysteryBox = Instantiate(mysteryBoxPrefab, worldPos, Quaternion.identity);
+        ApplyMysteryBoxVisualEffects(_currentMysteryBox);
+
+        var mb = _currentMysteryBox.GetComponent<MysteryBoxPoint>();
+        if (mb != null) mb.spawner = this;
+
+        float reactionTime = CurrentReactionTime;
+        if (PointFlyIn.Instance != null)
+        {
+            Vector3 targetScale = _currentMysteryBox.transform.localScale;
+            PointFlyIn.Instance.PlayDissolveSpawn(_currentMysteryBox, worldPos, targetScale,
+                () => mb?.Activate(reactionTime, skipPopIn: true));
+        }
+        else
+        {
+            mb?.Activate(reactionTime);
+        }
+    }
+
+    /// <summary>Vom MysteryBoxPoint: wurde eingesammelt — Slots sofort lautlos leeren, Spawning aber
+    /// pausieren (wie beim Phasen-Banner), bis die Ankündigungs-Sequenz (Partikel → Effekt-Name-Text
+    /// → Effekt-Start, siehe MysteryBoxEffectSystem.PlayCollectSequence) fertig ist.</summary>
+    public void HandleMysteryBoxCollected()
+    {
+        _currentMysteryBox = null;
+        ClearAllSlotsSilently();
+        SetBannerPause(true);
+    }
+
+    /// <summary>Allgemeines Ende einer per SetBannerPause(true) pausierten Zwischensequenz (Mystery-Box-
+    /// Ankündigung ODER Extra-Life-Verbrauchs-Animation, siehe MysteryBoxEffectSystem) — Spawning wieder
+    /// freigeben, die nächste Dreier-Reihe kommt smooth weiter.</summary>
+    public void ResumeSpawningAfterPause()
+    {
+        if (running && !gameOver)
+            SetBannerPause(false);
+    }
+
+    /// <summary>Vom MysteryBoxPoint: ist ausgelaufen/wurde weggeräumt (folgenlos).</summary>
+    public void HandleMysteryBoxResolved()
+    {
+        _currentMysteryBox = null;
     }
 
     // ─── Abstand-Helpers ───────────────────────────────────────────────────────
@@ -1290,6 +1449,16 @@ public class MixedPointSpawner : MonoBehaviour
         return candidateVP;
     }
 
+    /// <summary>Liefert eine zufällige Weltposition innerhalb des normalen Spawn-Bereichs (derselbe
+    /// Bereich wie die 3 Farb-Slots, siehe GetAllowedSpawnRect) — für Effekte, die wie die Elemente
+    /// selbst im Spielbereich erscheinen sollen (z.B. Zufallsbox-Rauch statt eines festen Weltbereichs).</summary>
+    public Vector3 GetRandomWorldPosInSpawnArea()
+    {
+        Rect allowedVP = ScreenRectToViewportRect(GetAllowedSpawnRect());
+        Vector2 vp = new Vector2(Random.Range(allowedVP.xMin, allowedVP.xMax), Random.Range(allowedVP.yMin, allowedVP.yMax));
+        return ViewportToWorldOnZ0(vp);
+    }
+
     private Vector3 ViewportToWorldOnZ0(Vector2 viewportPos)
     {
         var ray = mainCamera.ViewportPointToRay(new Vector3(viewportPos.x, viewportPos.y, 0f));
@@ -1520,7 +1689,9 @@ public class MixedPointSpawner : MonoBehaviour
 
     private void SpawnFloatingScore(int score, Vector3 worldPos, PointColor color, int streak)
     {
-        if (floatingScorePrefab == null || score <= 0) return;
+        // score == 0 statt <= 0: negative Werte (Zufallsbox-Minuspunkte-Effekt) sollen weiterhin
+        // als Floating Score angezeigt werden, nur ein Treffer für exakt 0 Punkte bleibt stumm.
+        if (floatingScorePrefab == null || score == 0) return;
 
         Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
         var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
@@ -1549,7 +1720,9 @@ public class MixedPointSpawner : MonoBehaviour
     /// GravityModeSystem/FountainModeSystem einstellbar).</summary>
     public void SpawnSpecialFloatingScore(int score, Vector3 worldPos, Material textMaterial)
     {
-        if (floatingScorePrefab == null || score <= 0) return;
+        // score == 0 statt <= 0: negative Werte (Zufallsbox-Minuspunkte-Effekt) sollen weiterhin
+        // als Floating Score angezeigt werden, nur ein Treffer für exakt 0 Punkte bleibt stumm.
+        if (floatingScorePrefab == null || score == 0) return;
 
         Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
         var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);

@@ -59,7 +59,9 @@ public class ScoreManager : MonoBehaviour
         bool special = SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive;
         // Special-Multiplikator: phasenbasiert (Infinity Mode) via PhaseManager, sonst Fallback 2x (Multiplayer/o. PhaseManager).
         int specialMult = special ? (PhaseManager.Instance != null ? PhaseManager.Instance.CurrentSpecialMultiplier : 2) : 1;
-        int amount   = basePoints * specialMult * extraMultiplier;
+        // Zufallsbox-Effekt: x3/x2 (Bonus) oder x-1 (Minuspunkte statt Punkte), sonst 1 (kein Effekt aktiv).
+        int mysteryMult = MysteryBoxEffectSystem.Instance != null ? MysteryBoxEffectSystem.Instance.CurrentScoreMultiplier : 1;
+        int amount   = basePoints * specialMult * extraMultiplier * mysteryMult;
         score += amount;
         UpdateUI();
         return amount;
