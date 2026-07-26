@@ -78,6 +78,13 @@ public class MixedPointSpawner : MonoBehaviour
     [FormerlySerializedAs("swipePrefab_Purple")]
     [SerializeField] private GameObject swipePrefab_Blue;
 
+    [Header("Farblos (Zufallsbox-Effekt)")]
+    [Tooltip("Ersetzt die normalen Farb-Prefabs komplett, solange der Colorless-Effekt aktiv ist (statt " +
+             "nur die Farbe zu tinten) — alle 3 Slots nutzen dann dasselbe Prefab, die Spielfarbe " +
+             "(PointColor) bleibt intern aber unverändert, nur optisch nicht mehr unterscheidbar.")]
+    [SerializeField] private GameObject colorlessTapPrefab;
+    [SerializeField] private GameObject colorlessSwipePrefab;
+
     [Header("Spawn Delay nach Treffer")]
     [SerializeField] private float spawnDelayAfterHit = 0.05f;
 
@@ -304,6 +311,14 @@ public class MixedPointSpawner : MonoBehaviour
         _                 => ActiveSwipePrefab
     };
 
+    // Colorless-Effekt: komplettes Prefab-Swap statt Farb-Tint — fällt auf die normale Farbwahl zurück,
+    // falls kein farbloses Prefab zugewiesen ist.
+    private GameObject GetColorlessPrefab(bool spawnSwipe, PointColor fallbackColor)
+    {
+        if (spawnSwipe) return colorlessSwipePrefab != null ? colorlessSwipePrefab : GetSwipePrefab(fallbackColor);
+        return colorlessTapPrefab != null ? colorlessTapPrefab : GetTapPrefab(fallbackColor);
+    }
+
     // Zwischengespeicherter SwipePoint während er gesperrt ist
     private SwipePoint _lockedSwipePoint;
 
@@ -489,7 +504,9 @@ public class MixedPointSpawner : MonoBehaviour
         bool spawnSwipe = _roundIsSwipe;
         bool isThunder  = (i == _thunderSlotIndex);
 
+        bool colorlessActive = MysteryBoxEffectSystem.Instance != null && MysteryBoxEffectSystem.Instance.IsColorlessActive;
         GameObject samplePrefab = isThunder ? ActiveThunderPrefab
+                                 : colorlessActive ? GetColorlessPrefab(spawnSwipe, color)
                                  : (spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color));
         Vector2 viewportPos = FindSlotPosition(i, samplePrefab);
         Vector3 worldPos    = ViewportToWorldOnZ0(viewportPos);
@@ -533,19 +550,13 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    // Wendet aktive Zufallsbox-Effekte (Farblos-Tint, Größen-Multiplikator) auf ein frisch
-    // instanziiertes Element an — betrifft Farbelemente, Thunder, Diamant UND die Zufallsbox selbst.
+    // Wendet aktive Zufallsbox-Effekte (Größen-Multiplikator) auf ein frisch instanziiertes Element an —
+    // betrifft Farbelemente, Thunder, Diamant UND die Zufallsbox selbst. Der Colorless-Effekt läuft NICHT
+    // mehr hier über einen Tint, sondern per komplettem Prefab-Swap direkt in SpawnSlot (GetColorlessPrefab).
     // Direkt nach jedem Instantiate() aufrufen, BEVOR PointFlyIn die Zielgröße für den Dissolve-Spawn
     // ausliest (sonst würde der Größen-Effekt ignoriert).
     private void ApplyMysteryBoxVisualEffects(GameObject visual)
     {
-        var fx = MysteryBoxEffectSystem.Instance;
-        if (fx != null && fx.IsColorlessActive)
-        {
-            foreach (var sr in visual.GetComponentsInChildren<SpriteRenderer>())
-                sr.color *= fx.ColorlessTint;
-        }
-
         MysteryBoxEffectSystem.ApplySizeMultiplier(visual);
     }
 

@@ -35,7 +35,6 @@ public class MysteryBoxEffectSystem : MonoBehaviour
 
     [Header("Farblos")]
     [SerializeField] private float colorlessDuration = 8f;
-    [SerializeField] private Color colorlessTint = new Color(0.55f, 0.55f, 0.55f, 1f);
 
     [Header("Größe (Normal & Special Mode)")]
     [SerializeField] private float biggerSizeMultiplier  = 1.5f;
@@ -69,7 +68,6 @@ public class MysteryBoxEffectSystem : MonoBehaviour
 
     public int CurrentScoreMultiplier { get; private set; } = 1;
     public bool IsColorlessActive { get; private set; }
-    public Color ColorlessTint => colorlessTint;
     public float CurrentSizeMultiplier { get; private set; } = 1f;
     public bool HasExtraLifeCharge { get; private set; }
 
@@ -113,8 +111,11 @@ public class MysteryBoxEffectSystem : MonoBehaviour
         // seiner eigenen, im Prefab festgelegten Position UND der eigentliche Gameplay-Effekt. Smoke
         // ausgenommen: dessen sichtbarer Teil ist NICHT das Ankündigungs-Prefab, sondern das separate, im
         // Spielbereich verteilte Overlay (siehe Co_Smoke) — die Ankündigung selbst (Text) spielt trotzdem
-        // ganz normal mit.
-        float announceDuration = PlayParticlePrefab(GetAnnouncementPrefab(effect), warnIfMissing: true);
+        // ganz normal mit. Colorless ebenfalls ausgenommen: objektbasierter Effekt (siehe
+        // PortalColorlessEffect) statt reinem Partikelsystem, braucht eigene Dauer-Berechnung.
+        float announceDuration = effect == MysteryBoxEffect.Colorless
+            ? PlayColorlessAnnouncement()
+            : PlayParticlePrefab(GetAnnouncementPrefab(effect), warnIfMissing: true);
         ApplyEffect(effect, spawner);
 
         // 3) Erst wenn die Ankündigung fertig ist, geht's weiter.
@@ -129,12 +130,40 @@ public class MysteryBoxEffectSystem : MonoBehaviour
         MysteryBoxEffect.MultiplierX2     => announceMultiplierX2Prefab,
         MysteryBoxEffect.MultiplierMinus1 => announceMultiplierMinus1Prefab,
         MysteryBoxEffect.Smoke            => announceSmokePrefab,
-        MysteryBoxEffect.Colorless        => announceColorlessPrefab,
+        // Colorless bewusst nicht hier — läuft über PlayColorlessAnnouncement(), siehe Co_CollectSequence.
         MysteryBoxEffect.BiggerSize       => announceBiggerSizePrefab,
         MysteryBoxEffect.SmallerSize      => announceSmallerSizePrefab,
         MysteryBoxEffect.ExtraLife        => announceExtraLifePrefab,
         _                                  => null
     };
+
+    // Colorless ist objektbasiert (siehe PortalColorlessEffect: Portal erscheint, Steine fliegen rein
+    // und werden eingesogen, Quetsch-Effekt + Burst, Portal fadet weg) statt reinem Partikelsystem — die
+    // Dauer ergibt sich deterministisch aus dessen eigenen Timing-Feldern, nicht aus einer Partikel-
+    // Lifetime wie bei PlayParticlePrefab.
+    private float PlayColorlessAnnouncement()
+    {
+        if (announceColorlessPrefab == null)
+        {
+            Debug.LogWarning("[MysteryBoxEffectSystem] Kein Announce Colorless Prefab zugewiesen.");
+            return 0f;
+        }
+
+        var go = Instantiate(announceColorlessPrefab);
+        // InChildren statt nur GetComponent: PortalColorlessEffect sitzt auf "Portal Colorless", das
+        // innerhalb des Announce-Prefabs ein Kind sein kann statt dessen Root-Objekt.
+        var colorlessEffect = go.GetComponentInChildren<PortalColorlessEffect>(true);
+        if (colorlessEffect == null)
+        {
+            Debug.LogWarning("[MysteryBoxEffectSystem] Announce Colorless Prefab hat keine PortalColorlessEffect-Komponente (auch nicht in Kind-Objekten).");
+            Destroy(go);
+            return 0f;
+        }
+
+        colorlessEffect.Play();
+        Destroy(go, colorlessEffect.TotalDuration);
+        return colorlessEffect.TotalDuration;
+    }
 
     // Instanziiert prefab UNVERÄNDERT an seiner eigenen im Prefab festgelegten Position (kein
     // Positions-Override), spielt alle Kind-Partikelsysteme ab und räumt es nach der längsten Laufzeit
