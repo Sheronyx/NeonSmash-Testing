@@ -4,6 +4,14 @@ public abstract class BasePoint : MonoBehaviour
 {
     public PointColor Color { get; set; }
 
+    // Vom Spawner direkt nach Instantiate gemessen und hier zwischengespeichert (siehe
+    // MixedPointSpawner.CacheHalfSize/GetHalfSizePixels): mehrteilige Prefabs (MagneticFragmentFloat/
+    // -Orbit-Stücke) fliegen beim Spawnen erst aus der Mitte an ihre Position (siehe PointFlyIn) — eine
+    // Live-Messung der Collider/SpriteRenderer-Bounds WÄHREND dieser Animation würde die tatsächliche
+    // Endgröße unterschätzen und dadurch den Sicherheitsabstand zu neu spawnenden Nachbarn gelegentlich
+    // zu klein ansetzen (sichtbares Überlappen, sobald die Stücke fertig auseinandergeschwebt sind).
+    [System.NonSerialized] public float? CachedHalfSizePixels;
+
     [Header("VFX")]
     [Tooltip("Explosions-Prefab — normales Partikelsystem (kein VFX Graph mehr). Beliebig viele Kind-" +
              "Partikelsysteme werden alle abgespielt, das Prefab räumt sich nach der längsten Laufzeit selbst auf.")]

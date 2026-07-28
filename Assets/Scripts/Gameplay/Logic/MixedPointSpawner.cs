@@ -549,6 +549,7 @@ public class MixedPointSpawner : MonoBehaviour
 
         var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
         ApplyMysteryBoxVisualEffects(visual);
+        CacheHalfSize(visual);
 
         float reactionTime = CurrentReactionTime;
 
@@ -573,6 +574,15 @@ public class MixedPointSpawner : MonoBehaviour
     private void ApplyMysteryBoxVisualEffects(GameObject visual)
     {
         MysteryBoxEffectSystem.ApplySizeMultiplier(visual);
+    }
+
+    // Misst die Größe SOFORT nach Instantiate (+ eventuellem Größen-Multiplikator), bevor PointFlyIn
+    // bei mehrteiligen Prefabs die Fragment-Stücke aus der Mitte herausschweben lässt — siehe
+    // BasePoint.CachedHalfSizePixels/GetHalfSizePixels für den Hintergrund.
+    private void CacheHalfSize(GameObject visual)
+    {
+        var bp = visual.GetComponent<BasePoint>();
+        if (bp != null) bp.CachedHalfSizePixels = GetHalfSizePixels(visual);
     }
 
     // Startet Timer/Fuse/Pulse für ein bereits instanziiertes Element — nach Puls-Countdown-Stufe 1
@@ -1077,13 +1087,30 @@ public class MixedPointSpawner : MonoBehaviour
 
         // Prefab? → kurz instanziieren, messen, zerstören
         bool isPrefab = !go.scene.IsValid();
+
+        // Bereits gespawnte mehrteilige Elemente: gecachte Größe von direkt nach dem Instantiate
+        // bevorzugen (siehe BasePoint.CachedHalfSizePixels) — verhindert eine Unterschätzung, während
+        // die Fragment-Stücke noch von der Mitte an ihre Position schweben (PointFlyIn).
+        if (!isPrefab)
+        {
+            var cachedBp = go.GetComponent<BasePoint>();
+            if (cachedBp != null && cachedBp.CachedHalfSizePixels.HasValue)
+                return cachedBp.CachedHalfSizePixels.Value;
+        }
+
         GameObject target = isPrefab
             ? Instantiate(go, new Vector3(10000f, 10000f, 0f), Quaternion.identity)
             : go;
 
         float half = 40f;
 
-        var col = target.GetComponentInChildren<Collider2D>();
+        // Collider auf der WURZEL bevorzugen (nicht GetComponentInChildren!) — das ist bei allen
+        // spawnbaren Elementen ohnehin die maßgebliche, bewusst auf die volle Gesamtgröße gesetzte
+        // Trefferzone (siehe z.B. SwipePoint-BoxCollider2D). GetComponentInChildren würde bei
+        // mehrteiligen Prefabs nur die Bounds des ERSTEN gefundenen Kind-Colliders/-Sprites liefern,
+        // nicht die des ganzen Prefabs — das hat bisher gelegentlich zu unterschätzten Abständen und
+        // sichtbarem Überlappen geführt.
+        var col = target.GetComponent<Collider2D>();
         if (col != null)
         {
             Bounds b = col.bounds;
@@ -1091,14 +1118,17 @@ public class MixedPointSpawner : MonoBehaviour
             Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
             half = Mathf.Max(half, Vector2.Distance(spC, spE));
         }
-
-        var sr = target.GetComponentInChildren<SpriteRenderer>();
-        if (sr != null)
+        else
         {
-            Bounds b = sr.bounds;
-            Vector3 spC = mainCamera.WorldToScreenPoint(b.center);
-            Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
-            half = Mathf.Max(half, Vector2.Distance(spC, spE));
+            // Kein Collider auf der Wurzel (z.B. Diamant/Zufallsbox) — Fallback wie bisher.
+            var sr = target.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+            {
+                Bounds b = sr.bounds;
+                Vector3 spC = mainCamera.WorldToScreenPoint(b.center);
+                Vector3 spE = mainCamera.WorldToScreenPoint(b.center + new Vector3(b.extents.x, b.extents.y, 0f));
+                half = Mathf.Max(half, Vector2.Distance(spC, spE));
+            }
         }
 
         // Bereits gelandete Elemente pulsieren laufend um ±pulseAmount (PointPulse) — eine Live-Messung
