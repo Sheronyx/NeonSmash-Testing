@@ -405,9 +405,23 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (allEmpty)
         {
-            bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
-            bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
-            _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
+            // Boosts "All Swipe"/"All Tap": erzwingen den Rundentyp für den kompletten Run — alle
+            // Runden sind dann durchgehend Swipe bzw. durchgehend Tap, statt gemischt.
+            var activeBoost = BoostManager.Instance != null ? BoostManager.Instance.Selected : BoostType.None;
+            if (activeBoost == BoostType.AllSwipe)
+            {
+                _roundIsSwipe = true;
+            }
+            else if (activeBoost == BoostType.AllTap)
+            {
+                _roundIsSwipe = false;
+            }
+            else
+            {
+                bool forceSwipe  = maxNormalsInRow > 0 && normalsInRow >= maxNormalsInRow;
+                bool forceNormal = maxSwipesInRow  > 0 && swipesInRow  >= maxSwipesInRow;
+                _roundIsSwipe = forceSwipe ? true : (forceNormal ? false : Random.value < swipeChance);
+            }
             if (_roundIsSwipe) { swipesInRow++; normalsInRow = 0; }
             else               { normalsInRow++; swipesInRow = 0; }
 
@@ -510,9 +524,22 @@ public class MixedPointSpawner : MonoBehaviour
         bool spawnSwipe = _roundIsSwipe;
         bool isThunder  = (i == _thunderSlotIndex);
 
+        // Boost "Stay Positive": das ERSTE Shocker-Vorkommen im Run wird zu einem normalen Tap-
+        // Element umgewandelt (isThunder wird lokal false — der Rest von SpawnSlot/FinishSlotSpawn
+        // behandelt den Slot danach exakt wie ein normales Farbelement, keine Sonderbehandlung nötig).
+        bool convertShocker = isThunder && BoostManager.Instance != null
+            && BoostManager.Instance.Selected == BoostType.StayPositive
+            && !BoostManager.Instance.StayPositiveConsumed;
+        if (convertShocker)
+        {
+            isThunder = false;
+            BoostManager.Instance.StayPositiveConsumed = true;
+        }
+
         bool colorlessActive = MysteryBoxEffectSystem.Instance != null && MysteryBoxEffectSystem.Instance.IsColorlessActive;
         GameObject samplePrefab = isThunder ? ActiveThunderPrefab
                                  : colorlessActive ? GetColorlessPrefab(spawnSwipe, color)
+                                 : convertShocker ? GetTapPrefab(color)
                                  : (spawnSwipe ? GetSwipePrefab(color) : GetTapPrefab(color));
         Vector2 viewportPos = FindSlotPosition(i, samplePrefab);
         Vector3 worldPos    = ViewportToWorldOnZ0(viewportPos);

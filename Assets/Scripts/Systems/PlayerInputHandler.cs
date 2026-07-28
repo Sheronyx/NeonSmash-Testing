@@ -165,7 +165,7 @@ public class PlayerInputHandler : MonoBehaviour
                 return;
             }
 
-            ProcessHit(hit.collider, fromSwipe);
+            ProcessHit(hit.collider, fromSwipe, dir);
         }
     }
 
@@ -223,10 +223,20 @@ public class PlayerInputHandler : MonoBehaviour
     // =========================================
     // 🔥 HIT LOGIK (Priorität)
     // =========================================
-    private void ProcessHit(Collider2D col, bool fromSwipe = false)
+    private void ProcessHit(Collider2D col, bool fromSwipe = false, Vector2 swipeDir = default)
     {
+        // Boost "Swipe How You Like": öffnet ALLE unten mit tapGateOpen gegateten Zweige auch während
+        // eines Swipes (inkl. Thunder mit üblicher Strafe) — mit Slice-Optik statt normaler Explosion,
+        // sofern das getroffene Element einen Fragmenter hat (siehe BasePoint.SpawnExplosion).
+        var boost = BoostManager.Instance != null ? BoostManager.Instance.Selected : BoostType.None;
+        bool sliceEverything = fromSwipe && boost == BoostType.SwipeHowYouLike;
+        bool tapGateOpen = !fromSwipe || sliceEverything;
+
+        if (sliceEverything)
+            col.GetComponent<BasePoint>()?.SetPendingSliceDirection(swipeDir);
+
         // ☁️ Peek-a-boo Elemente — Klick löst beide gekoppelten Elemente aus
-        if (!fromSwipe)
+        if (tapGateOpen)
         {
             var peek = col.GetComponent<PeekElement>();
             if (peek != null)
@@ -236,8 +246,8 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // 🔴 Gravity Points — nie per Swipe treffbar
-        if (!fromSwipe)
+        // 🔴 Gravity Points — nie per Swipe treffbar (außer Boost "Swipe How You Like")
+        if (tapGateOpen)
         {
             var gravityPoint = col.GetComponent<GravityPoint>();
             if (gravityPoint != null)
@@ -247,8 +257,8 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // 🔵 Fountain Points — nie per Swipe treffbar
-        if (!fromSwipe)
+        // 🔵 Fountain Points — nie per Swipe treffbar (außer Boost "Swipe How You Like")
+        if (tapGateOpen)
         {
             var fountainPoint = col.GetComponent<FountainPoint>();
             if (fountainPoint != null)
@@ -258,8 +268,8 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // 🌀 Vortex Points — nie per Swipe treffbar
-        if (!fromSwipe)
+        // 🌀 Vortex Points — nie per Swipe treffbar (außer Boost "Swipe How You Like")
+        if (tapGateOpen)
         {
             var vortexPoint = col.GetComponent<VortexPoint>();
             if (vortexPoint != null)
@@ -270,14 +280,14 @@ public class PlayerInputHandler : MonoBehaviour
         }
 
         // 💣 Floating Mines — Antippen: kurzer Screen Shake, Mine bleibt
-        if (!fromSwipe)
+        if (tapGateOpen)
         {
             var mine = col.GetComponent<FloatingMine>();
             if (mine != null) { mine.OnTapped(); return; }
         }
 
-        // ⚪ Fake Points — nie per Swipe treffbar, verpuffen nur (Ablenkung)
-        if (!fromSwipe)
+        // ⚪ Fake Points — nie per Swipe treffbar (außer Boost "Swipe How You Like"), verpuffen nur
+        if (tapGateOpen)
         {
             var fakePoint = col.GetComponent<FakePoint>();
             if (fakePoint != null)
@@ -287,8 +297,8 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // ⚡ Thunder Points — nie per Swipe treffbar, Antippen kostet ein Leben
-        if (!fromSwipe)
+        // ⚡ Thunder Points — nie per Swipe treffbar (außer Boost "Swipe How You Like"), Antippen kostet ein Leben
+        if (tapGateOpen)
         {
             var thunderPoint = col.GetComponent<ThunderPoint>();
             if (thunderPoint != null)
@@ -298,8 +308,8 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // 💎 Diamant — nie per Swipe treffbar, Sammeln = Punkte, Verpassen = folgenlos
-        if (!fromSwipe)
+        // 💎 Diamant — nie per Swipe treffbar (außer Boost "Swipe How You Like"), Sammeln = Punkte
+        if (tapGateOpen)
         {
             var diamondPoint = col.GetComponent<DiamondPoint>();
             if (diamondPoint != null)
@@ -309,8 +319,8 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // ❓ Zufallsbox — nie per Swipe treffbar, Sammeln = zufälliger Effekt, Verpassen = folgenlos
-        if (!fromSwipe)
+        // ❓ Zufallsbox — nie per Swipe treffbar (außer Boost "Swipe How You Like")
+        if (tapGateOpen)
         {
             var mysteryBoxPoint = col.GetComponent<MysteryBoxPoint>();
             if (mysteryBoxPoint != null)
@@ -320,12 +330,25 @@ public class PlayerInputHandler : MonoBehaviour
             }
         }
 
-        // 🔵 Normale Tap Points — nie per Swipe treffbar
-        if (!fromSwipe)
+        // 🔵 Normale Tap Points — nie per Swipe treffbar (außer Boost "Swipe How You Like")
+        if (tapGateOpen)
         {
             var tapPoint = col.GetComponent<TapPoint>();
             if (tapPoint != null)
+            {
                 tapPoint.TryTap();
+                return;
+            }
+        }
+
+        // 🆙 Boost "Swipe How You Like": Swipe-Elemente zusätzlich per beliebigem Swipe treffbar
+        // (ohne Richtungs-/Segment-Prüfung, siehe SwipePoint.ForceDestroy). "All Swipe"/"All Tap"
+        // brauchen das nicht mehr — die erzwingen stattdessen direkt den Rundentyp in
+        // MixedPointSpawner.SpawnNextPoint, es entstehen also nie gemischte Tap/Swipe-Runden.
+        if (sliceEverything)
+        {
+            var swipePoint = col.GetComponent<SwipePoint>();
+            if (swipePoint != null) swipePoint.ForceDestroy();
         }
     }
 

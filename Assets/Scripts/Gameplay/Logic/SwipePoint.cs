@@ -104,6 +104,20 @@ public class SwipePoint : BasePoint
         return true;
     }
 
+    // Boosts "All Tap"/"Swipe How You Like": zerstört das Element ohne Richtungs-/Segment-Prüfung
+    // (Kopie des SUCCESS-Endteils von TryStrikeWorld). Wird von PlayerInputHandler aufgerufen, wenn
+    // der jeweilige Boost aktiv ist.
+    public void ForceDestroy()
+    {
+        if (isHit) return;
+        isHit = true;
+
+        if (TutorialManager.Instance != null)
+            TutorialManager.Instance.OnActionPerformed(TutorialPointType.SwipePoint);
+
+        spawner?.HandlePointHit(gameObject);
+    }
+
     // =========================================================
     // HELPER METHODS
     // =========================================================

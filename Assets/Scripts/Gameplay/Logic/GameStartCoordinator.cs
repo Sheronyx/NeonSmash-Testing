@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -21,6 +22,10 @@ public class GameStartCoordinator : MonoBehaviour
     [Header("Options")]
     [SerializeField] private bool blockTimeScale = false;   // wenn true, Time.timeScale=0 während Countdown
 
+    [Header("Top Bar (Infinity Mode: erst nach der Boost-Wahl einblenden)")]
+    [SerializeField] private CanvasGroup topBarCanvasGroup;
+    [SerializeField] private float topBarFadeInDuration = 0.35f;
+
     void Awake()
     {
 if (!countdownUI)
@@ -37,12 +42,22 @@ if (!countdownUI)
                     countdownUI = v.countdownUI;
         }
 
-if (!spawner)     
+if (!spawner)
     spawner = FindFirstObjectByType<MixedPointSpawner>(FindObjectsInactive.Include);
 
         if (spawner)      spawner.StopSpawning();
         if (playerInput)  playerInput.enabled = false;
         if (blockTimeScale) Time.timeScale = 0f;
+
+        // Top Bar bleibt unsichtbar, bis der Boost gewählt wurde (siehe BeginInfinityRun) — nur
+        // im Infinity Mode, Multiplayer zeigt sie unverändert direkt von Anfang an.
+        bool isInfinityMode = GlobalGameManager.Instance != null && GlobalGameManager.Instance.SelectedMode == GameMode.Infinity;
+        if (isInfinityMode && topBarCanvasGroup != null)
+        {
+            topBarCanvasGroup.alpha          = 0f;
+            topBarCanvasGroup.interactable   = false;
+            topBarCanvasGroup.blocksRaycasts = false;
+        }
     }
 
     void Start()
@@ -97,10 +112,38 @@ if (!spawner)
             GlobalGameManager.Instance ? GlobalGameManager.Instance.SelectedMode : GameMode.Infinity);
 
         bool isInfinity = GlobalGameManager.Instance != null && GlobalGameManager.Instance.SelectedMode == GameMode.Infinity;
-        if (isInfinity && PhaseManager.Instance != null)
-            PhaseManager.Instance.BeginRun();
+
+        // Infinity Mode: erst Boost wählen lassen, danach beginnt der Run (kein Spawn davor). Nur
+        // Infinity — Multiplayer läuft unverändert direkt weiter.
+        if (isInfinity && BoostSelectionUI.Instance != null)
+            BoostSelectionUI.Instance.Show(_ => BeginInfinityRun());
+        else if (isInfinity && PhaseManager.Instance != null)
+            BeginInfinityRun();
         else if (spawner)
             spawner.Begin();
+    }
+
+    private void BeginInfinityRun()
+    {
+        if (topBarCanvasGroup != null) StartCoroutine(Co_FadeInTopBar());
+
+        if (PhaseManager.Instance != null) PhaseManager.Instance.BeginRun();
+        else if (spawner) spawner.Begin();
+    }
+
+    private IEnumerator Co_FadeInTopBar()
+    {
+        topBarCanvasGroup.interactable   = true;
+        topBarCanvasGroup.blocksRaycasts = true;
+
+        float t = 0f;
+        while (t < topBarFadeInDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            topBarCanvasGroup.alpha = Mathf.Clamp01(t / topBarFadeInDuration);
+            yield return null;
+        }
+        topBarCanvasGroup.alpha = 1f;
     }
 
     void OnDestroy()
