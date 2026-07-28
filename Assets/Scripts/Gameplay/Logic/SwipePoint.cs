@@ -17,6 +17,10 @@ public class SwipePoint : BasePoint
     [Header("Direction Settings")]
     [SerializeField] private bool allowBidirectional = true;
     [SerializeField] private bool onlyBidirectionalOnDiagonals = false;
+    [Tooltip("Korrektur für die Icon-Rotation (Grad), falls das Sprite standardmäßig nicht nach oben " +
+             "zeigt — betrifft NUR die Optik, nicht die tatsächlich erkannte Wisch-Richtung. Bei genau " +
+             "90° falscher Anzeige hier 90 oder -90 eintragen, je nachdem in welche Richtung es kippen muss.")]
+    [SerializeField] private float iconRotationOffset = 90f;
 
     private SwipeDirection direction;
     private float effectiveRadius;
@@ -175,12 +179,22 @@ public class SwipePoint : BasePoint
     private void CacheEffectiveRadius()
     {
         float baseRadius = 0.5f;
+        float scale = Mathf.Max(transform.lossyScale.x, transform.lossyScale.y);
 
-        var col = GetComponent<CircleCollider2D>();
-        if (col != null)
+        var circle = GetComponent<CircleCollider2D>();
+        var box = GetComponent<BoxCollider2D>();
+
+        if (circle != null)
         {
-            float scale = Mathf.Max(transform.lossyScale.x, transform.lossyScale.y);
-            baseRadius = col.radius * scale;
+            baseRadius = circle.radius * scale;
+        }
+        else if (box != null)
+        {
+            // Kein Kreis-Collider vorhanden (z.B. längliche/unregelmäßige Mehrteil-Prefabs mit
+            // BoxCollider2D) — Trefferzone bleibt trotzdem kreisbasiert (DoesSegmentCrossCircle),
+            // deshalb aus der Box einen ungefähr passenden Radius ableiten (Mittel der halben
+            // Kantenlängen), statt auf den festen Default zurückzufallen.
+            baseRadius = (box.size.x + box.size.y) * 0.25f * scale;
         }
 
         effectiveRadius = baseRadius + strikePadding;
@@ -209,6 +223,6 @@ public class SwipePoint : BasePoint
             _ => 0f
         };
 
-        transform.rotation = Quaternion.Euler(0, 0, angle);
+        transform.rotation = Quaternion.Euler(0, 0, angle + iconRotationOffset);
     }
 }

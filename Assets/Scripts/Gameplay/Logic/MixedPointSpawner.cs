@@ -486,7 +486,13 @@ public class MixedPointSpawner : MonoBehaviour
     // Spawnt ein neues Element in Slot i (zufällige Farbe, Tap oder Swipe).
     private void SpawnSlot(int i)
     {
-        if (!running || spawnPausedForBanner || _slots[i].point != null || isConvertingPoints) return;
+        // _pendingSlotPositions[i] ist gesetzt, solange ein Element noch einschwebt (Position schon
+        // reserviert, .point aber erst nach onArrived gesetzt) — ohne diesen Check könnte während einer
+        // laufenden Einschweb-Animation ein ZWEITES Element in denselben Slot gespawnt werden, sobald
+        // z.B. ein Nachbar-Slot getroffen wird und SpawnNextPoint erneut läuft (Slot gilt für dessen
+        // simplen null-Check ja noch als "leer"). Das erste Element würde dann nie in _slots[i].point
+        // landen und wäre für Treffer-Erkennung (GetActiveSwipePoints etc.) unsichtbar.
+        if (!running || spawnPausedForBanner || _slots[i].point != null || _pendingSlotPositions[i].HasValue || isConvertingPoints) return;
 
         // Farbe: die noch nicht in einem anderen Slot belegten Farbe wählen
         PointColor color = GetUnusedColor(i);
@@ -517,37 +523,19 @@ public class MixedPointSpawner : MonoBehaviour
         var visual = Instantiate(samplePrefab, worldPos, Quaternion.identity);
         ApplyMysteryBoxVisualEffects(visual);
 
-        // ALLE Elemente (Farbe wie Thunder/Shocker) bekommen denselben Dissolve-Spawn ("Zaubermaterie"
-        // entsteht an Ort und Stelle, siehe PointFlyIn) — entfällt nur im Tutorial. reactionTime wird
-        // HIER EINMAL berechnet und exakt so an FinishSlotSpawn durchgereicht, damit Fuse/Countdown-
-        // Optik und Co_SlotTimeout synchron sind.
-        bool   shouldFlyIn   = !IsTutorialMode && PointFlyIn.Instance != null;
-        float  reactionTime  = CurrentReactionTime;
+        float reactionTime = CurrentReactionTime;
 
-        if (shouldFlyIn)
-        {
-            // Variablen für Closure festhalten
-            int        ci      = i;
-            PointColor cc      = color;
-            bool       cs      = spawnSwipe;
-            bool       ct      = isThunder;
-            Vector3    cpos    = worldPos;
-            GameObject cvisual = visual;
-            float      crt     = reactionTime;
-            System.Action onArrived = () =>
-            {
-                _pendingSlotPositions[ci] = null;
-                if (!running || gameOver || _slots[ci].point != null) { Destroy(cvisual); return; }
-                FinishSlotSpawn(ci, cvisual, cpos, cc, cs, ct, crt);
-            };
+        // Slot-Bookkeeping (Timer/Fuse/Pulse, _slots[i].point) läuft SOFORT, nicht erst nach der
+        // Einschweb-Animation — das Element ist von der ersten Sekunde an treffbar/zerstörbar, die
+        // Animation (siehe PointFlyIn) läuft rein optisch parallel dazu.
+        _pendingSlotPositions[i] = null;
+        FinishSlotSpawn(i, visual, worldPos, color, spawnSwipe, isThunder, reactionTime);
 
-            PointFlyIn.Instance.PlayDissolveSpawn(visual, worldPos, visual.transform.localScale, onArrived);
-        }
-        else
-        {
-            _pendingSlotPositions[i] = null;
-            FinishSlotSpawn(i, visual, worldPos, color, spawnSwipe, isThunder, reactionTime);
-        }
+        // ALLE Elemente (Farbe wie Thunder/Shocker) bekommen denselben Spawn-Effekt ("Zaubermaterie"
+        // entsteht an Ort und Stelle, siehe PointFlyIn) — entfällt nur im Tutorial. Rein optisch, kein
+        // Einfluss mehr auf Treffbarkeit/Timing (siehe oben).
+        if (!IsTutorialMode && PointFlyIn.Instance != null)
+            PointFlyIn.Instance.PlaySpawnAnimation(visual, worldPos, visual.transform.localScale, null);
     }
 
     // Wendet aktive Zufallsbox-Effekte (Größen-Multiplikator) auf ein frisch instanziiertes Element an —
@@ -824,7 +812,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (PointFlyIn.Instance != null)
         {
             Vector3 targetScale = _currentDiamond.transform.localScale;
-            PointFlyIn.Instance.PlayDissolveSpawn(_currentDiamond, worldPos, targetScale,
+            PointFlyIn.Instance.PlaySpawnAnimation(_currentDiamond, worldPos, targetScale,
                 () => dp?.Activate(reactionTime, skipPopIn: true));
         }
         else
@@ -955,7 +943,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (PointFlyIn.Instance != null)
         {
             Vector3 targetScale = _currentMysteryBox.transform.localScale;
-            PointFlyIn.Instance.PlayDissolveSpawn(_currentMysteryBox, worldPos, targetScale,
+            PointFlyIn.Instance.PlaySpawnAnimation(_currentMysteryBox, worldPos, targetScale,
                 () => mb?.Activate(reactionTime, skipPopIn: true));
         }
         else
@@ -1122,9 +1110,18 @@ public class MixedPointSpawner : MonoBehaviour
         if (!TryFindFakePosition(out Vector3 worldPos)) return;
 
         currentFake = Instantiate(ActiveFakePrefab, worldPos, Quaternion.identity);
-
         var fp = currentFake.GetComponent<FakePoint>();
-        if (fp != null) fp.Activate(lifetime);
+
+        if (PointFlyIn.Instance != null)
+        {
+            Vector3 targetScale = currentFake.transform.localScale;
+            PointFlyIn.Instance.PlaySpawnAnimation(currentFake, worldPos, targetScale,
+                () => fp?.Activate(lifetime));
+        }
+        else
+        {
+            fp?.Activate(lifetime);
+        }
     }
 
     // Räumt das aktuelle Fake (wenn das Original getappt/geräumt wurde).

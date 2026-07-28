@@ -792,7 +792,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22b9c315e9ff88d4e862184938fc4c9f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TapPoint
-  explodeVFXPrefab: {fileID: 7636390409669451756, guid: a7fcc8844b5b6490ab4cc934c486f602, type: 3}
+  explodeVFXPrefab: {fileID: 4073561431321066891, guid: 0a64d633d9a444c6085894768f44e69d, type: 3}
   spawner: {fileID: 0}
 --- !u!61 &9015347786431185009
 BoxCollider2D:
@@ -2452,7 +2452,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1652143759095011303, guid: e2c1ac940434a5242b54d72b66654687, type: 3}
       propertyPath: m_SortingOrder
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1652143759095011303, guid: e2c1ac940434a5242b54d72b66654687, type: 3}
       propertyPath: m_Materials.Array.size
@@ -2480,7 +2480,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3827264115780404086, guid: e2c1ac940434a5242b54d72b66654687, type: 3}
       propertyPath: m_SortingOrder
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 3827264115780404086, guid: e2c1ac940434a5242b54d72b66654687, type: 3}
       propertyPath: m_Materials.Array.size
@@ -2492,7 +2492,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8797081065329041583, guid: e2c1ac940434a5242b54d72b66654687, type: 3}
       propertyPath: m_SortingOrder
-      value: 1
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 8797081065329041583, guid: e2c1ac940434a5242b54d72b66654687, type: 3}
       propertyPath: m_Materials.Array.size

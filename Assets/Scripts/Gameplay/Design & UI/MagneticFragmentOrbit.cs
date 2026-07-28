@@ -34,6 +34,13 @@ public class MagneticFragmentOrbit : MonoBehaviour
     private Quaternion baseRotation;
 
     private float seedX, seedY, seedScale, seedRot;
+    private float startTime;
+
+    // Perlin-Wert am jeweiligen Seed bei "lokaler Zeit 0" — nicht zwangsläufig der Mittelwert 0.5.
+    // Wird von jeder Abweichung abgezogen, damit die Schwankung GARANTIERT bei 0 (= genau baseScale/
+    // baseRotation bzw. Bahnposition ohne Zusatz-Offset) beginnt, statt beim Start auf einen
+    // beliebigen Noise-Wert zu springen.
+    private float zeroX, zeroY, zeroScale, zeroRot;
 
     private void Start()
     {
@@ -58,6 +65,12 @@ public class MagneticFragmentOrbit : MonoBehaviour
         seedY     = Random.Range(1000f, 2000f);
         seedScale = Random.Range(2000f, 3000f);
         seedRot   = Random.Range(3000f, 4000f);
+
+        startTime = Time.time;
+        zeroX     = Mathf.PerlinNoise(seedX, 0f);
+        zeroY     = Mathf.PerlinNoise(seedY, 0f);
+        zeroScale = Mathf.PerlinNoise(seedScale, 0f);
+        zeroRot   = Mathf.PerlinNoise(seedRot, 0f);
     }
 
     private void Update()
@@ -68,14 +81,16 @@ public class MagneticFragmentOrbit : MonoBehaviour
         float rad = orbitAngleDeg * Mathf.Deg2Rad;
         Vector3 orbitPos = center.position + new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f) * orbitRadius;
 
-        float offsetX = (Mathf.PerlinNoise(seedX, Time.time * moveSpeed) - 0.5f) * 2f * moveRadius;
-        float offsetY = (Mathf.PerlinNoise(seedY, Time.time * moveSpeed) - 0.5f) * 2f * moveRadius;
+        float t = Time.time - startTime;
+
+        float offsetX = (Mathf.PerlinNoise(seedX, t * moveSpeed) - zeroX) * 2f * moveRadius;
+        float offsetY = (Mathf.PerlinNoise(seedY, t * moveSpeed) - zeroY) * 2f * moveRadius;
         transform.position = orbitPos + new Vector3(offsetX, offsetY, 0f);
 
-        float scalePercent = 1f + (Mathf.PerlinNoise(seedScale, Time.time * scaleSpeed) - 0.5f) * 2f * scaleVariance;
+        float scalePercent = 1f + (Mathf.PerlinNoise(seedScale, t * scaleSpeed) - zeroScale) * 2f * scaleVariance;
         transform.localScale = baseScale * scalePercent;
 
-        float rotOffset = (Mathf.PerlinNoise(seedRot, Time.time * rotationSpeed) - 0.5f) * 2f * rotationAmount;
+        float rotOffset = (Mathf.PerlinNoise(seedRot, t * rotationSpeed) - zeroRot) * 2f * rotationAmount;
         transform.rotation = baseRotation * Quaternion.Euler(0f, 0f, rotOffset);
     }
 }
