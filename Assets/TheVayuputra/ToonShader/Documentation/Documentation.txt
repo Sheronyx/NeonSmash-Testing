@@ -1,0 +1,100 @@
+TheVayuputra Toon Shader
+========================
+
+Overview
+--------
+TheVayuputra Toon Shader is a Universal Render Pipeline toon shader package for stylized opaque materials. It includes the shader, sample material presets, a demo scene, and simple demo scripts for previewing materials.
+
+Package Contents
+----------------
+- Shader/ToonShader.shader
+  Main URP toon shader.
+
+- Demo/Material
+  Sample materials that demonstrate basic toon, anime style, glossy, soft, rim glow, metallic, outline, dark stylized, and highlight looks.
+
+- Demo/Scene/Demo.unity
+  Demo scene for previewing the included material presets.
+
+- Demo/Script/AutoRotate.cs
+  Rotates preview objects in the demo scene.
+
+- Demo/Script/ShaderShowcaseController.cs
+  Switches between material presets and updates the material name UI.
+
+Requirements
+------------
+- Unity project using the Universal Render Pipeline (URP).
+- URP shader libraries available through the Unity Render Pipelines package.
+- Unity UI is used by the included demo scene for the material name label and previous/next buttons.
+
+Dependencies
+------------
+- Required: Universal Render Pipeline.
+- Demo only: Unity UI.
+- No external runtime libraries are required by the shader.
+- Test frameworks such as NUnit or the Unity Test Framework are not required by this asset.
+
+Setup
+-----
+1. Import the package into a Unity project that uses URP.
+2. Open Demo/Scene/Demo.unity to preview the included materials.
+3. Assign the shader from TheVayuputra/ToonShader to your own materials.
+4. Adjust the material properties in the Inspector to match your art direction.
+
+Shader Properties
+-----------------
+- Texture
+  Base texture sampled by the shader.
+
+- Color
+  Main material tint.
+
+- Shade Threshold
+  Controls where the lit and shaded bands separate.
+
+- Shade Softness
+  Controls the softness of the main lighting transition.
+
+- Gloss Threshold
+  Controls the position and intensity behavior of the stylized highlight.
+
+- Gloss Softness
+  Controls how sharp or soft the gloss highlight appears.
+
+- Gloss Tint
+  HDR tint for the stylized highlight.
+
+- Edge Threshold
+  Controls the view-angle edge/rim response.
+
+- Edge Softness
+  Controls the softness of the edge/rim transition.
+
+- Edge Color
+  Color added along view-angle edges.
+
+- Stroke Width
+  Width of the outline pass.
+
+- Stroke Color
+  Color of the outline pass.
+
+Demo Scripts
+------------
+All included demo scripts are inside the TheVayuputra namespace.
+
+If you reference these scripts from custom C# code, add:
+
+using TheVayuputra;
+
+or use the fully qualified type names:
+
+TheVayuputra.AutoRotate
+TheVayuputra.ShaderShowcaseController
+
+Notes
+-----
+- The shader is intended for opaque stylized rendering in URP.
+- The outline pass expands vertices along their normals, so outline results depend on model normals and mesh shape.
+- For best results, test lighting, shadow, and outline settings on the final target model.

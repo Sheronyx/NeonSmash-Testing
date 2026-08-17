@@ -56,7 +56,28 @@ public class PhaseManager : MonoBehaviour
     [Tooltip("Pause nach Ende eines Special Modes, bevor der nächste Normal Mode zu spawnen beginnt.")]
     [SerializeField] private float postSpecialModePause = 2f;
 
+    [Header("Ramp-up bei Phasenwechsel")]
+    [Tooltip("Über wie viele Elementreihen mindestens von der alten zur neuen Reaktionszeit übergeblendet wird.")]
+    [SerializeField] private int minRampRows = 1;
+    [Tooltip("Über wie viele Elementreihen höchstens übergeblendet wird — bei sehr großen Tempo-Sprüngen.")]
+    [SerializeField] private int maxRampRows = 4;
+    [Tooltip("Relative Reaktionszeit-Änderung (0.3 = 30%), ab der die maximale Ramp-Länge (maxRampRows) erreicht wird. Kleinere Sprünge bekommen proportional weniger Reihen.")]
+    [SerializeField] private float relativeChangeForMaxRamp = 0.3f;
+    [Tooltip("Verlauf der Überblendung innerhalb der Ramp (X=Fortschritt 0-1, Y=Anteil neue Reaktionszeit 0-1). Default: langsamer Start, dann zügiger ans Ziel.")]
+    [SerializeField] private AnimationCurve rampEaseCurve = new AnimationCurve(
+        new Keyframe(0f, 0f, 0f, 0.3f),
+        new Keyframe(1f, 1f, 1.7f, 0f));
+
     public int DiamondsNeededForBonus => diamondsNeededForBonus;
+
+    // Ramp-Zustand: bei jedem Phasenwechsel neu gesetzt (siehe ApplyPhaseSettings), von
+    // MixedPointSpawner.NotifyRowSpawned() pro neu gestarteter Elementreihe hochgezählt.
+    private float _rampFromReactionTime;
+    private float _rampToReactionTime;
+    private int   _rampLength;
+    private int   _rowsSinceRamp;
+    private bool  _hasAppliedPhaseBefore;
+    private float _rowStartTime;
 
     private int _currentIndex = -1;
     private readonly int[] _destroyedCount = new int[3]; // indiziert per PointColor
@@ -73,7 +94,74 @@ public class PhaseManager : MonoBehaviour
     public PhaseDefinition CurrentPhase =>
         (_currentIndex >= 0 && phases != null && _currentIndex < phases.Length) ? phases[_currentIndex] : null;
 
-    public float CurrentReactionTime => CurrentPhase != null ? CurrentPhase.reactionTime : 3f;
+    /// <summary>Reaktionszeit für die GERADE aktuelle Elementreihe — direkt nach einem Phasenwechsel noch
+    /// sanft von der alten zur neuen Phase übergeblendet (siehe rampEaseCurve), danach der reine
+    /// Phasenwert. MixedPointSpawner UND die Eye-Rays-Intensität lesen beide diesen einen Wert, bleiben
+    /// dadurch automatisch synchron.</summary>
+    public float CurrentReactionTime
+    {
+        get
+        {
+            if (CurrentPhase == null) return 3f;
+            if (_rampLength <= 0 || _rowsSinceRamp >= _rampLength) return _rampToReactionTime;
+
+            float t = rampEaseCurve.Evaluate((float)_rowsSinceRamp / _rampLength);
+            return Mathf.Lerp(_rampFromReactionTime, _rampToReactionTime, t);
+        }
+    }
+
+    /// <summary>Vom MixedPointSpawner aufgerufen, sobald eine neue Elementreihe zu spawnen beginnt —
+    /// zählt NUR den Ramp-Fortschritt seit dem letzten Phasenwechsel hoch. Der Startzeitpunkt für
+    /// CurrentRowProgress01 wird bewusst NICHT hier gesetzt, sondern schon früher in
+    /// NotifyElementDestroyed() — sonst würde der Eye-Rays-Reset erst nach dem kurzen Spawn-Delay
+    /// nach einem Treffer einsetzen, statt sofort beim Treffer selbst.</summary>
+    public void NotifyRowSpawned()
+    {
+        if (_rowsSinceRamp < _rampLength) _rowsSinceRamp++;
+    }
+
+    /// <summary>Vom MixedPointSpawner SOFORT beim Zerstören eines Elements aufgerufen (als eines der
+    /// ersten Dinge in HandlePointHit, nicht erst beim tatsächlichen Start der nächsten Reihe) — setzt
+    /// CurrentRowProgress01 unmittelbar zurück, damit z.B. EyeRaysIntensity ohne spürbare Verzögerung
+    /// zu reagieren beginnt.</summary>
+    public void NotifyElementDestroyed()
+    {
+        _rowStartTime = Time.time;
+    }
+
+    /// <summary>0 = die aktuelle Elementreihe ist gerade erst gespawnt bzw. das letzte Element wurde
+    /// gerade zerstört (volle Reaktionszeit übrig), 1 = ihre Reaktionszeit ist komplett verstrichen. Für
+    /// Optik, die live mit dem Zeitdruck pro Reihe mitgehen soll (z.B. EyeRaysIntensity) — steigt
+    /// kontinuierlich an, springt bei NotifyElementDestroyed() sofort zurück auf 0.</summary>
+    public float CurrentRowProgress01
+    {
+        get
+        {
+            // Vor BeginRun() (z.B. während der Boost-Auswahl) bzw. nach Game Over läuft noch keine
+            // echte Reihe — ohne diesen Guard würde der Fallback-Reaktionszeitwert (3s) den Fortschritt
+            // trotzdem hochzählen lassen, obwohl das gar nichts mit tatsächlichem Zeitdruck zu tun hat.
+            if (!_running) return 0f;
+
+            // Special Mode: läuft über ein komplett anderes Trefferystem (GravityModeSystem/etc.), das
+            // NotifyElementDestroyed() nie aufruft — _rowStartTime bliebe stehen, während Time.time
+            // weiterläuft, wodurch der Fortschritt einfach bis zum Anschlag hochlaufen würde. Passt
+            // ohnehin zur Design-Entscheidung "Special Mode = sichere Verschnaufpause" → fest aufs
+            // Minimum.
+            if (CurrentPhase != null && CurrentPhase.type == PhaseType.Special) return 0f;
+
+            // Spawning gerade pausiert (Banner/Zwischensequenz, z.B. Zufallsbox-Extraleben-Verbrauch,
+            // Special-Mode-Übergang): NUR während dieser kurzen Animation/Pause aufs Minimum zwingen —
+            // bewusst NICHT an MysteryBoxEffectSystem.IsEffectActive gekoppelt, das bei manchen Effekten
+            // (z.B. Größen-Multiplikator, Colorless) noch über viele NACHFOLGENDE, ganz normal
+            // weiterlaufende Reihen aktiv bleibt, in denen der Ray wieder normal reagieren soll.
+            if (spawner != null && spawner.IsSpawnPausedForBanner) return 0f;
+
+            float rt = CurrentReactionTime;
+            if (rt <= 0.0001f) return 1f;
+            return Mathf.Clamp01((Time.time - _rowStartTime) / rt);
+        }
+    }
+
     public int CurrentSpecialMultiplier => CurrentPhase != null && CurrentPhase.type == PhaseType.Special ? CurrentPhase.specialScoreMultiplier : 1;
     public bool ShockerEnabledThisPhase => CurrentPhase != null && CurrentPhase.shockerEnabled;
 
@@ -106,6 +194,12 @@ public class PhaseManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+
+        // Ohne das bliebe _rowStartTime beim C#-Default 0 stehen, bis der erste Treffer/BeginRun()
+        // passiert — CurrentRowProgress01 (z.B. für EyeRaysIntensity) würde schon VOR Spielstart (z.B.
+        // während der Boost-Auswahl) fälschlich "komplett abgelaufen" berechnen, weil Time.time zu dem
+        // Zeitpunkt schon deutlich über 0 liegt.
+        _rowStartTime = Time.time;
     }
 
     // Beim erstmaligen Hinzufügen des Components in Unity (oder via Context-Menu "Reset"):
@@ -219,6 +313,17 @@ public class PhaseManager : MonoBehaviour
         Array.Clear(_destroyedCount, 0, _destroyedCount.Length);
         _currentIndex = 0;
 
+        // Ramp-Zustand für einen frischen Run zurücksetzen (bei "Play Again" darf kein Ramp-Rest vom
+        // vorherigen Run überleben) — Phase 1 startet direkt ohne Überblendung, es gibt ja nichts,
+        // wovon aus geglättet werden könnte.
+        _hasAppliedPhaseBefore = false;
+        _rampLength = 0;
+        _rowsSinceRamp = 0;
+        // Ohne diesen Reset bliebe _rowStartTime auf 0 (C#-Default) stehen, bis der erste Treffer
+        // NotifyElementDestroyed() aufruft — CurrentRowProgress01 würde die allererste Reihe fälschlich
+        // als "komplett abgelaufen" berechnen (Time.time ist beim Run-Start ja meist schon > 0).
+        _rowStartTime = Time.time;
+
         OnColorProgressChanged?.Invoke(PointColor.Pink, 0, ColorTriggerThreshold);
         OnColorProgressChanged?.Invoke(PointColor.Green, 0, ColorTriggerThreshold);
         OnColorProgressChanged?.Invoke(PointColor.Blue, 0, ColorTriggerThreshold);
@@ -240,6 +345,27 @@ public class PhaseManager : MonoBehaviour
     {
         var def = CurrentPhase;
         if (def == null || spawner == null) return;
+
+        // Ramp-Setup: von der zuletzt EFFEKTIVEN Reaktionszeit (falls die vorherige Phase selbst noch
+        // mitten in einer Überblendung war, nicht vom rohen Phasenwert) sanft zum neuen Phasenwert
+        // übergehen. Länge proportional zur relativen Größe des Sprungs, innerhalb Min/Max gekappt.
+        bool wasFirstPhase = !_hasAppliedPhaseBefore;
+        float fromRT = wasFirstPhase ? def.reactionTime : CurrentReactionTime;
+        _rampFromReactionTime = fromRT;
+        _rampToReactionTime   = def.reactionTime;
+        _rowsSinceRamp        = 0;
+        _hasAppliedPhaseBefore = true;
+
+        if (wasFirstPhase || fromRT <= 0.0001f || Mathf.Approximately(fromRT, def.reactionTime))
+        {
+            _rampLength = 0; // nichts zu überblenden (erste Phase oder keine echte Änderung)
+        }
+        else
+        {
+            float relativeChange = Mathf.Abs(fromRT - def.reactionTime) / fromRT;
+            float p = Mathf.Clamp01(relativeChange / Mathf.Max(0.0001f, relativeChangeForMaxRamp));
+            _rampLength = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(minRampRows, maxRampRows, p)), minRampRows, maxRampRows);
+        }
 
         spawner.thunderSpawnChance = def.shockerEnabled ? def.shockerChance : 0f;
 

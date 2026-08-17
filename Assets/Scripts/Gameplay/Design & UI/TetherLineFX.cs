@@ -22,6 +22,18 @@ public class TetherLineFX : MonoBehaviour
     [Tooltip("Skaliert die Frequenz des Noise-Musters entlang der Linie (höher = mehr kleine Wellen statt eines großen Bogens).")]
     [SerializeField] private float noiseFrequency = 2f;
 
+    [Header("Tiefe (Sorting)")]
+    [Tooltip("Überschreibt die Z-Tiefe ALLER Linienpunkte fest auf diesen Wert — pointA/pointB liefern " +
+             "wegen useWorldSpace sonst live ihre eigene Z-Position, die des Tether-Objekts selbst wird " +
+             "dabei komplett ignoriert. Über dieses Feld bekommst du echte, wirksame Kontrolle.")]
+    [SerializeField] private float zOverride = 0f;
+
+    [Tooltip("Render Queue wird zur Laufzeit hart auf diesen Wert gesetzt — Outline-Shader setzen ihre " +
+             "eigene Queue oft bewusst hoch (zeichnen absichtlich zuletzt/oben), was Sorting Layer/Order " +
+             "in Layer komplett übergehen kann. Muss niedriger sein als die Queue vom Fairy Energy Orb " +
+             "(laut Inspector 3000), damit die Linie garantiert dahinter gezeichnet wird.")]
+    [SerializeField] private int forceRenderQueue = 2999;
+
     private LineRenderer lr;
     private float seed;
 
@@ -30,6 +42,10 @@ public class TetherLineFX : MonoBehaviour
         lr = GetComponent<LineRenderer>();
         lr.useWorldSpace = true;
         seed = Random.Range(0f, 1000f); // pro Instanz ein eigenes Zitter-Muster
+
+        Debug.Log($"[TetherLineFX] {name}: Material-Render-Queue VOR Override = {lr.material.renderQueue}");
+        lr.material.renderQueue = forceRenderQueue;
+        Debug.Log($"[TetherLineFX] {name}: Material-Render-Queue NACH Override = {lr.material.renderQueue}");
     }
 
     private void Update()
@@ -72,7 +88,9 @@ public class TetherLineFX : MonoBehaviour
             float noise = (Mathf.PerlinNoise(seed + t * noiseFrequency, time) - 0.5f) * 2f;
             Vector3 offset = perpendicular * (noise * jitterAmount * edgeFade);
 
-            lr.SetPosition(i, basePos + offset);
+            Vector3 finalPos = basePos + offset;
+            finalPos.z = zOverride;
+            lr.SetPosition(i, finalPos);
         }
     }
 

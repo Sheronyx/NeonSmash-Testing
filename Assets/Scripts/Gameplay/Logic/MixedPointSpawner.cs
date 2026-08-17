@@ -179,6 +179,12 @@ public class MixedPointSpawner : MonoBehaviour
     /// Vom PhaseManager genutzt, um die Farb-Zähler für den 20er-Special-Mode-Trigger zu führen.</summary>
     public static event System.Action<PointColor> OnColorHitRegistered;
 
+    /// <summary>Gefeuert, sobald die Reaktionszeit einer normalen Elementreihe (Farbe/Thunder-Tap)
+    /// tatsächlich abgelaufen ist — auch wenn eine Extraleben-Ladung den Game-Over-Effekt danach noch
+    /// verzeiht. Für Optik, die genau diesen "zu spät"-Moment markieren soll (z.B. EyeRaysIntensity:
+    /// einmaliger Partikel-Burst).</summary>
+    public static event System.Action OnRowTimedOut;
+
     /// <summary>Vom PhaseManager beim 20er-Trigger: entfernt alle noch aktiven Slot-Elemente lautlos
     /// (kein Score, kein Schaden) — z.B. wenn ein Special Mode mitten in einer Normal-Phase startet.</summary>
     public void ClearAllSlotsSilently() => ClearAllSlots();
@@ -331,6 +337,11 @@ public class MixedPointSpawner : MonoBehaviour
     private bool gameOver = false;
     private bool spawnPausedForBanner = false;
 
+    /// <summary>Ob das normale Spawning gerade pausiert ist (Banner/Zwischensequenz, z.B. Extraleben-
+    /// Verbrauch, Special-Mode-Übergang) — für PhaseManager.CurrentRowProgress01, damit z.B. die
+    /// Eye-Rays-Optik während einer solchen Pause nicht fälschlich Richtung Maximum hochläuft.</summary>
+    public bool IsSpawnPausedForBanner => spawnPausedForBanner;
+
     // Rundentyp: alle 3 Slots spawnen immer denselben Typ (Tap oder Swipe).
     // Wird neu gewürfelt, sobald alle 3 Slots gleichzeitig leer sind.
     private bool _roundIsSwipe    = false;
@@ -405,6 +416,11 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (allEmpty)
         {
+            // Zählt für die Ramp-up-Überblendung nach Phasenwechseln (siehe PhaseManager.CurrentReactionTime)
+            // die Elementreihen seit dem letzten Phasensprung hoch — hier, weil GENAU hier eine neue Reihe
+            // beginnt (nicht bei jedem SpawnSlot-Aufruf, das wäre pro Slot statt pro Reihe).
+            PhaseManager.Instance?.NotifyRowSpawned();
+
             // Boosts "All Swipe"/"All Tap": erzwingen den Rundentyp für den kompletten Run — alle
             // Runden sind dann durchgehend Swipe bzw. durchgehend Tap, statt gemischt.
             var activeBoost = BoostManager.Instance != null ? BoostManager.Instance.Selected : BoostType.None;
@@ -774,6 +790,11 @@ public class MixedPointSpawner : MonoBehaviour
 
         if (!running || gameOver || _slots[i].point != point) yield break;
 
+        // Reaktionszeit dieser Reihe ist jetzt wirklich abgelaufen — feuert auch, wenn eine
+        // Extraleben-Ladung den Game-Over-Effekt gleich noch verzeiht (der "zu spät"-Moment selbst
+        // ist ja trotzdem passiert).
+        OnRowTimedOut?.Invoke();
+
         // Extraleben-Ladung (Zufallsbox-Effekt)? Dann wird dieser eigentlich tödliche Fehler
         // einmalig verziehen — Element wird nur normal weggeräumt, kein Game Over. Statt sofort
         // weiterzuspawnen: Spawning pausieren, Verbrauchs-Animation abspielen, erst danach freigeben.
@@ -793,15 +814,33 @@ public class MixedPointSpawner : MonoBehaviour
             yield break;
         }
 
-        // Timeout: sofortiges Game Over (kein Leben-System mehr)
+        // Timeout: sofortiges Game Over (kein Leben-System mehr). Alle noch aktiven Elemente explodieren
+        // jetzt (statt wie beim normalen ClearOtherSlots lautlos zu verpuffen) — zusammen mit dem
+        // OnRowTimedOut-Ray-Burst von oben der "zu spät"-Moment. Das Game-Over-Banner (GameOver() unten)
+        // kommt erst NACH dieser kurzen Pause, nicht gleichzeitig.
         DismissCurrentFake();
 
-        _slots[i].timeout = null;
-        _slots[i].point   = null;
-        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
-        Destroy(point);
+        for (int j = 0; j < _slots.Length; j++)
+        {
+            // Slot i ist die HIER GERADE LAUFENDE Coroutine — StopCoroutine darauf würde sie sich
+            // selbst mitten im Ablauf abwürgen (GameOver() unten würde dann nie erreicht). Nur die
+            // ANDEREN Slots per StopCoroutine abbrechen, bei i nur die Referenz löschen.
+            if (j == i) { _slots[i].timeout = null; }
+            else if (_slots[j].timeout != null) { StopCoroutine(_slots[j].timeout); _slots[j].timeout = null; }
 
-        ClearOtherSlots(i);
+            var slotPoint = _slots[j].point;
+            if (slotPoint == null) continue;
+
+            if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == slotPoint) CurrentSwipePoint = null;
+
+            var bp = slotPoint.GetComponent<BasePoint>();
+            if (bp != null) bp.SendMessage("SpawnExplosion");
+            Destroy(slotPoint);
+            _slots[j].point = null;
+        }
+
+        DismissCurrentDiamond();
+        DismissCurrentMysteryBox();
 
         if (ScreenShakeManager.Instance != null) ScreenShakeManager.Instance.Shake(0.35f, 0.25f);
         yield return new WaitForSecondsRealtime(0.4f);
@@ -1648,6 +1687,10 @@ public class MixedPointSpawner : MonoBehaviour
 
     public void HandlePointHit(GameObject point)
     {
+        // SOFORT als Erstes: Eye-Rays-Intensität (bzw. alles, was CurrentRowProgress01 nutzt) muss
+        // schon jetzt zurückspringen, nicht erst nach dem Spawn-Delay der nächsten Reihe.
+        PhaseManager.Instance?.NotifyElementDestroyed();
+
         // Kristall-Endphase: eigene Punktzahl, kein Slot-Ökosystem (Farben/Fake/Respawn-Runde) —
         // komplett eigener Ablauf statt der normalen Treffer-Logik unten.
         if (_crystalPhaseActive) { HandleCrystalPointHit(point); return; }
