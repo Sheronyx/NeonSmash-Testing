@@ -67,10 +67,12 @@ public class CloudPool : MonoBehaviour
 
     private void Update()
     {
-        // Alle aktiven Wolken bewegen
-        foreach (Transform cloud in GetComponentsInChildren<Transform>())
+        // Alle aktiven Wolken bewegen (direkte Child-Iteration statt
+        // GetComponentsInChildren, das pro Frame ein neues Array alloziert)
+        for (int i = 0; i < transform.childCount; i++)
         {
-            if (cloud == transform) continue;  // Skip parent
+            Transform cloud = transform.GetChild(i);
+            if (!cloud.gameObject.activeSelf) continue;  // pooled/despawned
 
             cloud.position += Vector3.left * scrollSpeed * Time.deltaTime;
 
