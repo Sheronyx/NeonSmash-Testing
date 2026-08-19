@@ -73,8 +73,17 @@ public static class DailyRewardManager
             if (result.TryGetValue(CloudKeyLast, out var dateItem))
             {
                 string cloudDate = dateItem.Value.GetAs<string>();
-                if (!string.IsNullOrEmpty(cloudDate))
+                // Nur übernehmen, wenn das Cloud-Datum neuer als das lokale ist -
+                // sonst kann ein veralteter/verzögerter Cloud-Load einen frischeren
+                // lokalen Claim zurücksetzen und den heutigen Reward erneut freigeben.
+                if (!string.IsNullOrEmpty(cloudDate)
+                    && DateTime.TryParse(cloudDate, out var cloudDt)
+                    && (string.IsNullOrEmpty(LastClaimedDate)
+                        || !DateTime.TryParse(LastClaimedDate, out var localDt)
+                        || cloudDt > localDt))
+                {
                     PlayerPrefs.SetString(PrefKeyLastDate, cloudDate);
+                }
             }
 
             if (result.TryGetValue(CloudKeyStreak, out var streakItem))
