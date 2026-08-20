@@ -4,7 +4,7 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 ## Hoch (kritisch/blockierend für Release oder bekannter Bug)
 
-- **[BUG, bestätigt 2026-07-27]** `NEONSMASH_PROD` Define ist zwischen `Assets/Settings/Build Profiles/Android Release.asset` und `iOS.asset` vertauscht (hängt jeweils am falschen Platform-Eintrag). Vor jedem Store-Build in Unity prüfen — sonst geht Android/iOS Prod mit falscher Firebase-Umgebung raus. Nicht automatisch fixbar ohne Unity-Editor-Zugriff auf die Asset-Referenzen; für Night Shift geeignet, sobald Unity offen ist.
+- **[BUG-Beschreibung korrigiert, geprüft 2026-08-20 Zyklus 3]** `NEONSMASH_PROD` Define zwischen den Build-Profile-Assets: Bei Dateiinspektion (Unity lief, `Unity_GetConsoleLogs` bestätigte keine Fehler) zeigte sich, dass der ursprünglich gemeldete "Vertausch" in `Assets/Settings/Build Profiles/Android Release.asset` / `iOS.asset` tatsächlich in `m_PlayerSettingsYaml` liegt — das ist nur eine inerte Snapshot-Kopie alter globaler PlayerSettings, **nicht** die aktive Konfiguration (beide Profile haben `m_HasScriptingDefines: 0` und `m_ScriptingDefines: []`, überschreiben also nichts). Die tatsächlich wirksame Quelle ist `ProjectSettings/ProjectSettings.asset` → `scriptingDefineSymbols` (global, ein Eintrag pro Plattform). Dort ist **aktuell weder für Android noch iPhone `NEONSMASH_PROD` oder `NEON_ANALYTICS_TEST` gesetzt** — laut Code-Konvention (`AdConfig.cs`, `UgsBootstrap.cs`: "ohne Define → development") ist das der sichere Default, aber es bedeutet: vor jedem echten Store-Release muss `NEONSMASH_PROD` manuell in Player Settings → Scripting Define Symbols für die Zielplattform gesetzt werden — es gibt keinen Automatismus und keinen Bug, der das verhindert. Alte Formulierung ("vertauscht") war irreführend und ist hiermit ersetzt. Bleibt Release-Checkliste-Punkt (siehe `project_release_checklist`), kein Code-Bug mehr.
 - **[OFFEN]** iOS AdMob Interstitial — letzter bekannter Stand: Propagation/Account-seitig, Code als korrekt verifiziert. Bei nächster Gelegenheit mit echtem Gerät erneut testen (siehe `project_admob_plan`).
 
 ## Mittel (hoher Nutzen, vertretbarer Aufwand)
@@ -15,7 +15,7 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 - **[Idee, Recherche 2026-08-20]** Streak-Freeze für `DailyRewardManager`: aktuell resettet ein verpasster Tag den Streak hart auf 1, Research zu Retention-Mechaniken empfiehlt explizit einen Freeze-Mechanismus, um Frust/Investitionsverlust abzufedern (siehe `docs/RESEARCH.md` Abschnitt "Daily-Reward/Streak-Loop Best Practices"). Braucht neue Mechanik (Freeze-Charge verdienen/per Rewarded-Ad) + UI, kein Quick-Fix.
 - `PhaseManager`-GameObject in `GameScene_InfinityMode` fehlt noch (Szene-Setup, keine Codeänderung) — 12-Phasen-System ist sonst komplett fertig aber inaktiv.
 - `DiamondPoint`-Prefab bauen (Visual + Collider2D + Script) für Diamant-Collectibles ab Phase 9/11.
-- Diagnose-Logs in `AdManager.cs` waren zum 2026-06-24 bereits ausgedünnt — bei Gelegenheit erneut prüfen, ob seither wieder Debug-Rauschen reingekommen ist.
+- **[Erledigt/geprüft 2026-08-20 Zyklus 3]** Diagnose-Logs in `AdManager.cs` erneut geprüft: aktuell 8 `Debug.Log`/`Debug.LogWarning`-Aufrufe, alle mit `[Ads]`-Präfix, ausschließlich Fehler-/Statuswechsel-relevant (Consent-Fehler, Ad-Laden fehlgeschlagen, Init-Status) — kein Rauschen, kein Handlungsbedarf. Punkt kann aus dem Backlog.
 
 ## Niedrig / Recherche / Design (kein Blocker)
 
