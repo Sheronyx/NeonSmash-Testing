@@ -1,13 +1,20 @@
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
-// Zeigt den Fortschritt der 3 Farb-Zähler an (z.B. "12/20"), die den jeweiligen Special Mode auslösen.
+// Zeigt den Fortschritt der 3 Farb-Zähler als Füllbalken an (0 = leer, Schwellenwert = voll),
+// die den jeweiligen Special Mode auslösen.
 // Rein anzeigend — die eigentliche Logik/der Zählerstand liegt im PhaseManager.
 public class ColorProgressUI : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI pinkText;
-    [SerializeField] private TextMeshProUGUI greenText;
-    [SerializeField] private TextMeshProUGUI blueText;
+    [Header("Fill Bars (Image Type: Filled, Fill Method: Horizontal)")]
+    [SerializeField] private Image pinkFill;
+    [SerializeField] private Image greenFill;
+    [SerializeField] private Image blueFill;
+
+    [Header("Optional: Glow-Marker am Füllstand-Ende")]
+    [SerializeField] private RectTransform pinkGlow;
+    [SerializeField] private RectTransform greenGlow;
+    [SerializeField] private RectTransform blueGlow;
 
     private void OnEnable()
     {
@@ -17,9 +24,9 @@ public class ColorProgressUI : MonoBehaviour
         if (PhaseManager.Instance != null)
         {
             int threshold = PhaseManager.Instance.ColorTriggerThreshold;
-            UpdateText(pinkText,  PhaseManager.Instance.GetColorCount(PointColor.Pink),  threshold);
-            UpdateText(greenText, PhaseManager.Instance.GetColorCount(PointColor.Green), threshold);
-            UpdateText(blueText,  PhaseManager.Instance.GetColorCount(PointColor.Blue),  threshold);
+            UpdateFill(pinkFill,  pinkGlow,  PhaseManager.Instance.GetColorCount(PointColor.Pink),  threshold);
+            UpdateFill(greenFill, greenGlow, PhaseManager.Instance.GetColorCount(PointColor.Green), threshold);
+            UpdateFill(blueFill,  blueGlow,  PhaseManager.Instance.GetColorCount(PointColor.Blue),  threshold);
         }
     }
 
@@ -32,14 +39,24 @@ public class ColorProgressUI : MonoBehaviour
     {
         switch (color)
         {
-            case PointColor.Pink:  UpdateText(pinkText,  current, threshold); break;
-            case PointColor.Green: UpdateText(greenText, current, threshold); break;
-            case PointColor.Blue:  UpdateText(blueText,  current, threshold); break;
+            case PointColor.Pink:  UpdateFill(pinkFill,  pinkGlow,  current, threshold); break;
+            case PointColor.Green: UpdateFill(greenFill, greenGlow, current, threshold); break;
+            case PointColor.Blue:  UpdateFill(blueFill,  blueGlow,  current, threshold); break;
         }
     }
 
-    private void UpdateText(TextMeshProUGUI label, int current, int threshold)
+    private void UpdateFill(Image fill, RectTransform glow, int current, int threshold)
     {
-        if (label != null) label.text = $"{current}/{threshold}";
+        if (fill == null) return;
+        float amount = threshold > 0 ? Mathf.Clamp01((float)current / threshold) : 0f;
+        fill.fillAmount = amount;
+
+        if (glow != null)
+        {
+            // Glow-Marker entlang der Fülllänge des Balkens positionieren (links -> rechts, horizontaler Fill).
+            float width = fill.rectTransform.rect.width;
+            glow.anchoredPosition = new Vector2(-width * 0.5f + width * amount, glow.anchoredPosition.y);
+            glow.gameObject.SetActive(current > 0);
+        }
     }
 }
