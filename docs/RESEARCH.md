@@ -33,5 +33,15 @@ Best-konvertierende Platzierungen hängen an Fail-/Übergangs-Momenten, nicht mi
 - **CPI stieg ~30% YoY auf $0,56 in 2025** — für ein kleines Indie-Budget zählt organischer Hook/Viralität (teilbare Combo-Momente, Leaderboard-Flexing) mehr als bezahlte User Acquisition.
 - **Referenzpunkt:** Block Blast! erreichte 368M Downloads ohne IAP, rein Ad-Monetarisierung — belegt, dass ein gut getunter Ad-only-Casual-Loop skalieren kann, als Fallback falls der IAP-Ausbau sich verzögert.
 
+## Daily-Reward/Streak-Loop Best Practices (Recherche 2026-08-20)
+
+Anlass: `DailyRewardManager`-Bugfix in dieser Night Shift (Reward-Zyklus wrappte ab Tag 7 nicht mehr, siehe Commit `2c169a7a`). Quellen: [StriveCloud – Hook Model 2026](https://www.strivecloud.io/blog/hook-model-user-retention), [Plotline – Streaks for Gamification](https://www.plotline.so/blog/streaks-for-gamification-in-mobile-apps), [Digia – Gamification in Mobile Apps](https://www.digia.tech/post/gamification-mobile-apps-streaks-rewards-retention/).
+
+- **7-Tage-Streak ist der stärkste Frühindikator für Langzeit-Retention** (stärker als klassische D30-Werte); Nutzer mit 7+ Tagen Streak sind laut zitierten Duolingo-Zahlen ~2,3x wahrscheinlicher täglich aktiv. Bestätigt, dass NeonSmashs 7-Tage-Zyklus (jetzt korrekt wrapend) die richtige Zykluslänge ist.
+- **Streak-Aktion muss an einem schlechten Tag noch machbar sein** — ein 10-Sekunden-Claim ist verteidigbar, eine 20-Minuten-Aktion nicht. NeonSmashs Daily-Claim (ein Tap) erfüllt das bereits.
+- **Streak-Protection/Freeze fehlt bei NeonSmash:** Quellen empfehlen explizit einen "Freeze", der einen verpassten Tag abfedert — ohne ihn zerstört ein einziger verpasster Tag wochenlange Investition und erzeugt eher Frust als Motivation zum Neustart. `DailyRewardManager.ClaimTodayReward()` setzt den Streak aktuell hart auf 1 zurück, sobald `LastClaimedDate != gestern`, kein Freeze-Mechanismus vorhanden.
+- **Alternative: rollierendes Kumulativ-Login** ("3 von 7 Tagen diese Woche") gilt als nachsichtiger/nachhaltiger als ein hart resettender Streak — als Design-Alternative im Hinterkopf behalten, falls Streak-Reset-Frust sich in Retention-Daten zeigt.
+- **Eigene Schlussfolgerung/Backlog-Vorschlag:** Kein Blocker, aber ein möglicher nächster Schritt für den Daily-Reward-Loop wäre ein einfacher Streak-Freeze (z. B. 1 Freeze-Charge pro Woche, verdient oder per Rewarded-Ad) — passt auch zum bestehenden Rewarded-Ad-Placement-Research (Opt-in-Momente an Verlust-Punkten konvertieren am besten). Noch nicht umgesetzt, da neue Spielmechanik + UI nötig wäre.
+
 ---
-Recherche durchgeführt von einem Subagenten via Websuche am 2026-08-19. Alle Quellen/Links wie vom Agenten zurückgegeben, nicht einzeln nachverifiziert — bei wichtigen Entscheidungen (z. B. Ad-Placement-Änderungen) Originalquelle vor Umsetzung selbst gegenchecken.
+Recherche durchgeführt von einem Subagenten via Websuche am 2026-08-19 sowie direkt am 2026-08-20 (Daily-Reward-Abschnitt). Alle Quellen/Links wie zurückgegeben, nicht einzeln nachverifiziert — bei wichtigen Entscheidungen (z. B. Ad-Placement-Änderungen) Originalquelle vor Umsetzung selbst gegenchecken.
