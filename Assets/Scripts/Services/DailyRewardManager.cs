@@ -22,16 +22,23 @@ public static class DailyRewardManager
     public static bool CanClaimToday =>
         LastClaimedDate != DateTime.UtcNow.ToString("yyyy-MM-dd");
 
+    // Maps a raw (unclamped, ever-growing) streak count onto the 7-day reward
+    // cycle, e.g. streak 8 -> tier 1, streak 14 -> tier 7, streak 15 -> tier 1.
+    // The raw streak itself (PlayerPrefs/Cloud) is never wrapped, so it keeps
+    // working as a monotonically increasing counter for AchievementManager.
+    static int RewardTierIndex(int rawStreak) =>
+        ((Mathf.Max(rawStreak, 1) - 1) % StreakRewards.Length) + 1;
+
     // Which reward is shown as "today's" (even before claiming)
     public static int TodayRewardAmount
     {
         get
         {
-            int nextDay = Mathf.Clamp(CurrentStreak + 1, 1, StreakRewards.Length);
+            int nextDay = CurrentStreak + 1;
             string yesterday = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd");
             bool streakContinues = LastClaimedDate == yesterday || CurrentStreak == 0;
-            int dayIndex = streakContinues ? nextDay : 1;
-            return StreakRewards[dayIndex - 1];
+            int rawDay = streakContinues ? nextDay : 1;
+            return StreakRewards[RewardTierIndex(rawDay) - 1];
         }
     }
 
@@ -45,10 +52,9 @@ public static class DailyRewardManager
 
         bool streakContinues = LastClaimedDate == yesterday;
         int newStreak = streakContinues ? CurrentStreak + 1 : 1;
-        newStreak = Mathf.Clamp(newStreak, 1, StreakRewards.Length);
 
-        int reward   = StreakRewards[newStreak - 1];
-        int dayIndex = newStreak;
+        int dayIndex = RewardTierIndex(newStreak);
+        int reward   = StreakRewards[dayIndex - 1];
 
         PlayerPrefs.SetString(PrefKeyLastDate, today);
         PlayerPrefs.SetInt(PrefKeyStreak, newStreak);
