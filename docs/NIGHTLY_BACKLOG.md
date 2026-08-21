@@ -33,6 +33,11 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-21 (Zyklus 3) hinzugekommen
+
+- **[ERLEDIGT, Fallback-Blender-Design]** `LeafGem_Boost` erstellt — Grün-Pendant zu `CrystalShard_Boost`, siehe Commit `2fcde0ea`. In Unity importgeprüft (fehlerfrei). **Offen:** Platzierung in `DemoDesignScene.unity` — Szene hat aktuell eine kleine uncommittete manuelle Änderung (Objekt-Rotation), daher nicht angefasst. Nachtrag sobald WIP geklärt ist.
+- **[Blocker, technisch]** `execute_blender_code_for_cli` (Headless-Blender-MCP-Tool) ist nicht nutzbar — `BLENDER_PATH`-Umgebungsvariable ist im MCP-Serverprozess nicht gesetzt, obwohl `Blender.app` unter `/Applications/Blender.app` existiert. Für zukünftige Blender-Fallback-Aufgaben ohne offene GUI-Session müsste das gesetzt werden (liegt außerhalb dessen, was ich als Night Shift selbst ändern kann/soll — Konfiguration des MCP-Servers, kein Projekt-Code).
+
 ## Aus Night Shift 2026-08-19 hinzugekommen
 
 Siehe [reports/nightly/2026-08-19.md](../reports/nightly/2026-08-19.md) für Details zu Findings aus Code-QA-Scan und Recherche dieser Nacht.
