@@ -40,6 +40,7 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 ## Aus Night Shift 2026-08-21 (Zyklus 3) hinzugekommen
 
 - **[ERLEDIGT, Fallback-Blender-Design]** `LeafGem_Boost` erstellt — Grün-Pendant zu `CrystalShard_Boost`, siehe Commit `2fcde0ea`. In Unity importgeprüft (fehlerfrei). **Offen:** Platzierung in `DemoDesignScene.unity` — Szene hat aktuell eine kleine uncommittete manuelle Änderung (Objekt-Rotation), daher nicht angefasst. Nachtrag sobald WIP geklärt ist.
+- **[ERLEDIGT, Fallback-Blender-Design, Zyklus 9]** `StoneShard_Boost` erstellt — Pink/Gestein-Pendant, vervollständigt das Boost-Trio (Grün/Blau/Pink), Commit `9ef206bd`. In Unity importgeprüft (fehlerfrei). Gleiches Offen-Item wie LeafGem_Boost: Platzierung in `DemoDesignScene.unity` steht noch aus.
 - **[Blocker, technisch]** `execute_blender_code_for_cli` (Headless-Blender-MCP-Tool) ist nicht nutzbar — `BLENDER_PATH`-Umgebungsvariable ist im MCP-Serverprozess nicht gesetzt, obwohl `Blender.app` unter `/Applications/Blender.app` existiert. Für zukünftige Blender-Fallback-Aufgaben ohne offene GUI-Session müsste das gesetzt werden (liegt außerhalb dessen, was ich als Night Shift selbst ändern kann/soll — Konfiguration des MCP-Servers, kein Projekt-Code).
 
 ## Aus Night Shift 2026-08-19 hinzugekommen
