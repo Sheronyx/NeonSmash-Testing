@@ -55,6 +55,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Konsistenzprüfung]** Zwischen-Check nach 52 Commits dieser Night Shift: WIP-Szenen (`DemoDesignScene`, `GameScene_InfinityMode`, `MainMenuScene`) weiterhin exakt im Ausgangszustand (nur `M`, keine neuen Änderungen), vollständige EditMode-Testsuite (alle Assemblies, nicht nur die eigenen 4 Testklassen) 20/20 grün.
 
+## Aus Night Shift 2026-08-22 (Zyklus 37) hinzugekommen
+
+- **[Geklärt]** Die seit langem offene "15 vs. 20 Energie-Trigger"-Frage (siehe Memory `project_dream_world_fairies_concept`) ist aufgelöst: `colorTriggerThreshold` in `GameScene_InfinityMode.unity` (`PhaseManager`) steigt progressiv 10→15→20 über die 12 Phasen (je 4 Phasen pro Stufe) — kein fixer Einzelwert, beide alten Zahlen waren für unterschiedliche Spielphasen korrekt. Rein per Datei-Lesen verifiziert (keine Szenenänderung).
+
 ## Aus Night Shift 2026-08-22 (Zyklus 35) hinzugekommen
 
 - **[ERLEDIGT, Fallback-Blender-Design]** `IceShard_Hazard` erstellt — erstes Gefahren-Konzept (nicht Collectible) dieser Night Shift, Commit `a5997e9a`. In Unity importgeprüft (fehlerfrei).
