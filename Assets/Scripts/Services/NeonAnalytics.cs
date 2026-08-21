@@ -118,6 +118,54 @@ public static class NeonAnalytics
         FirebaseAnalytics.LogEvent(FirebaseAnalytics.EventTutorialComplete);
     }
 
+    // ── Monetarisierung: Ads ─────────────────────────────────────────────────
+    // Bisher komplett ungetrackt (Lücke gefunden 2026-08-22) — ohne diese Events gibt es keinerlei
+    // Sichtbarkeit auf Ad-Funnel-Performance (Completion-Rate, Verfügbarkeit, Interstitial-Frequenz).
+
+    /// <summary>Rewarded-Video wurde vollständig angesehen und die Belohnung vergeben.</summary>
+    /// <param name="placement">z.B. "dream_energy" | "streak_freeze"</param>
+    public static void LogAdRewardedCompleted(string placement)
+    {
+        if (!Active) return;
+        FirebaseAnalytics.LogEvent("ad_rewarded_completed",
+            new Parameter("placement", placement));
+    }
+
+    /// <summary>Rewarded-Video wurde angefragt, war aber nicht verfügbar (kein Fill/noch am Laden).</summary>
+    public static void LogAdRewardedUnavailable(string placement)
+    {
+        if (!Active) return;
+        FirebaseAnalytics.LogEvent("ad_rewarded_unavailable",
+            new Parameter("placement", placement));
+    }
+
+    /// <summary>Interstitial wurde tatsächlich angezeigt (nach Due/Cooldown/Ready-Prüfung).</summary>
+    public static void LogAdInterstitialShown()
+    {
+        if (!Active) return;
+        FirebaseAnalytics.LogEvent("ad_interstitial_shown");
+    }
+
+    // ── Monetarisierung: IAP ─────────────────────────────────────────────────
+
+    /// <summary>Nutzt Firebases Standard-Purchase-Event für automatisches Revenue-Tracking im Dashboard.</summary>
+    public static void LogPurchaseSuccess(string productId, double price, string currencyCode)
+    {
+        if (!Active) return;
+        FirebaseAnalytics.LogEvent(FirebaseAnalytics.EventPurchase,
+            new Parameter(FirebaseAnalytics.ParameterItemID, productId),
+            new Parameter(FirebaseAnalytics.ParameterValue, price),
+            new Parameter(FirebaseAnalytics.ParameterCurrency, string.IsNullOrEmpty(currencyCode) ? "USD" : currencyCode));
+    }
+
+    public static void LogPurchaseFailed(string productId, string reason)
+    {
+        if (!Active) return;
+        FirebaseAnalytics.LogEvent("purchase_failed",
+            new Parameter("product_id", productId),
+            new Parameter("reason",     reason));
+    }
+
     // ── Crashlytics helpers ───────────────────────────────────────────────────
     // Requires FirebaseCrashlytics.unitypackage to be imported.
 

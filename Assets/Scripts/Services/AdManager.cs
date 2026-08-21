@@ -151,21 +151,30 @@ public class AdManager : MonoBehaviour
     }
 
     /// <summary>Zeigt ein Rewarded-Video. onReward NUR, wenn der Nutzer es zu Ende schaut.</summary>
-    public void ShowRewarded(Action onReward, Action onUnavailable = null)
+    public void ShowRewarded(Action onReward, Action onUnavailable = null) =>
+        ShowRewarded("unknown", onReward, onUnavailable);
+
+    /// <param name="placement">Analytics-Bezeichner für diesen Rewarded-Button (z.B. "dream_energy").</param>
+    public void ShowRewarded(string placement, Action onReward, Action onUnavailable = null)
     {
         if (!IsRewardedReady)
         {
+            NeonAnalytics.LogAdRewardedUnavailable(placement);
             onUnavailable?.Invoke();
             if (IsInitialized) LoadRewarded();
             return;
         }
-        _rewardedAd.Show(_ => onReward?.Invoke());
+        _rewardedAd.Show(_ =>
+        {
+            NeonAnalytics.LogAdRewardedCompleted(placement);
+            onReward?.Invoke();
+        });
     }
 
     /// <summary>Free-Dream-Energy-Button: Video → RewardedDreamEnergyAmount Dream Energy gutschreiben.</summary>
     public void ShowRewardedForDreamEnergy(Action<int> onGranted = null, Action onUnavailable = null)
     {
-        ShowRewarded(
+        ShowRewarded("dream_energy",
             () => { DreamEnergyManager.AddDreamEnergy(RewardedDreamEnergyAmount); onGranted?.Invoke(RewardedDreamEnergyAmount); },
             onUnavailable);
     }
@@ -173,7 +182,7 @@ public class AdManager : MonoBehaviour
     /// <summary>Streak-Freeze-Button: Video → 1 Freeze-Charge für DailyRewardManager gutschreiben.</summary>
     public void ShowRewardedForStreakFreeze(Action onGranted = null, Action onUnavailable = null)
     {
-        ShowRewarded(
+        ShowRewarded("streak_freeze",
             () => { DailyRewardManager.AddFreezeCharge(1); onGranted?.Invoke(); },
             onUnavailable);
     }
@@ -232,6 +241,7 @@ public class AdManager : MonoBehaviour
 
         _interstitialAd.OnAdFullScreenContentClosed += Done;
         _interstitialAd.OnAdFullScreenContentFailed += _ => Done();
+        NeonAnalytics.LogAdInterstitialShown();
         _interstitialAd.Show();
     }
 }

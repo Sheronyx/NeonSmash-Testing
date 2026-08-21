@@ -118,6 +118,9 @@ public class IAPManager : MonoBehaviour, IDetailedStoreListener
             Debug.LogWarning($"[IAP] Kein ShopItem für productId '{productId}' gefunden.");
         }
 
+        var metadata = args.purchasedProduct.metadata;
+        NeonAnalytics.LogPurchaseSuccess(productId, (double)metadata.localizedPrice, metadata.isoCurrencyCode);
+
         OnPurchaseSuccess?.Invoke(productId);
         return PurchaseProcessingResult.Complete;
     }
@@ -125,12 +128,14 @@ public class IAPManager : MonoBehaviour, IDetailedStoreListener
     public void OnPurchaseFailed(Product product, PurchaseFailureReason reason)
     {
         Debug.LogWarning($"[IAP] Kauf fehlgeschlagen: {product.definition.id} — {reason}");
+        NeonAnalytics.LogPurchaseFailed(product.definition.id, reason.ToString());
         OnPurchaseError?.Invoke(product.definition.id);
     }
 
     public void OnPurchaseFailed(Product product, PurchaseFailureDescription description)
     {
         Debug.LogWarning($"[IAP] Kauf fehlgeschlagen: {product.definition.id} — {description.message}");
+        NeonAnalytics.LogPurchaseFailed(product.definition.id, description.reason.ToString());
         OnPurchaseError?.Invoke(product.definition.id);
     }
 
