@@ -54,6 +54,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Konsistenzprüfung]** Zwischen-Check nach 52 Commits dieser Night Shift: WIP-Szenen (`DemoDesignScene`, `GameScene_InfinityMode`, `MainMenuScene`) weiterhin exakt im Ausgangszustand (nur `M`, keine neuen Änderungen), vollständige EditMode-Testsuite (alle Assemblies, nicht nur die eigenen 4 Testklassen) 20/20 grün.
 
+## Aus Night Shift 2026-08-22 (Zyklus 35) hinzugekommen
+
+- **[ERLEDIGT, Fallback-Blender-Design]** `IceShard_Hazard` erstellt — erstes Gefahren-Konzept (nicht Collectible) dieser Night Shift, Commit `a5997e9a`. In Unity importgeprüft (fehlerfrei).
+
 ## Aus Night Shift 2026-08-22 (Zyklus 32) hinzugekommen
 
 - **[ERLEDIGT, Cleanup]** Totes Duplikat `LeaderboardIds.cs` entfernt (definierte `infinity_highscore` ein zweites Mal, unbenutzt neben `LeaderboardApi.InfinityId`). Commit `1e53e6f2`.
