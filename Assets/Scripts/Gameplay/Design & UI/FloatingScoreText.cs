@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -6,6 +7,15 @@ using UnityEngine.Serialization;
 public class FloatingScoreText : MonoBehaviour
 {
     [SerializeField] private TextMeshPro label;
+
+    // Wird vom Pool (MixedPointSpawner) gesetzt, damit diese Instanz nach der Animation
+    // recycelt statt zerstört wird. Bleibt null, wenn ohne Pool instanziiert (Fallback: Destroy).
+    private Action<FloatingScoreText> _onFinished;
+
+    public void SetPoolCallback(Action<FloatingScoreText> onFinished)
+    {
+        _onFinished = onFinished;
+    }
 
     [Header("Materialien pro Farbe")]
     [SerializeField] private Material materialDefault;
@@ -48,6 +58,7 @@ public class FloatingScoreText : MonoBehaviour
             if (mat != null) label.fontMaterial = mat;
         }
 
+        StopAllCoroutines();
         StartCoroutine(Co_Animate(holdDuration));
     }
 
@@ -82,6 +93,9 @@ public class FloatingScoreText : MonoBehaviour
             yield return null;
         }
 
-        Destroy(gameObject);
+        if (_onFinished != null)
+            _onFinished.Invoke(this);
+        else
+            Destroy(gameObject);
     }
 }
