@@ -11,7 +11,11 @@ Infinity Mode: 12-Phasen-System (Farb/Phasen-Redesign, bestätigt 2026-07-09, Co
 - Pro Farbe läuft ein "zerstörte Elemente"-Zähler, persistiert über Normal-Phasen. Bei 20 → Special Mode der Farbe startet sofort (Pink→Gravity, Grün→Magnet-Platzhalter/Gravity, Blau→Fountain), Punkte 3x.
 - Special Mode ist anzahl-basiert (nicht zeit-basiert), endet nach fester Elementzahl.
 - Game Over bei Miss in JEDEM Mode + bei Shocker-Treffer überall. Diamanten sind ungefährlich (Miss = folgenlos).
-- 12 Phasen mit steigender Intensität: Shocker ab Phase 5, Diamanten ab Phase 9/11, Diamant-Bonus-Multiplikator (15x gestapelt) in Phase 10/12. Phase 13 = Endless-Platzhalter (grob, TBD).
+- 12 Phasen mit steigender Intensität. Exakte Werte 2026-08-22 per Direktabgleich der Szene verifiziert (`GameScene_InfinityMode.unity`, `PhaseManager`):
+  - `colorTriggerThreshold` steigt progressiv 10 (Phase 1–4) → 15 (Phase 5–8) → 20 (Phase 9–12).
+  - Shocker aktiv in Phase 5, 6, 7, 9, 10, 11, 12 — **Phase 8 ist bewusst shockerfrei** (Verschnaufpause direkt vor Diamant-Start in Phase 9, plausibles Pacing-Design, nicht als Bug behandelt).
+  - Diamanten aktiv in Phase 9 und 11 (alternierend), Diamant-Bonus-Multiplikator (15x gestapelt, `diamondsNeededForBonus: 5`) vermutlich in den Folgephasen 10/12.
+  - Phase 13 = Endless-Platzhalter (grob, TBD).
 
 **Offene technische Restarbeit (User in Unity, nicht blockierend):**
 1. ~~`PhaseManager`-GameObject in `GameScene_InfinityMode` anlegen + spawner-Referenz.~~ **ERLEDIGT** — per Night-Shift-Check 2026-08-20 bestätigt: GameObject existiert, ist aktiv, `PhaseManager.Instance` zur Laufzeit nicht null (siehe `docs/NIGHTLY_BACKLOG.md`).
