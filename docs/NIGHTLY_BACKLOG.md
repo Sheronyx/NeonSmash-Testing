@@ -50,6 +50,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-22 (Zyklus 31) hinzugekommen
+
+- **[ERLEDIGT, stärkste Verifikation]** Gleicher Erfolgsfall-Test mit echter Cloud-Verbindung auch für `DiamondManager`, `DiamondSplinterManager` und `AchievementManager` durchgeführt (Fortsetzung Zyklus 30) — alle vier Dirty-Flags nach echtem Save auf 0, Cloud-Logs bestätigen tatsächliche Speicherung ("Cloud gespeichert: 5"/"10"). Damit sind jetzt ALLE VIER Cloud-Dirty-Fixes dieser Night Shift end-to-end mit echtem Backend verifiziert, nicht nur der Fehlerpfad im Editor-Mock.
+
 ## Aus Night Shift 2026-08-22 (Zyklus 30) hinzugekommen
 
 - **[ERLEDIGT, stärkste Verifikation]** Dirty-Flag-Retry-Mechanismus (`DreamEnergyManager.RetryPendingCloudSaveIfNeeded`) mit ECHTER UGS-Cloud-Verbindung im Erfolgsfall getestet (nicht nur Fehlerfall wie zuvor): Dirty-Flag manuell auf 1 gesetzt, Retry aufgerufen → echter Cloud-Save gelang, Flag korrekt auf 0 zurückgesetzt. Log bestätigt: "[DreamEnergy] Cloud gespeichert: 50100". Damit ist der Kernmechanismus aller vier Cloud-Dirty-Fixes (Zyklus 4/10/11) jetzt End-to-End mit echtem Backend bestätigt, nicht nur die Fehlerpfad-Resilienz.
