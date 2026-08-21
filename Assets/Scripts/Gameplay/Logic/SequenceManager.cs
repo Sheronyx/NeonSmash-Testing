@@ -130,7 +130,12 @@ public class SequenceManager : MonoBehaviour
             StartCoroutine(Co_DeliverBonus(seq));
 
         yield return new WaitForSecondsRealtime(seq.effectDuration);
-        Time.timeScale = 1f;
+        // Nicht ungeprüft auf 1 setzen: wenn der Spieler während des Freeze-Frames pausiert hat,
+        // würde das die Pause faktisch wieder aufheben (identisches Bug-Muster wie bei
+        // LivesManager.RampUpTimeScale/CancelRampUp, siehe dort). ResumeGame() setzt beim
+        // tatsächlichen Fortsetzen ohnehin Time.timeScale=1f, das übernimmt hier nichts verloren.
+        if (!PauseMenuController.IsPaused)
+            Time.timeScale = 1f;
 
         // Szenen-PS zurücksetzen
         foreach (var ps in toRestore)
