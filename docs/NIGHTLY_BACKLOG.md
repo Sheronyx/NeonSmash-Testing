@@ -35,6 +35,8 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 ## Niedrig / Recherche / Design (kein Blocker)
 
+- **[Vorschlag, Recherche 2026-08-22]** Dritte Diamant-IAP-Stufe (~15–20 Diamanten) zwischen den bestehenden 5er/50er-Paketen als Decoy-Option ergänzen — siehe `docs/RESEARCH.md` Abschnitt "IAP-Pricing-Patterns". Braucht neues Store-Produkt (App Store Connect/Play Console) + neues `ShopItem`-Asset, ist eine Preis-/Business-Entscheidung, keine Night-Shift-Aufgabe.
+
 - Flow/Pacing-Redesign (Special Modes als Ruhephase, Ease-Ramp bei Phasenwechseln) — Diskussionsstand vom 2026-07-29, noch nicht umgesetzt. Braucht zuerst Klärung: gibt es reales Playtester-Signal für "zu stressig"?
 - Magnet Mode (echte Mechanik statt Gravity-Platzhalter für Grün) — späteres Feature.
 - Phase 13 Endless-Feindesign — bewusst zurückgestellt.
