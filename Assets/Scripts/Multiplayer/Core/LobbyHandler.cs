@@ -85,6 +85,16 @@ public class LobbyHandler
         if (_heartbeatTimer > 0f) return;
 
         _heartbeatTimer = 15f;
-        await LobbyService.Instance.SendHeartbeatPingAsync(CurrentLobby.Id);
+        try
+        {
+            await LobbyService.Instance.SendHeartbeatPingAsync(CurrentLobby.Id);
+        }
+        catch (System.Exception e)
+        {
+            // async void ohne try/catch würde eine unbehandelte Exception werfen, die alle 15s
+            // erneut auftreten kann (z.B. Lobby bereits abgelaufen, Netzwerkfehler) - siehe
+            // DeleteAsync oben im selben File für dasselbe Muster.
+            Debug.LogWarning($"[Lobby] Heartbeat fehlgeschlagen: {e.Message}");
+        }
     }
 }
