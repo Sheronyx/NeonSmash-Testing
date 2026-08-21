@@ -45,6 +45,7 @@ public class InAppReviewManager : MonoBehaviour
         int playCount = PlayerPrefs.GetInt(PLAY_COUNT_KEY, 0);
         playCount++;
         PlayerPrefs.SetInt(PLAY_COUNT_KEY, playCount);
+        PlayerPrefs.Save();
 
         Debug.Log("PlayCount: " + playCount);
 
@@ -93,6 +94,7 @@ public class InAppReviewManager : MonoBehaviour
         Debug.Log("Review flow completed.");
 
         PlayerPrefs.SetInt(REVIEW_SHOWN_KEY, 1);
+        PlayerPrefs.Save();
     }
 #endif
 
@@ -105,6 +107,7 @@ public class InAppReviewManager : MonoBehaviour
         Debug.Log("Opened iOS Review Page");
 
         PlayerPrefs.SetInt(REVIEW_SHOWN_KEY, 1);
+        PlayerPrefs.Save();
     }
 #endif
 }
