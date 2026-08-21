@@ -49,6 +49,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-22 (Zyklus 24) hinzugekommen
+
+- **[BUG, gefunden & gefixt]** `DebugResetPrefs.cs` (Strg+R löscht `PlayerPrefs.DeleteAll()`) fehlte der `#if UNITY_EDITOR || DEVELOPMENT_BUILD`-Guard, den `RewardDebugHelper.cs` für dieselbe Art Aktion bereits hat. Reales Risiko, falls das Skript je wieder einem GameObject zugewiesen wird und in einen Production-Build landet. Aktuell inert (nicht referenziert), Guard trotzdem ergänzt statt nur zu löschen. Commit `cb693b51`.
+
 ## Aus Night Shift 2026-08-22 (Zyklus 22) hinzugekommen
 
 - **[ERLEDIGT]** `InAppReviewManager` speicherte PlayCount/ReviewShown nie mit `PlayerPrefs.Save()` — bei App-Crash/Kill vor dem nächsten automatischen Flush wäre der Status verloren gegangen. Fix, Commit `27cc234b`. Niedrige Kritikalität (keine Spielerwährung betroffen).
