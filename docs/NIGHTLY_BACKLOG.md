@@ -47,6 +47,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-22 (Zyklus 22) hinzugekommen
+
+- **[ERLEDIGT]** `InAppReviewManager` speicherte PlayCount/ReviewShown nie mit `PlayerPrefs.Save()` — bei App-Crash/Kill vor dem nächsten automatischen Flush wäre der Status verloren gegangen. Fix, Commit `27cc234b`. Niedrige Kritikalität (keine Spielerwährung betroffen).
+
 ## Aus Night Shift 2026-08-22 (Zyklus 21) hinzugekommen
 
 - **[ERLEDIGT]** Ads/IAP-Analytics-Lücke geschlossen — `AdManager`/`IAPManager` riefen `NeonAnalytics` nirgends auf (kein Rewarded-Completion/Interstitial/Purchase-Tracking). Neue Events ergänzt, Commit `92759162`. Kompiliert fehlerfrei nach Fix eines falschen Firebase-Parameternamens, 20/20 Tests weiterhin grün. **Bitte bei Gelegenheit mit echtem Firebase-DebugView verifizieren** (Editor kann Firebase Analytics nicht wirklich senden).
