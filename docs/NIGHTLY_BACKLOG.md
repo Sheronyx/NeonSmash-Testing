@@ -50,6 +50,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-22 (Zyklus 34) hinzugekommen
+
+- **[Konsistenzprüfung]** Zwischen-Check nach 52 Commits dieser Night Shift: WIP-Szenen (`DemoDesignScene`, `GameScene_InfinityMode`, `MainMenuScene`) weiterhin exakt im Ausgangszustand (nur `M`, keine neuen Änderungen), vollständige EditMode-Testsuite (alle Assemblies, nicht nur die eigenen 4 Testklassen) 20/20 grün.
+
 ## Aus Night Shift 2026-08-22 (Zyklus 32) hinzugekommen
 
 - **[ERLEDIGT, Cleanup]** Totes Duplikat `LeaderboardIds.cs` entfernt (definierte `infinity_highscore` ein zweites Mal, unbenutzt neben `LeaderboardApi.InfinityId`). Commit `1e53e6f2`.
