@@ -9,6 +9,7 @@ public static class DiamondSplinterManager
 {
     const string PrefKey  = "diamond_splinters_balance";
     const string CloudKey = "diamond_splinters";
+    const string CloudDirtyPrefKey = "diamond_splinters_cloud_dirty";
 
     static readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
@@ -61,6 +62,8 @@ public static class DiamondSplinterManager
         {
             Debug.LogWarning("[DiamondSplinters] Cloud Load fehlgeschlagen: " + e.Message);
         }
+
+        await RetryPendingCloudSaveIfNeeded();
     }
 
     static async Task SaveToCloudAsync()
@@ -72,14 +75,27 @@ public static class DiamondSplinterManager
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKey, balance } });
             Debug.Log($"[DiamondSplinters] Cloud gespeichert: {balance}");
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 0);
+            PlayerPrefs.Save();
         }
         catch (Exception e)
         {
             Debug.LogWarning("[DiamondSplinters] Cloud Save fehlgeschlagen: " + e.Message);
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 1);
+            PlayerPrefs.Save();
         }
         finally
         {
             _saveLock.Release();
         }
+    }
+
+    // Siehe DreamEnergyManager.RetryPendingCloudSaveIfNeeded für die Begründung — gleiches Muster,
+    // von LoadFromCloudAsync (App-Resume) aufgerufen.
+    public static async Task RetryPendingCloudSaveIfNeeded()
+    {
+        if (PlayerPrefs.GetInt(CloudDirtyPrefKey, 0) == 0) return;
+        Debug.Log("[DiamondSplinters] Offener Cloud-Save aus vorherigem Fehlversuch wird nachgeholt.");
+        await SaveToCloudAsync();
     }
 }

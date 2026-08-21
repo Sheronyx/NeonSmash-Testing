@@ -9,6 +9,7 @@ public static class DiamondManager
 {
     const string PrefKey  = "diamonds_balance";
     const string CloudKey = "diamonds";
+    const string CloudDirtyPrefKey = "diamonds_cloud_dirty";
 
     static readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
@@ -61,6 +62,8 @@ public static class DiamondManager
         {
             Debug.LogWarning("[Diamonds] Cloud Load fehlgeschlagen: " + e.Message);
         }
+
+        await RetryPendingCloudSaveIfNeeded();
     }
 
     static async Task SaveToCloudAsync()
@@ -72,14 +75,27 @@ public static class DiamondManager
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKey, balance } });
             Debug.Log($"[Diamonds] Cloud gespeichert: {balance}");
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 0);
+            PlayerPrefs.Save();
         }
         catch (Exception e)
         {
             Debug.LogWarning("[Diamonds] Cloud Save fehlgeschlagen: " + e.Message);
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 1);
+            PlayerPrefs.Save();
         }
         finally
         {
             _saveLock.Release();
         }
+    }
+
+    // Siehe DreamEnergyManager.RetryPendingCloudSaveIfNeeded für die Begründung — gleiches Muster,
+    // von LoadFromCloudAsync (App-Resume) aufgerufen.
+    public static async Task RetryPendingCloudSaveIfNeeded()
+    {
+        if (PlayerPrefs.GetInt(CloudDirtyPrefKey, 0) == 0) return;
+        Debug.Log("[Diamonds] Offener Cloud-Save aus vorherigem Fehlversuch wird nachgeholt.");
+        await SaveToCloudAsync();
     }
 }
