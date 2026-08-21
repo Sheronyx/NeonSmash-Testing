@@ -9,7 +9,6 @@ public class VoronoiTextureBaker : EditorWindow
     private int seed          = 42;
     private bool drawEdges    = true;
     private float edgeWidth   = 0.06f;
-    private bool animate      = false; // false = statische Textur für Shader-Replacement
     private string savePath   = "Assets/Textures/VoronoiBaked.png";
 
     [MenuItem("Tools/Voronoi Texture Baker")]
