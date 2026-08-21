@@ -16,7 +16,7 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 ## Vom User priorisiert (2026-08-21, für nächste Night Shift)
 
 - **[TEILWEISE ERLEDIGT, Night Shift 2026-08-22 Zyklus 15]** Icon-Artwork selbst erstellt (`Assets/001 Fairy World/Elements/Fairy Progress Icons/`, Commit `77df1e68`) — Blatt/Tropfen/Kristall als 128x128 Sprites, importiert und konfiguriert. **Weiterhin blockiert:** die eigentliche Verdrahtung in der Szene (Icon-GameObjects neben den Fill-Bars in `ColorProgressUI`/`GameScene_InfinityMode.unity`) — Szene hat weiterhin einen großen uncommitteten WIP-Diff (manuelle 3D-Charakter-Arbeit), wird laut Standing-Regel nicht angefasst. Sobald WIP geklärt: Icons sind fertig zum Drag&Drop in die Image-Felder.
-- **[BLOCKIERT durch Scene-WIP, Night Shift 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken ausarbeiten (siehe Eintrag unten in "Niedrig") — gleiche Blockade: braucht Szenenänderung an `GameScene_InfinityMode.unity`.
+- **[TEILWEISE ERLEDIGT, Night Shift 2026-08-22 Zyklus 18]** Reward-Preview: Code-Unterstützung in `ColorProgressUI.cs` (optionale, nullable Felder + Schwellenwert-Logik) und Sparkle-Icon erstellt, Commit `7356ea98`. **Weiterhin blockiert:** Zuweisung der Icons in der Szene selbst (`GameScene_InfinityMode.unity`, weiterhin uncommitteter WIP).
 - **[ERLEDIGT, Night Shift 2026-08-21]** Streak-Freeze für `DailyRewardManager` umgesetzt — reiner Code-Task, keine Szene betroffen. Siehe Commit `4180f37d`. UI-Anbindung (Anzeige der Charges, Freeze-Button) bleibt offen, ebenfalls Scene-WIP-blockiert.
 
 ## Mittel (hoher Nutzen, vertretbarer Aufwand)
@@ -35,6 +35,8 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 - **[Erledigt/geprüft 2026-08-20 Zyklus 3]** Diagnose-Logs in `AdManager.cs` erneut geprüft: aktuell 8 `Debug.Log`/`Debug.LogWarning`-Aufrufe, alle mit `[Ads]`-Präfix, ausschließlich Fehler-/Statuswechsel-relevant (Consent-Fehler, Ad-Laden fehlgeschlagen, Init-Status) — kein Rauschen, kein Handlungsbedarf. Punkt kann aus dem Backlog.
 
 ## Niedrig / Recherche / Design (kein Blocker)
+
+- **[QA-Fund, nicht night-shift-verursacht, 2026-08-22 Zyklus 18]** `Assets/Bundles/01 Default/Prefabs/Top Bar Default.prefab` wirft bei jedem Reimport "Transform child can't be loaded"/"Immediate cast failed from GameObject to Transform" (12x). Datei ist seit 20.08. unverändert (nicht Teil des heutigen WIP, nicht von mir angefasst) — vermutlich alte verwaiste FileID-Einträge aus einer früheren Bearbeitung. Prefab lädt trotzdem korrekt (3 Kinder erhalten), funktional aktuell kein bekannter Schaden. Nicht selbst repariert (YAML-Chirurgie an fremdem WIP-Bundle-Prefab zu riskant ohne genaue Kenntnis der beabsichtigten Struktur) — bei Gelegenheit im Editor öffnen und einmal manuell speichern lassen, das bereinigt solche verwaisten Einträge meist automatisch.
 
 - **[Vorschlag, Recherche 2026-08-22]** Dritte Diamant-IAP-Stufe (~15–20 Diamanten) zwischen den bestehenden 5er/50er-Paketen als Decoy-Option ergänzen — siehe `docs/RESEARCH.md` Abschnitt "IAP-Pricing-Patterns". Braucht neues Store-Produkt (App Store Connect/Play Console) + neues `ShopItem`-Asset, ist eine Preis-/Business-Entscheidung, keine Night-Shift-Aufgabe.
 
