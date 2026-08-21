@@ -8,16 +8,33 @@ public static class DailyRewardManager
 {
     const string PrefKeyLastDate = "daily_last_date";
     const string PrefKeyStreak   = "daily_streak";
+    const string PrefKeyFreeze   = "daily_freeze_charges";
     const string CloudKeyLast    = "daily_last";
     const string CloudKeyStreak  = "daily_streak";
+    const string CloudKeyFreeze  = "daily_freeze_charges";
 
     // Dream Energy per streak day (Day 1–7, then repeats from Day 1)
     static readonly int[] StreakRewards = { 50, 75, 100, 125, 150, 200, 500 };
 
     public static event Action<int, int, int> OnRewardClaimed; // dreamEnergy, streak, dayIndex (1-based)
+    public static event Action<int> OnFreezeChargesChanged;    // neue Anzahl Freeze-Charges
+    public static event Action OnStreakFrozen;                 // ein verpasster Tag wurde per Freeze-Charge abgefedert
 
     public static int  CurrentStreak    => PlayerPrefs.GetInt(PrefKeyStreak, 0);
     public static string LastClaimedDate => PlayerPrefs.GetString(PrefKeyLastDate, "");
+
+    // Anzahl verfügbarer Streak-Freeze-Charges (z.B. per Rewarded-Ad verdient).
+    // Ein verpasster Tag verbraucht automatisch eine Charge statt den Streak zu resetten.
+    public static int FreezeCharges => PlayerPrefs.GetInt(PrefKeyFreeze, 0);
+
+    public static void AddFreezeCharge(int amount = 1)
+    {
+        if (amount <= 0) return;
+        int newTotal = FreezeCharges + amount;
+        PlayerPrefs.SetInt(PrefKeyFreeze, newTotal);
+        PlayerPrefs.Save();
+        OnFreezeChargesChanged?.Invoke(newTotal);
+    }
 
     public static bool CanClaimToday =>
         LastClaimedDate != DateTime.UtcNow.ToString("yyyy-MM-dd");
@@ -47,10 +64,21 @@ public static class DailyRewardManager
     {
         if (!CanClaimToday) return 0;
 
-        string today     = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        string yesterday = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd");
+        string today       = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        string yesterday   = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd");
+        string twoDaysAgo  = DateTime.UtcNow.AddDays(-2).ToString("yyyy-MM-dd");
 
         bool streakContinues = LastClaimedDate == yesterday;
+
+        // Genau ein Tag verpasst + Freeze-Charge vorhanden -> Charge verbrauchen statt Streak zu resetten.
+        // Deckt bewusst nur einen einzelnen verpassten Tag ab, keine längeren Lücken.
+        bool useFreeze = !streakContinues && LastClaimedDate == twoDaysAgo && FreezeCharges > 0;
+        if (useFreeze)
+        {
+            PlayerPrefs.SetInt(PrefKeyFreeze, FreezeCharges - 1);
+            streakContinues = true;
+        }
+
         int newStreak = streakContinues ? CurrentStreak + 1 : 1;
 
         int dayIndex = RewardTierIndex(newStreak);
@@ -62,10 +90,15 @@ public static class DailyRewardManager
 
         DreamEnergyManager.AddDreamEnergy(reward);
         AchievementManager.OnStreakReached(newStreak);
-        _ = SaveToCloudAsync(today, newStreak);
+        _ = SaveToCloudAsync(today, newStreak, FreezeCharges);
 
-        Debug.Log($"[DailyReward] Tag {dayIndex}, Streak {newStreak} → +{reward} Dream Energy");
+        Debug.Log($"[DailyReward] Tag {dayIndex}, Streak {newStreak} → +{reward} Dream Energy" + (useFreeze ? " (Freeze-Charge verbraucht)" : ""));
         OnRewardClaimed?.Invoke(reward, newStreak, dayIndex);
+        if (useFreeze)
+        {
+            OnFreezeChargesChanged?.Invoke(FreezeCharges);
+            OnStreakFrozen?.Invoke();
+        }
         return reward;
     }
 
@@ -74,7 +107,7 @@ public static class DailyRewardManager
         try
         {
             var result = await CloudSaveService.Instance.Data.Player.LoadAsync(
-                new HashSet<string> { CloudKeyLast, CloudKeyStreak });
+                new HashSet<string> { CloudKeyLast, CloudKeyStreak, CloudKeyFreeze });
 
             if (result.TryGetValue(CloudKeyLast, out var dateItem))
             {
@@ -99,6 +132,13 @@ public static class DailyRewardManager
                     PlayerPrefs.SetInt(PrefKeyStreak, cloudStreak);
             }
 
+            if (result.TryGetValue(CloudKeyFreeze, out var freezeItem))
+            {
+                int cloudFreeze = freezeItem.Value.GetAs<int>();
+                if (cloudFreeze > FreezeCharges)
+                    PlayerPrefs.SetInt(PrefKeyFreeze, cloudFreeze);
+            }
+
             PlayerPrefs.Save();
         }
         catch (Exception e)
@@ -107,14 +147,15 @@ public static class DailyRewardManager
         }
     }
 
-    static async Task SaveToCloudAsync(string date, int streak)
+    static async Task SaveToCloudAsync(string date, int streak, int freezeCharges)
     {
         try
         {
             await CloudSaveService.Instance.Data.Player.SaveAsync(new Dictionary<string, object>
             {
                 { CloudKeyLast,   date   },
-                { CloudKeyStreak, streak }
+                { CloudKeyStreak, streak },
+                { CloudKeyFreeze, freezeCharges }
             });
         }
         catch (Exception e)

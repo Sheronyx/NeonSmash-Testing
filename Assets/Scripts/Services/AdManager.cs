@@ -170,6 +170,14 @@ public class AdManager : MonoBehaviour
             onUnavailable);
     }
 
+    /// <summary>Streak-Freeze-Button: Video → 1 Freeze-Charge für DailyRewardManager gutschreiben.</summary>
+    public void ShowRewardedForStreakFreeze(Action onGranted = null, Action onUnavailable = null)
+    {
+        ShowRewarded(
+            () => { DailyRewardManager.AddFreezeCharge(1); onGranted?.Invoke(); },
+            onUnavailable);
+    }
+
     // ----------------------------------------------------------------- Interstitial
     void LoadInterstitial()
     {
