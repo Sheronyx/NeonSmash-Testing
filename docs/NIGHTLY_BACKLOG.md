@@ -50,6 +50,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-22 (Zyklus 29) hinzugekommen
+
+- **[ERLEDIGT, Play-Mode-Verifikation]** `BootstrapScene` end-to-end in Play Mode getestet (echte UGS-Verbindung, kein Editor-Mock): Anonymous Sign-In erfolgreich, `DiamondManager`/`DiamondSplinterManager.LoadFromCloudAsync()` (heutiger kritischer Fix aus Zyklus 14) liefen ohne Fehler durch den echten Bootstrap-Ablauf, 0 Errors insgesamt. Transiente "2 EventSystems/2 AudioListeners"-Warnung beim Bootstrap→MainMenu-Übergang beobachtet, aber selbstheilend (Endzustand nach Übergang: exakt 1 von jedem) — kein anhaltender Bug, nicht weiterverfolgt.
+
 ## Aus Night Shift 2026-08-22 (Zyklus 24) hinzugekommen
 
 - **[BUG, gefunden & gefixt]** `DebugResetPrefs.cs` (Strg+R löscht `PlayerPrefs.DeleteAll()`) fehlte der `#if UNITY_EDITOR || DEVELOPMENT_BUILD`-Guard, den `RewardDebugHelper.cs` für dieselbe Art Aktion bereits hat. Reales Risiko, falls das Skript je wieder einem GameObject zugewiesen wird und in einen Production-Build landet. Aktuell inert (nicht referenziert), Guard trotzdem ergänzt statt nur zu löschen. Commit `cb693b51`.
