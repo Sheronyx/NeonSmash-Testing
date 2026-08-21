@@ -95,6 +95,13 @@ public class UgsBootstrap : MonoBehaviour
             await DreamEnergyManager.LoadFromCloudAsync();
             await DailyRewardManager.LoadFromCloudAsync();
             await AchievementManager.LoadFromCloudAsync();
+            // Bug gefunden 2026-08-22 (Night Shift): Diamonds/Splinter wurden zwar bei jeder
+            // Änderung ZUR Cloud gespeichert (AddDiamonds/AddSplinters -> SaveToCloudAsync), aber
+            // nie beim App-Start WIEDER geladen — ein Gerätewechsel/Reinstall verlor den kompletten
+            // Diamanten-/Splitter-Stand, obwohl beide aktiv in ShopInventory/IAPManager verwendet
+            // werden (echte Ingame-Währung, kein totes Feature).
+            await DiamondManager.LoadFromCloudAsync();
+            await DiamondSplinterManager.LoadFromCloudAsync();
 
             // 3) Online bereit
             _tcs.TrySetResult(true);
