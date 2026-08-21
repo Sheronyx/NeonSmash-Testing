@@ -24,6 +24,11 @@ public class PauseMenuController : MonoBehaviour
         if (MultiplayerManager.IsMultiplayerGame) return;
         pauseMenuUI.SetActive(true);
 
+        // Falls gerade ein Leben verloren wurde, läuft LivesManager u.U. noch eine Ramp-Up-
+        // Coroutine (Time.timeScale langsam zurück auf 1), die sonst diese Pause sofort wieder
+        // aufheben würde (siehe LivesManager.CancelRampUp-Kommentar).
+        LivesManager.Instance?.CancelRampUp();
+
         Time.timeScale = 0f;
         AudioListener.pause = true;
 

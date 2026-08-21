@@ -66,6 +66,19 @@ public class LivesManager : MonoBehaviour
         UpdateHeartFills();
     }
 
+    // Bricht eine laufende Ramp-Up-Coroutine ab, ohne Time.timeScale selbst zu setzen — der
+    // Aufrufer (z.B. PauseMenuController) entscheidet direkt danach über den finalen Wert. Ohne
+    // das würde RampUpTimeScale() weiterhin jeden Frame Time.timeScale hochzählen und damit ein
+    // gleichzeitig geöffnetes Pause-Menü faktisch wieder "entpausieren" (Bug gefunden 2026-08-21).
+    public void CancelRampUp()
+    {
+        if (_rampUpRoutine != null)
+        {
+            StopCoroutine(_rampUpRoutine);
+            _rampUpRoutine = null;
+        }
+    }
+
     public void BindHearts(Image l1, Image l2, Image l3)
     {
         if (l1 != null) lifePoint1 = l1;
