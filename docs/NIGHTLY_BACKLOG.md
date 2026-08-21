@@ -47,6 +47,10 @@ Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine
 
 - **[Idee, Recherche 2026-08-21]** Reward-Preview am Feen-Energie-Füllbalken (`ColorProgressUI.cs`): laut UI-Pattern-Recherche sollte ein Fortschrittsbalken andeuten, was bei Erreichen des Ziels wartet, statt nur reinen Füllstand zu zeigen. NeonSmashs 3 Feen-Balken zeigen aktuell nur Fortschritt ohne Preview auf den Special-Mode-Trigger. Kleines Icon/Glow am Balkenende als möglicher nächster Schritt — siehe `docs/RESEARCH.md` Abschnitt "UI-Pattern für Progress-/Meta-Progression-Bars". Kein Quick-Fix (UI + Szene), daher nicht umgesetzt.
 
+## Aus Night Shift 2026-08-22 (Zyklus 19) hinzugekommen
+
+- **[ERLEDIGT, Cleanup]** Verwaistes Diagnose-Skript `DebugTimeScaleLogger.cs` entfernt — selbst als "nach Diagnose entfernen" markiert, zugehöriger Bug laut `FairyWingFlap.cs`-Kommentaren bereits behoben, nirgends mehr referenziert. Commit `dac2aec6`.
+
 ## Aus Night Shift 2026-08-21 (Zyklus 3) hinzugekommen
 
 - **[ERLEDIGT, Fallback-Blender-Design]** `LeafGem_Boost` erstellt — Grün-Pendant zu `CrystalShard_Boost`, siehe Commit `2fcde0ea`. In Unity importgeprüft (fehlerfrei). **Offen:** Platzierung in `DemoDesignScene.unity` — Szene hat aktuell eine kleine uncommittete manuelle Änderung (Objekt-Rotation), daher nicht angefasst. Nachtrag sobald WIP geklärt ist.
