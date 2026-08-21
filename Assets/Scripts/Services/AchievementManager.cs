@@ -37,6 +37,8 @@ public static class AchievementManager
     const string PrefKeyCompletedSet  = "ach_completed";    // comma-separated IDs
     const string CloudKeyCompleted    = "ach_completed";
     const string CloudKeyStats        = "ach_stats";         // JSON
+    const string CloudDirtyCompletedKey = "ach_completed_cloud_dirty";
+    const string CloudDirtyStatsKey     = "ach_stats_cloud_dirty";
 
     public static event Action<AchievementData, int> OnAchievementUnlocked; // data, dreamEnergyEarned
 
@@ -148,6 +150,25 @@ public static class AchievementManager
         {
             Debug.LogWarning("[Achievements] Cloud Load fehlgeschlagen: " + e.Message);
         }
+
+        await RetryPendingCloudSavesIfNeeded();
+    }
+
+    // Siehe DreamEnergyManager.RetryPendingCloudSaveIfNeeded für die Begründung — gleiches Muster,
+    // hier für beide unabhängigen Save-Pfade (completed-Set, Stats). Von LoadFromCloudAsync
+    // (App-Resume) aufgerufen.
+    public static async Task RetryPendingCloudSavesIfNeeded()
+    {
+        if (PlayerPrefs.GetInt(CloudDirtyCompletedKey, 0) == 1)
+        {
+            Debug.Log("[Achievements] Offener Cloud-Save (completed) aus vorherigem Fehlversuch wird nachgeholt.");
+            await SaveCompletedToCloudAsync();
+        }
+        if (PlayerPrefs.GetInt(CloudDirtyStatsKey, 0) == 1)
+        {
+            Debug.Log("[Achievements] Offener Cloud-Save (stats) aus vorherigem Fehlversuch wird nachgeholt.");
+            await SaveStatsToCloudAsync();
+        }
     }
 
     // ── Internal ──────────────────────────────────────────────────────────────
@@ -186,10 +207,14 @@ public static class AchievementManager
             string completed = PlayerPrefs.GetString(PrefKeyCompletedSet, "");
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKeyCompleted, completed } });
+            PlayerPrefs.SetInt(CloudDirtyCompletedKey, 0);
+            PlayerPrefs.Save();
         }
         catch (Exception e)
         {
             Debug.LogWarning("[Achievements] Cloud Save (completed) fehlgeschlagen: " + e.Message);
+            PlayerPrefs.SetInt(CloudDirtyCompletedKey, 1);
+            PlayerPrefs.Save();
         }
     }
 
@@ -205,10 +230,14 @@ public static class AchievementManager
             string json = JsonUtility.ToJson(stats);
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKeyStats, json } });
+            PlayerPrefs.SetInt(CloudDirtyStatsKey, 0);
+            PlayerPrefs.Save();
         }
         catch (Exception e)
         {
             Debug.LogWarning("[Achievements] Cloud Save (stats) fehlgeschlagen: " + e.Message);
+            PlayerPrefs.SetInt(CloudDirtyStatsKey, 1);
+            PlayerPrefs.Save();
         }
     }
 
