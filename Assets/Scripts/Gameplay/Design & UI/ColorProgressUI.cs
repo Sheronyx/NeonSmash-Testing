@@ -16,6 +16,18 @@ public class ColorProgressUI : MonoBehaviour
     [SerializeField] private RectTransform greenGlow;
     [SerializeField] private RectTransform blueGlow;
 
+    // Reward-Preview (siehe docs/RESEARCH.md "UI-Pattern für Progress-/Meta-Progression-Bars"):
+    // deutet knapp vor Balken-voll bereits an, dass gleich der Special Mode ausgelöst wird, statt
+    // nur reinen Fortschritt zu zeigen. Optional/nullable, damit dieses Feature ohne Scene-Änderung
+    // vorbereitet werden kann — Felder bleiben leer, bis in der Szene ein Image mit
+    // "Reward Preview Sparkle.png" zugewiesen wird (siehe Assets/001 Fairy World/Elements/Fairy
+    // Progress Icons/), Verhalten ist bis dahin identisch zu vorher (reine Glow-Balken).
+    [Header("Optional: Reward-Preview (aktiviert kurz vor Balken-voll)")]
+    [SerializeField, Range(0.5f, 0.99f)] private float rewardPreviewThreshold = 0.75f;
+    [SerializeField] private GameObject pinkRewardPreview;
+    [SerializeField] private GameObject greenRewardPreview;
+    [SerializeField] private GameObject blueRewardPreview;
+
     private void OnEnable()
     {
         PhaseManager.OnColorProgressChanged += HandleProgressChanged;
@@ -24,9 +36,9 @@ public class ColorProgressUI : MonoBehaviour
         if (PhaseManager.Instance != null)
         {
             int threshold = PhaseManager.Instance.ColorTriggerThreshold;
-            UpdateFill(pinkFill,  pinkGlow,  PhaseManager.Instance.GetColorCount(PointColor.Pink),  threshold);
-            UpdateFill(greenFill, greenGlow, PhaseManager.Instance.GetColorCount(PointColor.Green), threshold);
-            UpdateFill(blueFill,  blueGlow,  PhaseManager.Instance.GetColorCount(PointColor.Blue),  threshold);
+            UpdateFill(pinkFill,  pinkGlow,  pinkRewardPreview,  PhaseManager.Instance.GetColorCount(PointColor.Pink),  threshold);
+            UpdateFill(greenFill, greenGlow, greenRewardPreview, PhaseManager.Instance.GetColorCount(PointColor.Green), threshold);
+            UpdateFill(blueFill,  blueGlow,  blueRewardPreview,  PhaseManager.Instance.GetColorCount(PointColor.Blue),  threshold);
         }
     }
 
@@ -39,13 +51,13 @@ public class ColorProgressUI : MonoBehaviour
     {
         switch (color)
         {
-            case PointColor.Pink:  UpdateFill(pinkFill,  pinkGlow,  current, threshold); break;
-            case PointColor.Green: UpdateFill(greenFill, greenGlow, current, threshold); break;
-            case PointColor.Blue:  UpdateFill(blueFill,  blueGlow,  current, threshold); break;
+            case PointColor.Pink:  UpdateFill(pinkFill,  pinkGlow,  pinkRewardPreview,  current, threshold); break;
+            case PointColor.Green: UpdateFill(greenFill, greenGlow, greenRewardPreview, current, threshold); break;
+            case PointColor.Blue:  UpdateFill(blueFill,  blueGlow,  blueRewardPreview,  current, threshold); break;
         }
     }
 
-    private void UpdateFill(Image fill, RectTransform glow, int current, int threshold)
+    private void UpdateFill(Image fill, RectTransform glow, GameObject rewardPreview, int current, int threshold)
     {
         if (fill == null) return;
         float amount = threshold > 0 ? Mathf.Clamp01((float)current / threshold) : 0f;
@@ -58,5 +70,8 @@ public class ColorProgressUI : MonoBehaviour
             glow.anchoredPosition = new Vector2(-width * 0.5f + width * amount, glow.anchoredPosition.y);
             glow.gameObject.SetActive(current > 0);
         }
+
+        if (rewardPreview != null)
+            rewardPreview.SetActive(amount >= rewardPreviewThreshold);
     }
 }
