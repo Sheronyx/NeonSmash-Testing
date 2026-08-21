@@ -20,7 +20,7 @@ Infinity Mode: 12-Phasen-System (Farb/Phasen-Redesign, bestätigt 2026-07-09, Co
 **Offene technische Restarbeit (User in Unity, nicht blockierend):**
 1. ~~`PhaseManager`-GameObject in `GameScene_InfinityMode` anlegen + spawner-Referenz.~~ **ERLEDIGT** — per Night-Shift-Check 2026-08-20 bestätigt: GameObject existiert, ist aktiv, `PhaseManager.Instance` zur Laufzeit nicht null (siehe `docs/NIGHTLY_BACKLOG.md`).
 2. ~~`DiamondPoint`-Prefab bauen → `MixedPointSpawner.diamondPrefab` zuweisen.~~ **ERLEDIGT** — `Assets/Prefabs/Diamond Point Collectable.prefab` existiert vollständig und ist in der Szene verdrahtet (per Night-Shift-Check 2026-08-20 bestätigt, `diamondPrefab`-Feld in `MixedPointSpawner.cs:146` referenziert es aktiv).
-3. Optional `gravityDiamondPrefab`/`fountainDiamondPrefab` für Bonus-Elemente Phase 10/12 — **weiterhin offen**, diese Felder existieren nicht im aktuellen `MixedPointSpawner.cs` (Stand 2026-08-22 geprüft).
+3. ~~Optional `gravityDiamondPrefab`/`fountainDiamondPrefab` für Bonus-Elemente Phase 10/12.~~ **ERLEDIGT** — Korrektur 2026-08-22: mein vorheriger Check (selbentags) suchte fälschlich nur in `MixedPointSpawner.cs`. Beide Felder existieren tatsächlich auf `GravityModeSystem.cs`/`FountainModeSystem.cs` (`diamondBonusActive`/`diamondBonusCount`-Logik) und sind in der Szene mit echten Prefab-GUIDs verdrahtet (per Datei-Abgleich verifiziert).
 4. Bestehende Farb-Prefab-Zuweisungen in der Szene kurz visuell verifizieren.
 5. Echter Magnet Mode (aktuell Platzhalter=Gravity) und Phase-13-Feindesign: spätere Aufgaben.
 
