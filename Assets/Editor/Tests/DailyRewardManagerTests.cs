@@ -5,15 +5,26 @@ using UnityEngine;
 // EditMode-Tests für DailyRewardManager (statische, PlayerPrefs-basierte Klasse).
 // Sichert/stellt die echten PlayerPrefs-Werte in Setup/TearDown wieder her, damit
 // ein Testlauf den tatsächlichen Spielstand im Editor nicht verändert.
+//
+// WICHTIG: ClaimTodayReward() ruft intern DreamEnergyManager.AddDreamEnergy() auf (vergibt den
+// Tages-Reward) - das muss hier ebenfalls gesichert/wiederhergestellt werden, sonst erhöht jeder
+// Testlauf den echten dream_energy_balance-Stand dauerhaft (Bug gefunden am 2026-08-21, Zyklus 4:
+// vor diesem Fix hat Zyklus 2 den Editor-PlayerPrefs-Stand bereits real auf 50100 hochgezählt).
 public class DailyRewardManagerTests
 {
     const string KeyLastDate = "daily_last_date";
     const string KeyStreak   = "daily_streak";
     const string KeyFreeze   = "daily_freeze_charges";
+    const string KeyDreamBalance  = "dream_energy_balance";
+    const string KeyDreamLifetime = "dream_energy_lifetime_earned";
+    const string KeyDreamDirty    = "dream_energy_cloud_dirty";
 
     string _realDate;
     int _realStreak;
     int _realFreeze;
+    int _realDreamBalance;
+    int _realDreamLifetime;
+    int _realDreamDirty;
 
     [SetUp]
     public void SaveRealState()
@@ -21,6 +32,9 @@ public class DailyRewardManagerTests
         _realDate   = PlayerPrefs.GetString(KeyLastDate, "");
         _realStreak = PlayerPrefs.GetInt(KeyStreak, 0);
         _realFreeze = PlayerPrefs.GetInt(KeyFreeze, 0);
+        _realDreamBalance  = PlayerPrefs.GetInt(KeyDreamBalance, 0);
+        _realDreamLifetime = PlayerPrefs.GetInt(KeyDreamLifetime, 0);
+        _realDreamDirty    = PlayerPrefs.GetInt(KeyDreamDirty, 0);
     }
 
     [TearDown]
@@ -29,6 +43,9 @@ public class DailyRewardManagerTests
         PlayerPrefs.SetString(KeyLastDate, _realDate);
         PlayerPrefs.SetInt(KeyStreak, _realStreak);
         PlayerPrefs.SetInt(KeyFreeze, _realFreeze);
+        PlayerPrefs.SetInt(KeyDreamBalance, _realDreamBalance);
+        PlayerPrefs.SetInt(KeyDreamLifetime, _realDreamLifetime);
+        PlayerPrefs.SetInt(KeyDreamDirty, _realDreamDirty);
         PlayerPrefs.Save();
     }
 

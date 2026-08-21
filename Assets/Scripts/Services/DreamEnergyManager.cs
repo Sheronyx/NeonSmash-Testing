@@ -15,6 +15,12 @@ public static class DreamEnergyManager
     const string PrefKey  = "dream_energy_balance";
     const string CloudKey = "dreamEnergy";
 
+    // Gesetzt, wenn ein Cloud-Save fehlgeschlagen ist (z.B. Netzwerkausfall) und der lokale
+    // Stand seitdem potenziell von der Cloud-Kopie abweicht. Wird bei nächster Gelegenheit
+    // (RetryPendingCloudSaveIfNeeded, aufgerufen von LoadFromCloudAsync bei App-Resume) erneut
+    // versucht, statt den Drift stillschweigend bestehen zu lassen.
+    const string CloudDirtyPrefKey = "dream_energy_cloud_dirty";
+
     // Separater, nie sinkender Zähler für "insgesamt jemals verdient" — anders als Balance (die
     // beim Ausgeben im Shop sinkt), treibt dieser den Dream-Energy-Fortschrittsbalken im
     // Hauptmenü (siehe DreamEnergyProgressUI). Wird NUR in AddDreamEnergy erhöht, nie in
@@ -169,6 +175,8 @@ public static class DreamEnergyManager
         {
             Debug.LogWarning("[DreamEnergy] Cloud Load fehlgeschlagen: " + e.Message);
         }
+
+        await RetryPendingCloudSaveIfNeeded();
     }
 
     // Reads the current balance at the time the lock is acquired, so that even if
@@ -183,14 +191,29 @@ public static class DreamEnergyManager
             await CloudSaveService.Instance.Data.Player.SaveAsync(
                 new Dictionary<string, object> { { CloudKey, balance }, { LifetimeCloudKey, lifetime } });
             Debug.Log($"[DreamEnergy] Cloud gespeichert: {balance} (lifetime {lifetime})");
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 0);
+            PlayerPrefs.Save();
         }
         catch (Exception e)
         {
             Debug.LogWarning("[DreamEnergy] Cloud Save fehlgeschlagen: " + e.Message);
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 1);
+            PlayerPrefs.Save();
         }
         finally
         {
             _saveLock.Release();
         }
+    }
+
+    // Holt einen fehlgeschlagenen Cloud-Save nach, falls seit dem letzten Versuch einer
+    // offen geblieben ist. Von LoadFromCloudAsync aufgerufen (bestehender App-Start/Resume-
+    // Einstiegspunkt), damit ein Netzwerkausfall den lokalen/Cloud-Stand nicht dauerhaft
+    // auseinanderlaufen lässt, ohne dass es auffällt.
+    public static async Task RetryPendingCloudSaveIfNeeded()
+    {
+        if (PlayerPrefs.GetInt(CloudDirtyPrefKey, 0) == 0) return;
+        Debug.Log("[DreamEnergy] Offener Cloud-Save aus vorherigem Fehlversuch wird nachgeholt.");
+        await SaveToCloudAsync();
     }
 }
