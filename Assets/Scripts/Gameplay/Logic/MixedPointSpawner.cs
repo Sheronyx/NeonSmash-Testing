@@ -2,10 +2,41 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
 using System.Collections;
+using System.Collections.Generic;
 
 public class MixedPointSpawner : MonoBehaviour
 {
     public static MixedPointSpawner Instance { get; private set; }
+
+    // Pool für FloatingScoreText: verhindert Instantiate/Destroy-Churn bei jedem gewerteten Treffer
+    // (Punkt-Hit, Diamant-Count, Special-Mode-Treffer) — spart GC-Allocations in InfinityMode.
+    private readonly Queue<FloatingScoreText> _floatingScorePool = new Queue<FloatingScoreText>();
+
+    private FloatingScoreText GetFloatingScore(Vector3 spawnPos)
+    {
+        FloatingScoreText fst;
+        if (_floatingScorePool.Count > 0)
+        {
+            fst = _floatingScorePool.Dequeue();
+            if (fst == null) return GetFloatingScore(spawnPos); // Instanz wurde zwischenzeitlich zerstört (z.B. Szenenwechsel)
+            fst.transform.position = spawnPos;
+            fst.gameObject.SetActive(true);
+        }
+        else
+        {
+            var go = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
+            fst = go.GetComponent<FloatingScoreText>();
+            fst?.SetPoolCallback(ReleaseFloatingScore);
+        }
+        return fst;
+    }
+
+    private void ReleaseFloatingScore(FloatingScoreText fst)
+    {
+        if (fst == null) return;
+        fst.gameObject.SetActive(false);
+        _floatingScorePool.Enqueue(fst);
+    }
 
     [SerializeField] private GameObject fountainModeActivationPointPrefab;
     [SerializeField] private GameObject gravityModeActivationPointPrefab;
@@ -1802,8 +1833,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (floatingScorePrefab == null || score == 0) return;
 
         Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
-        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
-        var fst = go.GetComponent<FloatingScoreText>();
+        var fst = GetFloatingScore(spawnPos);
         fst?.Play(score, Color.white, color);
     }
 
@@ -1814,8 +1844,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (floatingScorePrefab == null || count <= 0) return;
 
         Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
-        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
-        var fst = go.GetComponent<FloatingScoreText>();
+        var fst = GetFloatingScore(spawnPos);
 
         // Bei Erreichen der Bonus-Schwelle statt der Zahl "BONUS" anzeigen.
         bool bonusJustReached = PhaseManager.Instance != null && count == PhaseManager.Instance.DiamondsNeededForBonus;
@@ -1833,8 +1862,7 @@ public class MixedPointSpawner : MonoBehaviour
         if (floatingScorePrefab == null || score == 0) return;
 
         Vector3 spawnPos = worldPos + Vector3.up * floatingScoreSpawnOffsetY;
-        var go  = Instantiate(floatingScorePrefab, spawnPos, Quaternion.identity);
-        var fst = go.GetComponent<FloatingScoreText>();
+        var fst = GetFloatingScore(spawnPos);
         fst?.Play(score, Color.white, null, 1f, textMaterial);
     }
 
@@ -1847,8 +1875,8 @@ public class MixedPointSpawner : MonoBehaviour
         if (cam == null) return;
         Vector3 worldPos = cam.ViewportToWorldPoint(new Vector3(viewportPos.x, viewportPos.y, Mathf.Abs(cam.transform.position.z)));
         worldPos.z = 0f;
-        var go = Instantiate(floatingScorePrefab, worldPos, Quaternion.identity);
-        go.GetComponent<FloatingScoreText>()?.Play(amount, Color.white, pointColor, scale);
+        var fst = GetFloatingScore(worldPos);
+        fst?.Play(amount, Color.white, pointColor, scale);
     }
 
     // Vom PeekABooSystem: registriert das Swipe-Peek-Element für den Swipe-Input.
