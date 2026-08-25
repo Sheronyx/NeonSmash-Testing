@@ -2,6 +2,11 @@
 
 Offene Aufgaben für Night Shifts, nach Priorität. Nicht jeder Eintrag ist eine Entscheidung — Status ist vermerkt.
 
+## Aus Night Shift 2026-08-25 (manueller Lauf) hinzugekommen
+
+- **[ERLEDIGT, Verifikation nachgeholt]** `ComboManagerTests` (5 Tests, aus Night Shift 2026-08-23, Commit `5b8eb24d`) über `TestRunnerApi` tatsächlich laufen lassen und Ergebnis per `Debug.Log`-Callback bestätigt: **5/5 Passed, 0 Failed** (`OnComboChanged_FiresWithCurrentStreakOnEachHit`, `RegisterHit_ColorChange_ResetsStreakToOne`, `RegisterHit_SameColorFiveTimes_ActivatesCombo`, `RegisterHit_SameColorFourTimes_ComboNotYetActive`, `RegisterMiss_DuringActiveCombo_BreaksCombo`). Schließt den offenen "Bitte von mir testen"-Punkt aus dem 2026-08-23-Report. Unity-MCP reagiert wieder normal (Compile-Check + Testlauf beide ohne Timeout durchgelaufen) — der 2026-08-23 gemeldete Blocker ist nicht mehr reproduzierbar.
+- **[Beobachtung, WIP nicht angefasst]** Beim Start dieser Night Shift lag umfangreicher uncommitteter Stand vor, der über den bisher bekannten `TapElement_Crystal.blend`-WIP hinausgeht: `GameUIManager.cs`, `MixedPointSpawner.cs`, `GameOverSkinBinder.cs`, `SceneShortcuts.cs`, beide Haupt-Szenen (`GameScene_InfinityMode`, `MainMenuScene`), mehrere Shader/Materialien (Gritline, ToonShader) sowie `Packages/manifest.json`/`packages-lock.json` und `unity-neonsmash.slnx`. Bewusst nicht committet, editiert oder analysiert — sieht nach aktiver eigener manueller Arbeit aus (Shader-/Package-Änderungen deuten auf laufendes Experiment hin). Kein Code aus diesen Dateien wurde gelesen oder verändert.
+
 ## Hoch (kritisch/blockierend für Release oder bekannter Bug)
 
 - **[BUG, gefunden & gefixt 2026-08-22 Zyklus 17]** `LobbyHandler.TickHeartbeat()` (Multiplayer, `async void`, läuft jeden Frame) hatte kein try/catch um den Heartbeat-Call — bei abgelaufener Lobby/Netzwerkfehler während eines Matches hätte das alle 15s eine unbehandelte Exception geworfen. Fix analog zum bereits vorhandenen `DeleteAsync`-Muster im selben File, Commit `f7ab50d1`. Kompiliert fehlerfrei; NICHT live in einem echten Multiplayer-Match getestet (bräuchte zweiten Client + gezielte Netzwerkunterbrechung).
