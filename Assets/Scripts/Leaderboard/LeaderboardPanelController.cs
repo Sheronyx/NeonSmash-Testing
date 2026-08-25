@@ -7,8 +7,6 @@ using Unity.Services.Leaderboards.Models;
 
 public class LeaderboardPanelController : MonoBehaviour
 {
-    private bool startAroundPlayer = true;
-
     [Header("Leaderboard")]
     [SerializeField] private string leaderboardId = LeaderboardApi.InfinityId;
 

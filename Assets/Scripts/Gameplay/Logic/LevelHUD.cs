@@ -7,9 +7,6 @@ public class LevelHUD : MonoBehaviour
     [SerializeField] private TextMeshProUGUI levelText;
     [SerializeField] private LevelUp levelSystem;
 
-    private int currentLevel = -1;
-
-
     void Start()
     {
         if (levelSystem != null)

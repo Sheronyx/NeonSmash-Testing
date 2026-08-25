@@ -9,9 +9,6 @@ public class GravityPoint : BasePoint
     [Header("Suck Settings")]
     [SerializeField] private float portalYOffset = -1.0f;
     [SerializeField] private float suckStartDistance = 5f;
-    [SerializeField] private float suckSpeed = 5f;
-    [SerializeField] private float shrinkSpeed = 2f;
-    [SerializeField] private float fadeSpeed = 2f;
     [SerializeField] private float minScaleBeforeDestroy = 0.15f;
     [SerializeField] private float maxSuckForce = 10f;
 
