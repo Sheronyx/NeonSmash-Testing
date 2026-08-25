@@ -116,11 +116,18 @@ public class FirebaseNotificationManager : MonoBehaviour
         }
     }
 
+    [System.Serializable]
+    struct RegisterTokenPayload
+    {
+        public string playerId;
+        public string fcmToken;
+    }
+
     IEnumerator RegisterTokenCoroutine(string token, string playerId)
     {
         if (string.IsNullOrEmpty(playerId) || playerId == "?") yield break;
 
-        string json = "{\"playerId\":\"" + playerId + "\",\"fcmToken\":\"" + token + "\"}";
+        string json = JsonUtility.ToJson(new RegisterTokenPayload { playerId = playerId, fcmToken = token });
         var req = new UnityWebRequest(RegisterTokenUrl, "POST");
         req.uploadHandler   = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes(json));
         req.downloadHandler = new DownloadHandlerBuffer();
