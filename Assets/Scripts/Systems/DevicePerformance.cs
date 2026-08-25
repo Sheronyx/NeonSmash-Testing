@@ -23,10 +23,10 @@ public static class DevicePerformance
 
     private static bool DetectLowEnd()
     {
-        bool lowGpuMemory = SystemInfo.graphicsMemorySize < 2048;
-        bool oldApi = SystemInfo.graphicsDeviceType ==
-                      UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2;
-        return lowGpuMemory || oldApi;
+        // Der frühere OpenGLES2-Check ist entfallen: Unity unterstützt OpenGL ES 2.0 seit 2023.1
+        // nicht mehr, SystemInfo.graphicsDeviceType kann diesen Wert also nie mehr liefern —
+        // der Vergleich war seitdem permanent tot (CS0618-Warnung, kein Verhaltenseffekt entfernt).
+        return SystemInfo.graphicsMemorySize < 2048;
     }
 
     // Wird vom Settings-UI aufgerufen
