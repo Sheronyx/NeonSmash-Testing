@@ -168,7 +168,14 @@ public class MultiplayerManager : MonoBehaviour
     public async void Disconnect()
     {
         NetworkManager.Singleton?.Shutdown();
-        if (_isHost) await _lobby?.DeleteAsync();
+        try
+        {
+            if (_isHost) await _lobby?.DeleteAsync();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[MP] Lobby-Löschung beim Disconnect fehlgeschlagen: {e.Message}");
+        }
         _lobby = null;
         SetState(State.Idle);
     }
