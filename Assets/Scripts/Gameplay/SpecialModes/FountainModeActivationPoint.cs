@@ -161,7 +161,12 @@ public class FountainModeActivationPoint : MonoBehaviour
     private void FinishCombo()
     {
         if (orbAudioSource != null) orbAudioSource.Stop();
-        SpecialModeManager.Instance?.StartMode(SpecialMode.Fountain);
+        if (spawner != null)
+        {
+            if (SpecialModeManager.Instance != null && !SpecialModeManager.Instance.IsModeActive)
+                SpecialModeManager.Instance.StartMode(SpecialMode.Fountain);
+            spawner.ForceClearCurrentPoint();
+        }
         spawner?.ClearActivationPoint();
         Destroy(gameObject);
     }
