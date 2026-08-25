@@ -127,30 +127,40 @@ public class LeaderboardPanelController : MonoBehaviour
             return;
         }
 
-        myEntryCache = await LeaderboardApi.GetMyScoreAsync(leaderboardId);
-
-        allEntries.Clear();
-
-        int offset = 0;
-        const int batchSize = 50;
-
-        while (true)
+        try
         {
-            var page = await LeaderboardApi.GetScoresAsync(batchSize, offset, leaderboardId);
+            myEntryCache = await LeaderboardApi.GetMyScoreAsync(leaderboardId);
 
-            if (page == null || page.Results == null || page.Results.Count == 0)
-                break;
+            allEntries.Clear();
 
-            foreach (var e in page.Results)
+            int offset = 0;
+            const int batchSize = 50;
+
+            while (true)
             {
-                if (!allEntries.Exists(x => x.PlayerId == e.PlayerId))
-                    allEntries.Add(e);
+                var page = await LeaderboardApi.GetScoresAsync(batchSize, offset, leaderboardId);
+
+                if (page == null || page.Results == null || page.Results.Count == 0)
+                    break;
+
+                foreach (var e in page.Results)
+                {
+                    if (!allEntries.Exists(x => x.PlayerId == e.PlayerId))
+                        allEntries.Add(e);
+                }
+
+                offset += page.Results.Count;
+
+                if (page.Results.Count < batchSize)
+                    break;
             }
-
-            offset += page.Results.Count;
-
-            if (page.Results.Count < batchSize)
-                break;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[Leaderboard] RefreshAsync fehlgeschlagen: {e.Message}");
+            loadingOverlay.SetActive(false);
+            scrollRect.enabled = true;
+            return;
         }
 
         RenderList();
