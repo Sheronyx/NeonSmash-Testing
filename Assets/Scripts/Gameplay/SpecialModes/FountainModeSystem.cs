@@ -84,6 +84,24 @@ public class FountainModeSystem : MonoBehaviour
 
     private MixedPointSpawner spawner;
 
+    private void OnEnable()
+    {
+        SpecialModeManager.OnModeStarted += HandleModeStart;
+    }
+
+    private void OnDisable()
+    {
+        SpecialModeManager.OnModeStarted -= HandleModeStart;
+    }
+
+    private void HandleModeStart(SpecialMode mode)
+    {
+        if (mode == SpecialMode.Fountain)
+        {
+            Activate();
+        }
+    }
+
     public void Activate()
     {
         if (isActive) return;
