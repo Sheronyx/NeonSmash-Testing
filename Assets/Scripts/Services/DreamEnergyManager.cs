@@ -133,6 +133,7 @@ public static class DreamEnergyManager
 
     public static bool TrySpendDreamEnergy(int amount)
     {
+        if (amount <= 0) return false;
         if (Balance < amount) return false;
         int newBalance = Balance - amount;
         PlayerPrefs.SetInt(PrefKey, newBalance);
