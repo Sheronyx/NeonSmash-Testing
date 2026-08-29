@@ -75,6 +75,26 @@ public class MysteryBoxEffectSystem : MonoBehaviour
 
     private void Awake() => Instance = this;
 
+    /// <summary>Bei Game Over / Start eines neuen Runs aufgerufen (siehe PhaseManager) — "Play Again"
+    /// lädt die Szene NICHT neu, daher würden sonst laufende Effekt-Coroutinen, ein hängendes
+    /// Rauch-Overlay, eine ungenutzte Extra-Life-Ladung oder ein noch aktiver Größen-/Farblos-Zustand
+    /// in den nächsten Run überlaufen (u.a. IsEffectActive dauerhaft true → keine neuen Boxen,
+    /// CurrentSizeMultiplier ≠ 1 → übergroße Elemente zu Run-Beginn). Analog zum ForceStop() der
+    /// Special-Mode-Systeme.</summary>
+    public void ResetState()
+    {
+        StopAllCoroutines();
+
+        if (smokeOverlayInstance != null) Destroy(smokeOverlayInstance);
+        smokeOverlayInstance = null;
+
+        IsEffectActive = false;
+        CurrentScoreMultiplier = 1;
+        IsColorlessActive = false;
+        CurrentSizeMultiplier = 1f;
+        HasExtraLifeCharge = false;
+    }
+
     /// <summary>Multipliziert die Skalierung von go mit dem aktuellen Größen-Effekt (falls einer
     /// aktiv ist) — gemeinsamer Helfer für alle Spawn-Stellen (Normal Mode UND die 3 Special Modes).
     /// Direkt nach jedem Instantiate() aufrufen.</summary>

@@ -339,6 +339,11 @@ public class PhaseManager : MonoBehaviour
     {
         _running = false;
         if (_triggerRoutine != null) { StopCoroutine(_triggerRoutine); _triggerRoutine = null; }
+
+        // "Play Again" lädt die Szene nicht neu → Zufallsbox-Effektzustand (laufende Coroutinen,
+        // Rauch-Overlay, Extra-Life-Ladung, Größen-/Farblos-Zustand) sonst in den nächsten Run
+        // übernommen. Special-Mode-Systeme räumt MixedPointSpawner.EndGame() bereits via ForceStop() auf.
+        MysteryBoxEffectSystem.Instance?.ResetState();
     }
 
     private void ApplyPhaseSettings()
