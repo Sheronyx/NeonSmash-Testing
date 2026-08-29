@@ -139,9 +139,14 @@ public class FountainModeSystem : MonoBehaviour
         // Diamant-Bonus: ZUSÄTZLICH zu maxSpawnCount (z.B. 20+5=25 statt 20 ersetzt), Zeitpunkte
         // innerhalb der Phase zufällig verteilt — kein Chance-Roll pro Tick mehr, garantiert exakt
         // diamondBonusCount Treffer, wenn der Bonus aktiv ist.
-        int totalCount = maxSpawnCount > 0 && diamondBonusActive ? maxSpawnCount + diamondBonusCount : maxSpawnCount;
+        // Nur wenn wirklich Bonus-Diamanten gespawnt werden können, wird totalCount erhöht — sonst
+        // würde die Phase bei fehlendem fountainDiamondPrefab um diamondBonusCount längere Normal-
+        // Elemente spawnen (bonusTickIndices bliebe leer), obwohl PhaseManager den Bonus schon
+        // verbraucht hat.
+        bool spawnBonusDiamonds = maxSpawnCount > 0 && diamondBonusActive && fountainDiamondPrefab != null;
+        int totalCount = spawnBonusDiamonds ? maxSpawnCount + diamondBonusCount : maxSpawnCount;
         var bonusTickIndices = new System.Collections.Generic.HashSet<int>();
-        if (maxSpawnCount > 0 && diamondBonusActive && fountainDiamondPrefab != null)
+        if (spawnBonusDiamonds)
             while (bonusTickIndices.Count < diamondBonusCount)
                 bonusTickIndices.Add(Random.Range(0, totalCount));
 
