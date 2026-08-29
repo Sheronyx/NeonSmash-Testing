@@ -190,10 +190,18 @@ public class LivesManager : MonoBehaviour
 
     private IEnumerator RampUpTimeScale()
     {
+        // Wenn zwischen Lebensverlust-Animation und Ramp-Start pausiert wurde, hat CancelRampUp() diese
+        // Coroutine nicht erwischt (sie lief da noch nicht). Ohne diese Guards würde der Ramp
+        // Time.timeScale von 0 (Pause) wieder hochsetzen und das offene Pause-Menü faktisch
+        // entpausieren. Bei aktiver Pause: Ramp abbrechen — ResumeGame() setzt timeScale ohnehin
+        // hart auf 1 zurück. (verwandtes Guard-Muster: SequenceManager.Co_PlayEffect, Fix 2026-08-21)
+        if (PauseMenuController.IsPaused) { _rampUpRoutine = null; yield break; }
+
         Time.timeScale = rampUpStartScale;
         float elapsed = 0f;
         while (elapsed < rampUpDuration)
         {
+            if (PauseMenuController.IsPaused) { _rampUpRoutine = null; yield break; }
             elapsed += Time.unscaledDeltaTime;
             Time.timeScale = Mathf.Lerp(rampUpStartScale, 1f, elapsed / rampUpDuration);
             yield return null;
