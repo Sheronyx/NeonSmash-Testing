@@ -480,6 +480,20 @@ public class PhaseManager : MonoBehaviour
         ApplyPhaseSettings();
         _running = true;
 
+        // Die neue Normal-Phase kann einen anderen colorTriggerThreshold haben als die vorherige.
+        // Die nicht-auslösende(n) Farbe(n) behalten ihren Sammelstand über den Special Mode hinweg —
+        // ohne dieses Re-Broadcast würde ColorProgressUI die Balken weiter gegen den ALTEN Schwellenwert
+        // füllen, bis diese Farbe das nächste Mal getroffen wird (sichtbarer Sprung im Balken).
+        BroadcastAllColorProgress();
+
         spawner.SetBannerPause(false);
+    }
+
+    private void BroadcastAllColorProgress()
+    {
+        int threshold = ColorTriggerThreshold;
+        OnColorProgressChanged?.Invoke(PointColor.Pink,  _destroyedCount[(int)PointColor.Pink],  threshold);
+        OnColorProgressChanged?.Invoke(PointColor.Green, _destroyedCount[(int)PointColor.Green], threshold);
+        OnColorProgressChanged?.Invoke(PointColor.Blue,  _destroyedCount[(int)PointColor.Blue],  threshold);
     }
 }
