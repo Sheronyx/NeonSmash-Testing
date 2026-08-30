@@ -9,6 +9,16 @@ public class ModeSelectController : MonoBehaviour
 
     public void OnInfinity()
     {
+        var switcher = MenuPortalSwitcher.Instance;
+        if (switcher != null && !switcher.IsSelectedWorldPlayable())
+        {
+            // Gesperrte Welt: statt eines eigenen Popups direkt in den Shop (Bundle-Tab, siehe
+            // ShopController.Open) leiten — dort steht dieselbe Weltbox samt Buy-Button.
+            ShopController.Instance?.Open();
+            return;
+        }
+        switcher?.ConsumeFreePlayIfNeeded();
+
         if (GlobalGameManager.Instance != null)
             GlobalGameManager.Instance.SetMode(GameMode.Infinity);
 

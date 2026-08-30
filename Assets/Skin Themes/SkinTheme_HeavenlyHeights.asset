@@ -12,17 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d1a3137d94eb494abd3fd955ab16ed1, type: 3}
   m_Name: SkinTheme_HeavenlyHeights
   m_EditorClassIdentifier: Assembly-CSharp::SkinTheme
+  worldId: SkyIsland
   tapPointPrefab: {fileID: 7080553594425325570, guid: a938294a2d6f54bc0a20afa3446a2367, type: 3}
   swipePointPrefab: {fileID: 1588161493249182017, guid: c983fdf9ce5b74c08a641fef154f506a, type: 3}
   slashTrailPrefab: {fileID: 6593613985249772415, guid: e46b636b09e2f41cc8fc64d9870162d8, type: 3}
-  beamProjectilePrefab: {fileID: 6237600531714503956, guid: 9b5be42d13dac4c609753fb61e92877e, type: 3}
   gravityPointPrefab: {fileID: 1509820272943899219, guid: 6a0913112842542e6855e6dfad2cdbe1, type: 3}
   fountainPointPrefab: {fileID: 827511740509734178, guid: 456ebed7cc0b7493896762c6f4df6989, type: 3}
   fakePointPrefab: {fileID: 1685397057637113795, guid: 6e0b4c6c72abb4fbbbd484504195528e, type: 3}
   thunderPointPrefab: {fileID: 6656955221069036649, guid: f764a5de8ae74429598b4a9604c076f9, type: 3}
   peekCloudPrefab: {fileID: 3338983093656688545, guid: 96b7e4cf731c04e9d91ae014619914bd, type: 3}
-  overridePortalColor: 0
-  portalParticleColor: {r: 0, g: 1, b: 0, a: 1}
-  portalVoronoiColor: {r: 0, g: 1, b: 0, a: 1}
+  overridePeekFlightPath: 0
+  peekEntryViewport: {x: 0.5, y: 1.3}
+  peekExitViewport: {x: 0.5, y: 1.3}
   overrideTopBarColor: 0
   topBarColor: {r: 0, g: 1, b: 0, a: 1}

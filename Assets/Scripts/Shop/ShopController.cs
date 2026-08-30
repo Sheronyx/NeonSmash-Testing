@@ -29,6 +29,8 @@ public class ShopController : MonoBehaviour
     [SerializeField] Button tabSounds;
     [SerializeField] Button tabCoins;
     [SerializeField] Button tabBundles;
+    [SerializeField] Button tabBooster;
+    [SerializeField] Button tabStickers;
 
     [Header("Tab Colors")]
     [SerializeField] Color tabActiveColor   = Color.white;
@@ -49,10 +51,28 @@ public class ShopController : MonoBehaviour
     [Tooltip("Boxlose, breitere Karten-Variante speziell für den Bundle-Tab (kein Rahmen, großes " +
              "Bild als Hintergrund) — siehe 'Shop Item Card Bundle.prefab'.")]
     [SerializeField] ShopItemCardUI  bundleItemPrefab;
+    [Tooltip("Eigener Container für den Booster-Tab — einspaltige, zentrierte Liste (gleiches Muster " +
+             "wie bundleGridParent), damit die breiten Booster-Karten nicht wie im 2-spaltigen " +
+             "gridParent seitlich abgeschnitten werden. Wird per ScrollRect.content getauscht.")]
+    [SerializeField] Transform       boosterGridParent;
+    [Tooltip("Eigene Karten-Variante für den Booster-Tab (zentrierter Titel, Stückzahl-Badge, " +
+             "Splitter-Preis im sichtbaren Feld) — bewusst eine eigene Prefab-Variante statt " +
+             "itemCardPrefab zu verändern, damit Skins/Sounds/Diamonds/Bundles unangetastet bleiben.")]
+    [SerializeField] ShopItemCardUI  boosterItemPrefab;
+
+    [Header("Sticker-Tab (kein Grid — Portal + schwebende Münze + Buy-Button)")]
+    [SerializeField] GameObject stickerTabRoot;
+    [SerializeField] Button     stickerBuyButton;
+    [SerializeField] TMPro.TextMeshProUGUI stickerBuyButtonLabel;
+    [SerializeField] int        stickerPrice = 200;
 
     [Header("Items")]
     [SerializeField] ShopCatalogue catalogue;
     [SerializeField] ShopItem      dailyItem;
+    [Tooltip("Der Sticker-Katalog (RewardCatalogue.allStickers) für den Sticker-Tab-Kauf — separat " +
+             "von 'catalogue' (ShopItem-Katalog), da Sticker über RewardDefinition/RewardCatalogue " +
+             "laufen wie im Belohnungsfenster, nicht über ShopItem.")]
+    [SerializeField] RewardCatalogue rewardCatalogue;
 
     [Header("Shop Button Badge")]
     [SerializeField] ShopButtonBadge shopButtonBadge;
@@ -91,7 +111,10 @@ public class ShopController : MonoBehaviour
         if (tabSounds        != null) tabSounds.onClick.AddListener(() => SwitchTab(ShopItemType.Sound));
         if (tabCoins         != null) tabCoins.onClick.AddListener(() => SwitchTab(ShopItemType.Currency));
         if (tabBundles       != null) tabBundles.onClick.AddListener(() => SwitchTab(ShopItemType.Bundle));
+        if (tabBooster       != null) tabBooster.onClick.AddListener(() => SwitchTab(ShopItemType.Booster));
+        if (tabStickers      != null) tabStickers.onClick.AddListener(() => SwitchTab(ShopItemType.Sticker));
         if (dailyClaimButton != null) dailyClaimButton.onClick.AddListener(OnClaimDaily);
+        if (stickerBuyButton != null) stickerBuyButton.onClick.AddListener(OnBuySticker);
     }
 
     void OnDisable()
@@ -102,7 +125,10 @@ public class ShopController : MonoBehaviour
         if (tabSounds        != null) tabSounds.onClick.RemoveAllListeners();
         if (tabCoins         != null) tabCoins.onClick.RemoveAllListeners();
         if (tabBundles       != null) tabBundles.onClick.RemoveAllListeners();
+        if (tabBooster       != null) tabBooster.onClick.RemoveAllListeners();
+        if (tabStickers      != null) tabStickers.onClick.RemoveAllListeners();
         if (dailyClaimButton != null) dailyClaimButton.onClick.RemoveAllListeners();
+        if (stickerBuyButton != null) stickerBuyButton.onClick.RemoveAllListeners();
     }
 
     // Reagiert auf Equip-Änderungen egal woher (Shop-Karten selbst, oder z.B. das
@@ -148,6 +174,21 @@ public class ShopController : MonoBehaviour
         SetTabColor(tabSounds,  _activeTab == ShopItemType.Sound);
         SetTabColor(tabCoins,   _activeTab == ShopItemType.Currency);
         SetTabColor(tabBundles, _activeTab == ShopItemType.Bundle);
+        SetTabColor(tabBooster, _activeTab == ShopItemType.Booster);
+        SetTabColor(tabStickers, _activeTab == ShopItemType.Sticker);
+    }
+
+    void RefreshStickerBuyButton()
+    {
+        if (stickerBuyButtonLabel != null) stickerBuyButtonLabel.text = stickerPrice.ToString();
+    }
+
+    void OnBuySticker()
+    {
+        // Reveal-Popup öffnet sich automatisch über StickerManager.OnStickerGranted (siehe
+        // StickerDetailPopupController) — funktioniert so für JEDEN Vergabeweg (Shop + Level-Belohnung),
+        // hier kein manuelles Open() mehr nötig.
+        ShopInventory.TryPurchaseSticker(rewardCatalogue, stickerPrice);
     }
 
     void SetTabColor(Button btn, bool active)
@@ -161,6 +202,18 @@ public class ShopController : MonoBehaviour
 
     void PopulateGrid()
     {
+        // Sticker-Tab hat kein Karten-Raster — nur ein statisches Portal + schwebende Münze +
+        // Buy-Button (siehe stickerTabRoot). Eigener früher Ausstieg, damit der Rest der Methode
+        // (die von einem card-per-item-Katalog ausgeht) davon unberührt bleibt.
+        bool useStickerTab = _activeTab == ShopItemType.Sticker && stickerTabRoot != null;
+        if (stickerTabRoot != null) stickerTabRoot.SetActive(useStickerTab);
+        if (itemScrollRect != null) itemScrollRect.gameObject.SetActive(!useStickerTab);
+        if (useStickerTab)
+        {
+            RefreshStickerBuyButton();
+            return;
+        }
+
         if (itemCardPrefab == null || catalogue == null) return;
 
         // Jeder Tab kann seinen eigenen Container haben, damit Karten dort nicht von gridParent's
@@ -170,14 +223,17 @@ public class ShopController : MonoBehaviour
             && itemBoxPrefab != null && currencyGridParent != null;
         bool useBundleGrid = _activeTab == ShopItemType.Bundle
             && bundleItemPrefab != null && bundleGridParent != null;
+        bool useBoosterGrid = _activeTab == ShopItemType.Booster && boosterGridParent != null;
 
-        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid);
+        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid && !useBoosterGrid);
         if (currencyGridParent != null) currencyGridParent.gameObject.SetActive(useCurrencyGrid);
         if (bundleGridParent   != null) bundleGridParent.gameObject.SetActive(useBundleGrid);
+        if (boosterGridParent  != null) boosterGridParent.gameObject.SetActive(useBoosterGrid);
         if (itemScrollRect     != null)
         {
             itemScrollRect.content = useCurrencyGrid ? (RectTransform)currencyGridParent
                 : useBundleGrid     ? (RectTransform)bundleGridParent
+                : useBoosterGrid    ? (RectTransform)boosterGridParent
                 : (RectTransform)gridParent;
         }
 
@@ -200,6 +256,20 @@ public class ShopController : MonoBehaviour
             {
                 if (item == null) continue;
                 var card = Instantiate(bundleItemPrefab, bundleGridParent);
+                card.Bind(item, OnBuyItem, OnEquipItem);
+            }
+            return;
+        }
+
+        if (useBoosterGrid)
+        {
+            var boosterPrefab = boosterItemPrefab != null ? boosterItemPrefab : itemCardPrefab;
+            foreach (Transform child in boosterGridParent)
+                Destroy(child.gameObject);
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                var card = Instantiate(boosterPrefab, boosterGridParent);
                 card.Bind(item, OnBuyItem, OnEquipItem);
             }
             return;
@@ -287,6 +357,15 @@ public class ShopController : MonoBehaviour
         if (item.type == ShopItemType.Currency)
         {
             if (ShopInventory.TryExchangeForCurrency(item))
+                PopulateGrid();
+            return;
+        }
+
+        // Booster-Pakete: wiederholbarer Kauf gegen Diamond Splinters, schreibt direkt ins
+        // verbrauchbare Booster-Inventar statt eine Währung gutzuschreiben.
+        if (item.type == ShopItemType.Booster)
+        {
+            if (ShopInventory.TryPurchaseBoosterPack(item))
                 PopulateGrid();
             return;
         }

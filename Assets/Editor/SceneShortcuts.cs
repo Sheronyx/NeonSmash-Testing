@@ -9,6 +9,7 @@ public static class SceneShortcuts
     const string Intro      = "Assets/Scenes/IntroScene.unity";
     const string MainMenu   = "Assets/Scenes/MainMenuScene.unity";
     const string GameInfinity = "Assets/Scenes/GameScenes/GameScene_InfinityMode.unity";
+    const string DemoDesign  = "Assets/Scenes/DemoDesignScene.unity";
 
     [MenuItem("Scenes/1 - Bootstrap &1")]
     static void OpenBootstrap() => Open(Bootstrap);
@@ -21,6 +22,9 @@ public static class SceneShortcuts
 
     [MenuItem("Scenes/4 - GameScene Infinity &4")]
     static void OpenGameInfinity() => Open(GameInfinity);
+
+    [MenuItem("Scenes/5 - DemoDesign &5")]
+    static void OpenDemoDesign() => Open(DemoDesign);
 
     static void Open(string path)
     {

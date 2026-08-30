@@ -29,6 +29,7 @@ public class GameOverSkinBinder : MonoBehaviour
         public TextMeshProUGUI resultHeadline;
         public TextMeshProUGUI resultScore;
         public TextMeshProUGUI resultDreamEnergy;
+        public TextMeshProUGUI resultDiamondSplinters;
         public Button          restartButton;
         public Button          backButton;
     }
@@ -61,7 +62,7 @@ public class GameOverSkinBinder : MonoBehaviour
         gameUI.BindResultUI(
             gameOverBanner, chosen.gameOverText,
             resultPanel, chosen.resultHeadline, chosen.resultScore,
-            chosen.resultDreamEnergy,
+            chosen.resultDreamEnergy, chosen.resultDiamondSplinters,
             chosen.restartButton, chosen.backButton);
     }
 

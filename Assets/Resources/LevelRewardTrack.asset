@@ -1,0 +1,163 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66f8b5c685f0247b396b46e26c683b88, type: 3}
+  m_Name: LevelRewardTrack
+  m_EditorClassIdentifier: Assembly-CSharp::LevelRewardTrack
+  tiers:
+  - level: 1
+    xpThreshold: 0
+    rewards:
+    - {fileID: 11400000, guid: a3cd69698a2c143baade67d0e1c5829f, type: 2}
+  - level: 2
+    xpThreshold: 11054
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 1ab4dd7fad4e945a7b8442a27526ffec, type: 2}
+  - level: 3
+    xpThreshold: 22108
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 03d9518b80171423080dd99a4f4c04f4, type: 2}
+  - level: 4
+    xpThreshold: 38688
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+  - level: 5
+    xpThreshold: 55269
+    rewards:
+    - {fileID: 11400000, guid: 6d7a292314f994e86b591d19ea8399c8, type: 2}
+    - {fileID: 11400000, guid: 5de48d165225b4076ad73e0dc78889d9, type: 2}
+    - {fileID: 11400000, guid: c5ac8d4d99a19426cb025891bc5d9daf, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+    - {fileID: 11400000, guid: 6419157f0d9784c8693b6a217ca3343f, type: 2}
+  - level: 6
+    xpThreshold: 77377
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 2b56589a6a0c44d7286d3ea483a1c6ec, type: 2}
+  - level: 7
+    xpThreshold: 99485
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+  - level: 8
+    xpThreshold: 127119
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 17f19ea8862494d39843cd28bc5468e9, type: 2}
+  - level: 9
+    xpThreshold: 154754
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+  - level: 10
+    xpThreshold: 187915
+    rewards:
+    - {fileID: 11400000, guid: 2abaffcdaf7f74963a0089ec802ba273, type: 2}
+    - {fileID: 11400000, guid: 37bd0857244164f6c88f825d4518e61c, type: 2}
+    - {fileID: 11400000, guid: fcacf65d9ba96457e80a0376813c02ae, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+    - {fileID: 11400000, guid: 96a110f41ba07484e802b3eccf1359ff, type: 2}
+  - level: 11
+    xpThreshold: 221077
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: a1b21e5e2415f4cf4b37532ec5c7d9d1, type: 2}
+  - level: 12
+    xpThreshold: 254238
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+  - level: 13
+    xpThreshold: 287400
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+  - level: 14
+    xpThreshold: 320562
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+    - {fileID: 11400000, guid: a1b21e5e2415f4cf4b37532ec5c7d9d1, type: 2}
+  - level: 15
+    xpThreshold: 353723
+    rewards:
+    - {fileID: 11400000, guid: 6d7a292314f994e86b591d19ea8399c8, type: 2}
+    - {fileID: 11400000, guid: 5de48d165225b4076ad73e0dc78889d9, type: 2}
+    - {fileID: 11400000, guid: 82182dbfd01694f098feec6675ffd7b7, type: 2}
+    - {fileID: 11400000, guid: 98eb05c69335b464aaef2174b77fe6a3, type: 2}
+  - level: 16
+    xpThreshold: 386885
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 17
+    xpThreshold: 420046
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 18
+    xpThreshold: 453208
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 19
+    xpThreshold: 486369
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 20
+    xpThreshold: 519531
+    rewards:
+    - {fileID: 11400000, guid: 2abaffcdaf7f74963a0089ec802ba273, type: 2}
+    - {fileID: 11400000, guid: 37bd0857244164f6c88f825d4518e61c, type: 2}
+    - {fileID: 11400000, guid: 75d9653a606d24e45be2ea7b2564ba46, type: 2}
+  - level: 21
+    xpThreshold: 563746
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 22
+    xpThreshold: 607962
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 23
+    xpThreshold: 652177
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 24
+    xpThreshold: 696392
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 25
+    xpThreshold: 740608
+    rewards:
+    - {fileID: 11400000, guid: 6d7a292314f994e86b591d19ea8399c8, type: 2}
+    - {fileID: 11400000, guid: 5de48d165225b4076ad73e0dc78889d9, type: 2}
+    - {fileID: 11400000, guid: 1acda012878354ba48e28dff95c35a56, type: 2}
+  - level: 26
+    xpThreshold: 784823
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 27
+    xpThreshold: 829038
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 28
+    xpThreshold: 873254
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 29
+    xpThreshold: 917469
+    rewards:
+    - {fileID: 11400000, guid: 15fdf6891bb5a4ef08ed9f323cbad99c, type: 2}
+  - level: 30
+    xpThreshold: 961685
+    rewards:
+    - {fileID: 11400000, guid: 2abaffcdaf7f74963a0089ec802ba273, type: 2}
+    - {fileID: 11400000, guid: 37bd0857244164f6c88f825d4518e61c, type: 2}
+    - {fileID: 11400000, guid: 394f36fc6dd0f4fdfaab09d85e35a0c3, type: 2}

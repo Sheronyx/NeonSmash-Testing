@@ -198,4 +198,6 @@ Shader "TheVayuputra/ToonShader"
 
         UsePass "Universal Render Pipeline/Lit/ShadowCaster"
     }
+
+    Fallback "Universal Render Pipeline/Lit"
 }

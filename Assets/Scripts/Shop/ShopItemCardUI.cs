@@ -13,6 +13,13 @@ public class ShopItemCardUI : MonoBehaviour
     [SerializeField] GameObject      ownedBadge;
     [FormerlySerializedAs("coinIcon")]
     [SerializeField] GameObject      dreamEnergyIcon;
+    [Tooltip("Splitter-Icon für Booster-Items (type == Booster) — Preis dort ist in Diamond Splinters, nicht Dream Energy.")]
+    [SerializeField] GameObject      diamondSplinterIcon;
+    [Tooltip("Paketgröße oben rechts (z.B. \"x3\") — nur für type == Booster (aus item.packAmount).")]
+    [SerializeField] TextMeshProUGUI packCountLabel;
+    [Tooltip("Diamonds-Icon für Welt-Bundles (item.diamondsPrice > 0) — Preis dort ist in Diamonds " +
+             "(Traumkristalle), nicht Dream Energy.")]
+    [SerializeField] GameObject      diamondIcon;
 
     [Header("Sound Preview")]
     [SerializeField] GameObject previewOverlay;  // über dem Thumbnail, nur für Sound-Items
@@ -81,14 +88,27 @@ public class ShopItemCardUI : MonoBehaviour
     {
         if (_item == null) return;
 
+        bool isBooster    = _item.type == ShopItemType.Booster;
+        bool isWorldPrice = _item.diamondsPrice > 0;
+
+        // Booster-Pakete sind wie Currency-Items ein wiederholbarer Kauf ohne Owned-Zustand — itemId
+        // wird nie in ShopInventory.Owned aufgenommen, "owned"/"equipped" bleiben also immer false.
         bool owned    = ShopInventory.IsOwned(_item.itemId);
         bool equipped = owned && ShopInventory.GetEquipped(_item.type) == _item.itemId;
 
         bool hasPreview = _item.soundTheme != null && _item.soundTheme.previewClip != null;
 
-        if (ownedBadge     != null) ownedBadge.SetActive(owned);
-        if (dreamEnergyIcon != null) dreamEnergyIcon.SetActive(!owned && _item.dreamEnergyPrice > 0);
-        if (previewOverlay != null) previewOverlay.SetActive(hasPreview);
+        if (ownedBadge          != null) ownedBadge.SetActive(owned);
+        if (dreamEnergyIcon     != null) dreamEnergyIcon.SetActive(!owned && !isBooster && !isWorldPrice && _item.dreamEnergyPrice > 0);
+        if (diamondSplinterIcon != null) diamondSplinterIcon.SetActive(isBooster && _item.diamondSplinterPrice > 0);
+        if (diamondIcon         != null) diamondIcon.SetActive(!owned && isWorldPrice);
+        if (previewOverlay      != null) previewOverlay.SetActive(hasPreview);
+
+        if (packCountLabel != null)
+        {
+            packCountLabel.gameObject.SetActive(isBooster && _item.packAmount > 1);
+            if (isBooster) packCountLabel.text = "x" + Mathf.Max(1, _item.packAmount);
+        }
 
         if (actionButton != null)
         {
@@ -98,10 +118,14 @@ public class ShopItemCardUI : MonoBehaviour
 
         if (priceLabel != null)
         {
-            if (equipped)
+            if (isBooster)
+                priceLabel.text = CurrencyFormat.Format(_item.diamondSplinterPrice);
+            else if (equipped)
                 priceLabel.text = "USED";
             else if (owned)
                 priceLabel.text = "USE";
+            else if (isWorldPrice)
+                priceLabel.text = CurrencyFormat.Format(_item.diamondsPrice);
             else if (!string.IsNullOrEmpty(_item.iapProductId))
                 priceLabel.text = IAPManager.Instance?.GetLocalizedPrice(_item.iapProductId) ?? "...";
             else if (_item.dreamEnergyPrice == 0)

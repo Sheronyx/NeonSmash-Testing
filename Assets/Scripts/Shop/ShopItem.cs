@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public enum ShopItemType { Skin, Sound, Currency, Bundle }
+public enum ShopItemType { Skin, Sound, Currency, Bundle, Booster, Sticker }
 
 // Welche Währung ein Currency-Item gutschreibt — steuert außerdem, in welcher Box (siehe
 // ShopController.PopulateCurrencyGrid) die Karte im Shop einsortiert wird. Dream Energy gibt
@@ -34,4 +34,18 @@ public class ShopItem : ScriptableObject
     [Header("Gameplay Assets")]
     public SkinTheme  skinTheme;   // nur für type == Skin
     public SoundTheme soundTheme;  // nur für type == Sound
+
+    [Header("Booster (type == Booster)")]
+    [Tooltip("Welcher Booster-Typ verkauft wird — die Stückzahl wird pro BoostType.ToString() als " +
+             "rewardId in BoosterInventoryManager gezählt.")]
+    public BoostDefinition boostDefinition;
+    [Tooltip("Preis in Diamond Splinters für ein Booster-Paket. 0 = kein Booster-Item.")]
+    public int diamondSplinterPrice;
+    [Tooltip("Wie viele Stück des Boosters ein Kauf gutschreibt (z.B. 3er-Paket).")]
+    public int packAmount = 3;
+
+    [Header("World Unlock (type == Bundle)")]
+    [Tooltip("Preis in Diamonds (Traumkristalle), um die Welt (skinTheme.worldId) dauerhaft freizuschalten. " +
+             "0 = kein Diamonds-Kauf (Item bleibt kostenlos/dreamEnergyPrice-basiert wie bisher).")]
+    public int diamondsPrice;
 }

@@ -28,6 +28,7 @@ public class BoostSelectionUI : MonoBehaviour
     [SerializeField] private float popOutDuration = 0.2f;
 
     private Action<BoostType> _onChosen;
+    private readonly System.Collections.Generic.Dictionary<BoostType, BoostCardUI> _cardsByType = new();
 
     private void Awake()
     {
@@ -58,18 +59,32 @@ public class BoostSelectionUI : MonoBehaviour
 
         foreach (Transform child in cardParent)
             Destroy(child.gameObject);
+        _cardsByType.Clear();
 
         foreach (var boost in boosts)
         {
             if (boost == null) continue;
             var card = Instantiate(cardPrefab, cardParent);
-            card.Bind(boost, OnCardPicked);
+            card.Bind(boost, BoosterInventoryManager.GetCount(boost.type.ToString()), OnCardPicked);
+            _cardsByType[boost.type] = card;
         }
+    }
+
+    private void OnEnable()  => BoosterInventoryManager.OnCountChanged += HandleCountChanged;
+    private void OnDisable() => BoosterInventoryManager.OnCountChanged -= HandleCountChanged;
+
+    // rewardId der geänderten Booster-Karte entspricht BoostType.ToString() (siehe PopulateCards) —
+    // nur die betroffene Karte aktualisieren, nicht alle neu binden (kein Flacker).
+    private void HandleCountChanged(string rewardId, int newCount)
+    {
+        foreach (var kv in _cardsByType)
+            if (kv.Key.ToString() == rewardId) { kv.Value.SetCount(newCount); break; }
     }
 
     public void Show(Action<BoostType> onChosen)
     {
         _onChosen = onChosen;
+        PopulateCards(); // frische Stückzahlen bei jedem Öffnen (z.B. nach Shop-Kauf)
         StartCoroutine(Co_Open());
     }
 
@@ -77,6 +92,12 @@ public class BoostSelectionUI : MonoBehaviour
 
     private void Choose(BoostType type)
     {
+        // Echte Boosts (nicht "None"/Skip) verbrauchen beim Auswählen ein Stück aus dem Inventar —
+        // schlägt der Verbrauch fehl (z.B. 0 übrig, Button hätte eigentlich deaktiviert sein sollen),
+        // wird die Auswahl abgebrochen und die Karte bleibt offen.
+        if (type != BoostType.None && !BoosterInventoryManager.TryConsume(type.ToString()))
+            return;
+
         if (BoostManager.Instance != null) BoostManager.Instance.Select(type);
         var callback = _onChosen;
         _onChosen = null;

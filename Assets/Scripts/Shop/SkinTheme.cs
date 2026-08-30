@@ -3,6 +3,11 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SkinTheme", menuName = "NeonSmash/Skin Theme")]
 public class SkinTheme : ScriptableObject
 {
+    [Header("Welt-Identität (World Locking)")]
+    [Tooltip("Muss zur worldId von WorldUnlockManager/RewardDefinition(WorldUnlock) passen. Leer = " +
+             "Welt ist nie gesperrt (z.B. Default).")]
+    public string worldId;
+
     [Header("Prefab-Tausch (Null = Default)")]
     [Tooltip("Ersetzt das Standard Tap-Prefab. Null = Spawner-Default.")]
     public GameObject tapPointPrefab;

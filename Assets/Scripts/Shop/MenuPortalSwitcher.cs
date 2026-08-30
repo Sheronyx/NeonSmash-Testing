@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -48,6 +49,21 @@ public class MenuPortalSwitcher : MonoBehaviour
     [Tooltip("Überschwingen beim Reinwachsen des neuen Portals (Ease-Out-Back, 0 = kein Überschwingen).")]
     [SerializeField] private float popOvershoot = 1.7f;
 
+    [Header("World Locking (Portale mit skinTheme.worldId gesetzt)")]
+    [Tooltip("Schloss-Sprite, das über ein noch nicht spielbares Portal gelegt wird (LockIcon Gold).")]
+    [SerializeField] private Sprite lockIconSprite;
+    [Tooltip("Sortierlayer für das Schloss-/Freispiele-Overlay (muss über den Portal-Partikeln liegen).")]
+    [SerializeField] private string overlaySortingLayer = "Default";
+    [SerializeField] private int    overlaySortingOrder = 100;
+    [SerializeField] private Vector3 lockIconLocalPosition = new Vector3(0f, 0f, 0f);
+    [SerializeField] private Vector3 lockIconLocalScale = new Vector3(1.2f, 1.2f, 1.2f);
+    [SerializeField] private Vector3 freePlaysBadgeLocalPosition = new Vector3(1.6f, 0.8f, 0f);
+    [SerializeField] private float   freePlaysBadgeFontSize = 6f;
+    [SerializeField] private Color   freePlaysBadgeColor = Color.white;
+
+    private readonly Dictionary<GameObject, GameObject>    _lockOverlays    = new();
+    private readonly Dictionary<GameObject, TextMeshPro>   _freePlayBadges = new();
+
     private ShopCatalogue _catalogue;
     private ShopItem[]    _skinItems;
     private int            _index;
@@ -68,10 +84,53 @@ public class MenuPortalSwitcher : MonoBehaviour
             ? GetPortalObject(_index)?.transform
             : null;
 
+    /// <summary>Bundle-Item des aktuell angezeigten Portals (egal ob besessen oder nur "angeschaut").</summary>
+    public ShopItem SelectedItem =>
+        (_skinItems != null && _index >= 0 && _index < _skinItems.Length) ? _skinItems[_index] : null;
+
+    /// <summary>True, wenn die aktuell angezeigte Welt gespielt werden darf: keine worldId (z.B. Default),
+    /// bereits gekauft, oder noch Freispiele übrig (siehe WorldUnlockManager).</summary>
+    public bool IsSelectedWorldPlayable()
+    {
+        var item = SelectedItem;
+        string worldId = item != null && item.skinTheme != null ? item.skinTheme.worldId : null;
+        if (string.IsNullOrEmpty(worldId)) return true;
+        if (ShopInventory.IsOwned(item.itemId)) return true;
+        return WorldUnlockManager.GetFreePlaysRemaining(worldId) > 0;
+    }
+
+    /// <summary>Verbraucht ein Freispiel für die aktuell angezeigte Welt, falls sie nicht gekauft ist
+    /// und eine worldId hat — vom Play-Button aufzurufen, NACHDEM IsSelectedWorldPlayable() true war.</summary>
+    public void ConsumeFreePlayIfNeeded()
+    {
+        var item = SelectedItem;
+        string worldId = item != null && item.skinTheme != null ? item.skinTheme.worldId : null;
+        if (string.IsNullOrEmpty(worldId)) return;
+        if (ShopInventory.IsOwned(item.itemId)) return;
+        WorldUnlockManager.TryConsumeFreePlay(worldId);
+    }
+
     private void Awake() => Instance = this;
 
-    private void OnEnable()  => ShopInventory.OnEquippedChanged += HandleEquippedChangedExternally;
-    private void OnDisable() => ShopInventory.OnEquippedChanged -= HandleEquippedChangedExternally;
+    private void OnEnable()
+    {
+        ShopInventory.OnEquippedChanged      += HandleEquippedChangedExternally;
+        ShopInventory.OnItemPurchased        += HandleItemPurchasedExternally;
+        WorldUnlockManager.OnFreePlaysChanged += HandleWorldLockStateChanged;
+        WorldUnlockManager.OnWorldUnlocked    += HandleWorldUnlockedExternally;
+    }
+
+    private void OnDisable()
+    {
+        ShopInventory.OnEquippedChanged      -= HandleEquippedChangedExternally;
+        ShopInventory.OnItemPurchased        -= HandleItemPurchasedExternally;
+        WorldUnlockManager.OnFreePlaysChanged -= HandleWorldLockStateChanged;
+        WorldUnlockManager.OnWorldUnlocked    -= HandleWorldUnlockedExternally;
+    }
+
+    private void HandleWorldLockStateChanged(string worldId, int newFreePlays) => RefreshLockDisplays();
+    private void HandleWorldUnlockedExternally(string worldId) => RefreshLockDisplays();
+    private void HandleItemPurchasedExternally(string itemId) => RefreshLockDisplays();
 
     private void Start()
     {
@@ -101,7 +160,86 @@ public class MenuPortalSwitcher : MonoBehaviour
             if (entry.portalObject != null && !_homeTransforms.ContainsKey(entry.portalObject))
                 _homeTransforms[entry.portalObject] = (entry.portalObject.transform.localPosition, entry.portalObject.transform.localScale);
 
+        BuildLockOverlays();
         SyncToEquippedState(forceShow: true);
+        RefreshLockDisplays();
+    }
+
+    // Erzeugt pro Portal mit gesetzter theme.worldId (also jeder sperrbaren Welt) ein Schloss-Sprite
+    // und ein "xN"-Freispiele-Label als Kind-Objekte — beide initial inaktiv, RefreshLockDisplays()
+    // schaltet sie je nach Owned-/Freispiele-Zustand. Portale ohne worldId (z.B. Default) bleiben
+    // unangetastet, sind also nie sperrbar.
+    private void BuildLockOverlays()
+    {
+        foreach (var entry in portalEntries)
+        {
+            if (entry.portalObject == null || entry.theme == null) continue;
+            if (string.IsNullOrEmpty(entry.theme.worldId)) continue;
+            if (_lockOverlays.ContainsKey(entry.portalObject)) continue;
+
+            var overlayGo = new GameObject("LockOverlay");
+            overlayGo.transform.SetParent(entry.portalObject.transform, false);
+            overlayGo.transform.localPosition = lockIconLocalPosition;
+            overlayGo.transform.localScale    = lockIconLocalScale;
+            var sr = overlayGo.AddComponent<SpriteRenderer>();
+            sr.sprite = lockIconSprite;
+            sr.sortingLayerName = overlaySortingLayer;
+            sr.sortingOrder     = overlaySortingOrder;
+            overlayGo.SetActive(false);
+            _lockOverlays[entry.portalObject] = overlayGo;
+
+            var badgeGo = new GameObject("FreePlaysBadge");
+            badgeGo.transform.SetParent(entry.portalObject.transform, false);
+            badgeGo.transform.localPosition = freePlaysBadgeLocalPosition;
+            var tmp = badgeGo.AddComponent<TextMeshPro>();
+            tmp.text = "x3";
+            tmp.fontSize = freePlaysBadgeFontSize;
+            tmp.color = freePlaysBadgeColor;
+            tmp.alignment = TextAlignmentOptions.Center;
+            var badgeRenderer = badgeGo.GetComponent<MeshRenderer>();
+            if (badgeRenderer != null)
+            {
+                badgeRenderer.sortingLayerName = overlaySortingLayer;
+                badgeRenderer.sortingOrder     = overlaySortingOrder + 1;
+            }
+            badgeGo.SetActive(false);
+            _freePlayBadges[entry.portalObject] = tmp;
+        }
+    }
+
+    // Schaltet Schloss-Overlay/Freispiele-Badge für ALLE Portale (nicht nur das aktive) nach ihrem
+    // aktuellen Owned-/Freispiele-Zustand — läuft unabhängig vom Swipe-Index, damit ein Portal auch
+    // während es inaktiv ist (SetActive(false), siehe ShowPortal) den richtigen Zustand trägt und
+    // beim nächsten Anzeigen sofort stimmt.
+    private void RefreshLockDisplays()
+    {
+        if (_skinItems == null) return;
+
+        foreach (var item in _skinItems)
+        {
+            if (item == null || item.skinTheme == null) continue;
+            GameObject portal = null;
+            foreach (var entry in portalEntries)
+                if (entry.theme == item.skinTheme) { portal = entry.portalObject; break; }
+            if (portal == null) continue;
+
+            string worldId = item.skinTheme.worldId;
+            if (string.IsNullOrEmpty(worldId)) continue;
+
+            bool owned     = ShopInventory.IsOwned(item.itemId);
+            int  freePlays = WorldUnlockManager.GetFreePlaysRemaining(worldId);
+            bool locked    = !owned && freePlays <= 0;
+
+            if (_lockOverlays.TryGetValue(portal, out var overlay) && overlay != null)
+                overlay.SetActive(locked);
+
+            if (_freePlayBadges.TryGetValue(portal, out var badge) && badge != null)
+            {
+                bool showBadge = !owned && freePlays > 0;
+                badge.gameObject.SetActive(showBadge);
+                if (showBadge) badge.text = "x" + freePlays;
+            }
+        }
     }
 
     // Liest den aktuell equippten Skin (egal ob per Shop oder per Portal-Swipe gesetzt) und

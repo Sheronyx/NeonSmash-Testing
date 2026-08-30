@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d1a3137d94eb494abd3fd955ab16ed1, type: 3}
   m_Name: SkinTheme_TropicalJungle
   m_EditorClassIdentifier: Assembly-CSharp::SkinTheme
+  worldId: TropicalJungle
   tapPointPrefab: {fileID: 8472257533776920184, guid: 938d187816af3483b9c655e29fd06e66, type: 3}
   swipePointPrefab: {fileID: 1588161493249182017, guid: c0186f3738f7944d89860d1f20e9f53d, type: 3}
   slashTrailPrefab: {fileID: 6593613985249772415, guid: 587e1c1e5b3814e5baf0f79876ce5149, type: 3}
-  beamProjectilePrefab: {fileID: 6237600531714503956, guid: b026e6f1e15274f7baa7fd04e3d50a6d, type: 3}
   gravityPointPrefab: {fileID: 6586104543153159077, guid: 258cf248739904c4ab5f8dedf167d515, type: 3}
   fountainPointPrefab: {fileID: 4244668591810579317, guid: 6903148ff101e425a8871ac5db376397, type: 3}
   fakePointPrefab: {fileID: 446514900172689509, guid: 512b3d01d097240cf98eb6579c92f8ce, type: 3}
@@ -24,8 +24,5 @@ MonoBehaviour:
   overridePeekFlightPath: 1
   peekEntryViewport: {x: 0.6, y: 1.3}
   peekExitViewport: {x: 0.4, y: 1.3}
-  overridePortalColor: 0
-  portalParticleColor: {r: 0, g: 1, b: 0, a: 1}
-  portalVoronoiColor: {r: 0, g: 1, b: 0, a: 1}
   overrideTopBarColor: 0
   topBarColor: {r: 0, g: 1, b: 0, a: 1}
