@@ -759,19 +759,30 @@ public class MixedPointSpawner : MonoBehaviour
             return vp; // perfekte Position gefunden
         }
 
-        // Diagnose: der Fallback greift nur, wenn in 120 Versuchen KEINE Position alle Mindestabstände
-        // erfüllt hat — landet der beste gefundene Abstand deutlich unter dem geforderten Minimum,
-        // war die Aufgabe für den verfügbaren Platz vermutlich geometrisch gar nicht lösbar (z.B. weil
-        // GetAllowedSpawnRect() auf sehr kleinen/schmalen Screens auf ihren 100x100px-Mindestwert
-        // zurückfällt). Bewusst IMMER geloggt (nicht nur bei debugLogs), da der Bug selten/zufällig
-        // auftritt und wir beim nächsten Mal harte Daten dazu brauchen statt zu raten.
+        // Zufällige Versuche hatten Pech (z.B. viele gleichzeitige Elemente auf kleinem Screen) —
+        // bevor wir uns mit einer zu engen Position zufriedengeben, EXHAUSTIV ein festes Raster über
+        // den erlaubten Bereich absuchen. Zufällige Stichproben können eine tatsächlich existierende
+        // gültige Position verpassen; ein Raster kann das nicht (bis auf die Rasterauflösung) —
+        // schließt genau die "seltene Überlappung trotz Mindestabstand-Regel"-Lücke.
+        if (TryFindValidPositionOnGrid(slotIndex, halfSizePx, allowedViewport, siblingActive, siblingVP, siblingHalf,
+                currentActivationPoint, orbHalfPx, out Vector2 gridVp))
+        {
+            return gridVp;
+        }
+
+        // Diagnose: dieser Fallback greift nur, wenn WEDER 120 Zufallsversuche NOCH die Rastersuche
+        // eine gültige Position fanden — die Aufgabe war für den verfügbaren Platz geometrisch
+        // vermutlich gar nicht lösbar (z.B. weil GetAllowedSpawnRect() auf sehr kleinen/schmalen
+        // Screens auf ihren 100x100px-Mindestwert zurückfällt). Bewusst IMMER geloggt (nicht nur bei
+        // debugLogs), da der Bug selten/zufällig auftritt und wir beim nächsten Mal harte Daten
+        // dazu brauchen statt zu raten.
         float requiredDist = GetBaseMinDistancePixels();
         if (bestFallbackDist < requiredDist)
         {
             Rect spawnRectPx = GetAllowedSpawnRect();
             Debug.LogWarning(
                 $"[Spawner] FindSlotPosition-Fallback für Slot {slotIndex}: erreichter Mindestabstand " +
-                $"{bestFallbackDist:F1}px < gefordert {requiredDist:F1}px. " +
+                $"{bestFallbackDist:F1}px < gefordert {requiredDist:F1}px (auch Rastersuche ohne Treffer). " +
                 $"Screen={Screen.width}x{Screen.height}, SpawnRect={spawnRectPx.width:F0}x{spawnRectPx.height:F0}px " +
                 $"@({spawnRectPx.x:F0},{spawnRectPx.y:F0}), halfSizePx={halfSizePx:F1}, " +
                 $"minDistancePercent={minDistancePercent}, safeArea={Screen.safeArea.width:F0}x{Screen.safeArea.height:F0}."
@@ -779,6 +790,47 @@ public class MixedPointSpawner : MonoBehaviour
         }
 
         return bestFallback; // beste verfügbare Position nach allen Versuchen
+    }
+
+    // Deterministische Rastersuche als letzter Rettungsanker, bevor eine zu enge Position akzeptiert
+    // wird — läuft nur im seltenen Fall, dass 120 zufällige Versuche keine gültige Position fanden.
+    // Findet garantiert eine valide Position, sofern geometrisch überhaupt eine existiert (bis auf die
+    // Rasterauflösung), im Gegensatz zu reinem Zufallssampling, das Pech haben kann.
+    private bool TryFindValidPositionOnGrid(
+        int slotIndex, float halfSizePx, Rect allowedViewport,
+        bool[] siblingActive, Vector2[] siblingVP, float[] siblingHalf,
+        GameObject currentActivationPoint, float orbHalfPx,
+        out Vector2 result)
+    {
+        const int steps = 24; // 25x25-Raster über den erlaubten Bereich — fein genug für alle Screengrößen
+        Vector2? orbVP = currentActivationPoint != null
+            ? mainCamera.WorldToViewportPoint(currentActivationPoint.transform.position)
+            : (Vector2?)null;
+
+        for (int gx = 0; gx <= steps; gx++)
+        {
+            for (int gy = 0; gy <= steps; gy++)
+            {
+                Vector2 vp = new Vector2(
+                    Mathf.Lerp(allowedViewport.xMin, allowedViewport.xMax, gx / (float)steps),
+                    Mathf.Lerp(allowedViewport.yMin, allowedViewport.yMax, gy / (float)steps)
+                );
+
+                bool valid = true;
+                for (int j = 0; j < siblingActive.Length; j++)
+                {
+                    if (j == slotIndex || !siblingActive[j]) continue;
+                    if (!IsFarEnoughFromOrb(vp, siblingVP[j], halfSizePx, siblingHalf[j])) { valid = false; break; }
+                }
+                if (valid && orbVP.HasValue && !IsFarEnoughFromOrb(vp, orbVP.Value, halfSizePx, orbHalfPx))
+                    valid = false;
+
+                if (valid) { result = vp; return true; }
+            }
+        }
+
+        result = default;
+        return false;
     }
 
     // Slot-Timeout: überwacht ein einzelnes Element und behandelt Ablauf / Leben-verlust.

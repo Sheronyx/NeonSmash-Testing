@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ComicPosterize_TapElement_PreviewOnly
+  m_Name: ComicPosterize_SwipeElement
   m_Shader: {fileID: 4800000, guid: 96fa5b76cc2544613ba5aa013a71b85a, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 4a6fda0dd26b74284a52c9efefcfd20e, type: 3}
+        m_Texture: {fileID: 2800000, guid: 9fefdb56905fd4c3bb891833c3b99c8a, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -33,7 +33,7 @@ Material:
     - _PosterizeAmount: 0
     - _PosterizeLevels: 12
     - _Saturation: 1.7
-    - _ShadowTint: 0.45
+    - _ShadowTint: 0.16
     - _ToonSteps: 2
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
