@@ -68,6 +68,7 @@ public class MysteryBoxEffectSystem : MonoBehaviour
 
     public int CurrentScoreMultiplier { get; private set; } = 1;
     public bool IsColorlessActive { get; private set; }
+    public bool IsSmokeActive { get; private set; }
     public float CurrentSizeMultiplier { get; private set; } = 1f;
     public bool HasExtraLifeCharge { get; private set; }
 
@@ -91,6 +92,7 @@ public class MysteryBoxEffectSystem : MonoBehaviour
         IsEffectActive = false;
         CurrentScoreMultiplier = 1;
         IsColorlessActive = false;
+        IsSmokeActive = false;
         CurrentSizeMultiplier = 1f;
         HasExtraLifeCharge = false;
     }
@@ -259,6 +261,7 @@ public class MysteryBoxEffectSystem : MonoBehaviour
     private IEnumerator Co_Smoke(MixedPointSpawner spawner)
     {
         IsEffectActive = true;
+        IsSmokeActive = true;
         if (smokeVfxPrefab != null)
         {
             smokeOverlayInstance = Instantiate(smokeVfxPrefab);
@@ -269,6 +272,7 @@ public class MysteryBoxEffectSystem : MonoBehaviour
 
         if (smokeOverlayInstance != null) Destroy(smokeOverlayInstance);
         smokeOverlayInstance = null;
+        IsSmokeActive = false;
         IsEffectActive = false;
     }
 

@@ -6,8 +6,9 @@ Shader "Custom/DepthEdgeOutline"
     Properties
     {
         _OutlineColor ("Outline Color", Color) = (0.03, 0.02, 0.05, 1)
-        _DepthThreshold ("Depth Threshold", Range(0.0005, 0.2)) = 0.02
-        _EdgeThicknessPx ("Edge Thickness (px)", Range(1, 4)) = 1.5
+        _DepthThreshold ("Depth Threshold", Range(0.0005, 3.0)) = 0.02
+        _EdgeThicknessPx ("Edge Thickness (px)", Range(1, 8)) = 1.5
+        _EdgeSoftness ("Edge Softness (Anti-Aliasing)", Range(0.0001, 1.0)) = 0.05
     }
     SubShader
     {
@@ -31,6 +32,7 @@ Shader "Custom/DepthEdgeOutline"
             float4 _OutlineColor;
             float _DepthThreshold;
             float _EdgeThicknessPx;
+            float _EdgeSoftness;
 
             half4 Frag(Varyings input) : SV_Target
             {
@@ -62,7 +64,9 @@ Shader "Custom/DepthEdgeOutline"
                 float edge = (abs(ld0 - ld1) + abs(ld2 - ld3)) / refDepth;
 
                 half4 sceneColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
-                float mask = step(_DepthThreshold, edge);
+                // smoothstep statt step: weicher, kantenglaettender Uebergang statt hartem
+                // Ein/Aus-Pixelraster -- behebt die "verpixelte, unruhige" Linie.
+                float mask = smoothstep(_DepthThreshold, _DepthThreshold + _EdgeSoftness, edge);
 
                 return lerp(sceneColor, _OutlineColor, mask);
             }

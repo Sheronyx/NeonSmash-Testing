@@ -26,8 +26,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _DepthThreshold: 0.2
-    - _EdgeThicknessPx: 1.5
+    - _EdgeSoftness: 0.03
+    - _EdgeThicknessPx: 4
     m_Colors:
-    - _OutlineColor: {r: 0.03, g: 0.02, b: 0.05, a: 1}
+    - _OutlineColor: {r: 0.02, g: 0.02, b: 0.03, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
