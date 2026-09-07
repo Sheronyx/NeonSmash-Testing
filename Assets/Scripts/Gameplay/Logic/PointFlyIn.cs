@@ -29,6 +29,13 @@ public class PointFlyIn : MonoBehaviour
     [SerializeField] private float startScalePercent = 0.4f;
     [SerializeField] private float growDuration = 0.25f;
 
+    [Header("Eingebettete Partikelsysteme (z.B. Ambient-VFX in 3D-Modellen)")]
+    [Tooltip("Bei wie viel % des Einwachsens/Einschwebens die Partikelsysteme starten (0 = sofort mit " +
+             "der Animation, 1 = erst wenn sie fertig ist). Etwas früher als 1 wirkt organischer, statt " +
+             "dass der Effekt sichtbar \"nachträglich\" aufploppt.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float particleStartPercent = 0.5f;
+
     [Header("Stücke auseinanderschweben — für mehrteilige Prefabs (MagneticFragmentFloat/-Orbit)")]
     [SerializeField] private float pieceFlyDuration = 0.35f;
     [Tooltip("Wie stark die Stücke zu Beginn zufällig verdreht sind, bevor sie sich beim Einschweben in ihre Ausgangsrotation einpendeln (Grad, in beide Richtungen).")]
@@ -44,11 +51,20 @@ public class PointFlyIn : MonoBehaviour
 
         target.transform.position = targetPosition;
 
-        // Sprites sofort unsichtbar machen: die eigentliche Animation startet erst einen Frame später
-        // (siehe Kommentare unten), bis dahin würde das Element sonst kurz in voller Originalgröße/
-        // -position aufblitzen, bevor es in die Startpose der Animation "springt" — sichtbares Flackern.
-        var renderers = target.GetComponentsInChildren<SpriteRenderer>(true);
+        // Renderer sofort unsichtbar machen (SpriteRenderer für 2D-Prefabs, MeshRenderer für die
+        // neueren 3D-Modelle — Renderer als gemeinsame Basisklasse deckt beides ab): die eigentliche
+        // Animation startet erst einen Frame später (siehe Kommentare unten), bis dahin würde das
+        // Element sonst kurz in voller Originalgröße/-position aufblitzen, bevor es in die Startpose
+        // der Animation "springt" — sichtbares Flackern.
+        var renderers = target.GetComponentsInChildren<Renderer>(true);
         foreach (var r in renderers) r.enabled = false;
+
+        // Eingebettete Partikelsysteme (z.B. Ambient-Feuer-VFX in manchen 3D-Modellen) laufen
+        // unabhängig von der Root-Scale weiter — würden sonst schon in voller Stärke sichtbar sein,
+        // während das Mesh daneben noch klein anfängt und erst hochwächst. Sofort stoppen + leeren,
+        // erst am Ende der Animation (zusammen mit den Renderern) wieder starten.
+        var particles = target.GetComponentsInChildren<ParticleSystem>(true);
+        foreach (var p in particles) p.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
         var floats = target.GetComponentsInChildren<MagneticFragmentFloat>(true);
         var orbits = target.GetComponentsInChildren<MagneticFragmentOrbit>(true);
@@ -56,11 +72,11 @@ public class PointFlyIn : MonoBehaviour
         if (floats.Length > 0 || orbits.Length > 0)
         {
             target.transform.localScale = targetScale;
-            StartCoroutine(Co_PiecesFlyIn(target, floats, orbits, renderers, onArrived));
+            StartCoroutine(Co_PiecesFlyIn(target, floats, orbits, renderers, particles, onArrived));
         }
         else
         {
-            StartCoroutine(Co_PopIn(target, targetScale, renderers, onArrived));
+            StartCoroutine(Co_PopIn(target, targetScale, renderers, particles, onArrived));
         }
     }
 
@@ -69,7 +85,7 @@ public class PointFlyIn : MonoBehaviour
     // schweben von dort zu ihrer eigentlichen, im Editor gesetzten Position — mit leichter
     // Rotations-Einpendelung für einen organischen statt robotischen Eindruck.
     private IEnumerator Co_PiecesFlyIn(GameObject target, MagneticFragmentFloat[] floats,
-        MagneticFragmentOrbit[] orbits, SpriteRenderer[] renderers, Action onArrived)
+        MagneticFragmentOrbit[] orbits, Renderer[] renderers, ParticleSystem[] particles, Action onArrived)
     {
         // Komponenten SOFORT deaktivieren, bevor ihr eigenes Start() läuft — sonst würden sie ihre
         // Schwebe-Baseline (Position/Rotation) an der falschen Stelle festhalten. Da wir hier
@@ -107,6 +123,7 @@ public class PointFlyIn : MonoBehaviour
 
         foreach (var r in renderers) if (r != null) r.enabled = true;
 
+        bool particlesStarted = false;
         float t = 0f;
         while (t < pieceFlyDuration)
         {
@@ -118,6 +135,11 @@ public class PointFlyIn : MonoBehaviour
                 if (pieces[i] == null) continue;
                 pieces[i].position = Vector3.Lerp(center, homePos[i], k);
                 pieces[i].rotation = Quaternion.Slerp(startRot[i], homeRot[i], k);
+            }
+            if (!particlesStarted && k >= particleStartPercent)
+            {
+                particlesStarted = true;
+                foreach (var p in particles) if (p != null) p.Play();
             }
             yield return null;
         }
@@ -134,13 +156,15 @@ public class PointFlyIn : MonoBehaviour
         foreach (var f in floats) if (f != null) f.enabled = true;
         foreach (var o in orbits) if (o != null) o.enabled = true;
 
+        if (!particlesStarted) foreach (var p in particles) if (p != null) p.Play();
+
         target.GetComponent<SwipePoint>()?.RefreshEffectiveRadius();
 
         onArrived?.Invoke();
     }
 
     // Einteilige Prefabs (nur ein Visual-Sprite, kein Kind-Stücke-Aufbau): klassischer Scale-Pop.
-    private IEnumerator Co_PopIn(GameObject target, Vector3 targetScale, SpriteRenderer[] renderers, Action onArrived)
+    private IEnumerator Co_PopIn(GameObject target, Vector3 targetScale, Renderer[] renderers, ParticleSystem[] particles, Action onArrived)
     {
         // PointPulse pulsiert ebenfalls die Root-Scale (FinishSlotSpawn startet es bereits VOR dieser
         // Animation, da das Element ja von Anfang an treffbar sein soll) — würde sich sonst direkt mit
@@ -160,6 +184,7 @@ public class PointFlyIn : MonoBehaviour
 
         foreach (var r in renderers) if (r != null) r.enabled = true;
 
+        bool particlesStarted = false;
         float t = 0f;
         while (t < growDuration)
         {
@@ -167,6 +192,11 @@ public class PointFlyIn : MonoBehaviour
             t += Time.deltaTime;
             float k = Mathf.Clamp01(t / growDuration);
             target.transform.localScale = targetScale * Mathf.Lerp(startScalePercent, 1f, k);
+            if (!particlesStarted && k >= particleStartPercent)
+            {
+                particlesStarted = true;
+                foreach (var p in particles) if (p != null) p.Play();
+            }
             yield return null;
         }
         target.transform.localScale = targetScale;
@@ -176,6 +206,8 @@ public class PointFlyIn : MonoBehaviour
         target.GetComponent<SwipePoint>()?.RefreshEffectiveRadius();
 
         if (pulse != null) { pulse.enabled = true; pulse.StartPulsing(); }
+
+        if (!particlesStarted) foreach (var p in particles) if (p != null) p.Play();
 
         onArrived?.Invoke();
     }

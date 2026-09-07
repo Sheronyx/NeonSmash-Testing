@@ -1,11 +1,15 @@
 using System.Collections;
 using UnityEngine;
+using LineworkLite.FreeOutline;
 
 // Lässt die GlowColor ALLER zugewiesenen Fairy-Materialien (Core + jeder Flügel, jeweils eigenes
 // Material) kurz aufblitzen UND die ganze Fairy synchron kurz aufpulsieren (Scale-Punch), getriggert
 // sobald eine Energiekugel bei dieser Fairy ankommt (FairyEnergyManager). Braucht KEINE fest
 // eingetragene Zielfarbe: jedes Material behält seinen eigenen Farbton, nur die Intensität wird
 // pro Material relativ zu dessen AKTUELLEM Wert hochskaliert (glowBoostMultiplier).
+//
+// Zusätzlich (optional, für die neuen 3D-Feen ohne eigenes Glow-Material): kann stattdessen/zugleich
+// den schwarzen Free-Outline-Rahmen der Fee in ihrer Farbe kurz HDR-aufleuchten lassen (outlineTarget).
 public class FairyGlowFlash : MonoBehaviour
 {
     [Tooltip("Core + alle Flügel-SpriteRenderer. Leer lassen = automatisch alle SpriteRenderer in den Kindern.")]
@@ -17,6 +21,16 @@ public class FairyGlowFlash : MonoBehaviour
     [SerializeField] private float flashUpDuration   = 0.06f;
     [SerializeField] private float flashHoldDuration = 0.04f;
     [SerializeField] private float flashDownDuration = 0.25f;
+
+    [Header("Outline-Glow (optional, für 3D-Feen ohne eigenes Glow-Material)")]
+    [Tooltip("Der Free-Outline-Eintrag dieser Fee (Assets/001 Fairy World/Free Outline Settings - FairyTest.asset). " +
+             "Leer lassen, falls diese Fee stattdessen über glowRenderers leuchten soll.")]
+    [SerializeField] private Outline outlineTarget;
+    [Tooltip("Die HDR-Zielfarbe beim Aufblitzen (Feen-Farbe, leuchtend). Die Ruhe-Farbe der Outline " +
+             "bleibt unangetastet Schwarz (kommt live vom Outline-Asset, wird NICHT hier eingestellt).")]
+    [ColorUsage(true, true)]
+    [SerializeField] private Color outlineFlashColor = Color.white;
+    private Color outlineBaseColor;
 
     [Header("Scale-Pulse (synchron zum Glow)")]
     [Tooltip("Um wie viel die Fairy beim Aufblitzen kurz größer wird (1.2 = 20% größer).")]
@@ -47,6 +61,9 @@ public class FairyGlowFlash : MonoBehaviour
             mats[i]       = candidate;
             baseColors[i] = mats[i].GetColor(glowColorProperty);
         }
+
+        if (outlineTarget != null)
+            outlineBaseColor = outlineTarget.color;
     }
 
     public void Flash()
@@ -105,5 +122,8 @@ public class FairyGlowFlash : MonoBehaviour
             Color boosted = baseColors[i] * glowBoostMultiplier;
             mats[i].SetColor(glowColorProperty, Color.LerpUnclamped(baseColors[i], boosted, k));
         }
+
+        if (outlineTarget != null)
+            outlineTarget.color = Color.LerpUnclamped(outlineBaseColor, outlineFlashColor, k);
     }
 }

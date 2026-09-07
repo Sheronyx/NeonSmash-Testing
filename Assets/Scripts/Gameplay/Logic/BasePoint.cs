@@ -17,6 +17,12 @@ public abstract class BasePoint : MonoBehaviour
              "Partikelsysteme werden alle abgespielt, das Prefab räumt sich nach der längsten Laufzeit selbst auf.")]
     [SerializeField] protected GameObject explodeVFXPrefab;
 
+    [Tooltip("Zusätzlicher Z-Versatz beim Spawnen (MixedPointSpawner setzt die X/Y-Position sonst " +
+             "immer auf Z=0). Für 3D-Modelle nötig, die vor/hinter den Hintergrund-Ebenen liegen " +
+             "müssen — 2D-Sprite-Elemente lassen das auf 0.")]
+    [SerializeField] private float spawnDepthOffset = 0f;
+    public float SpawnDepthOffset => spawnDepthOffset;
+
     // Vom PlayerInputHandler gesetzt, kurz bevor ein Boost-"Swipe How You Like"/"All Swipe"-Treffer
     // TryTap()/ForceDestroy() auslöst — SpawnExplosion() nutzt das, um bei vorhandenem Fragmenter die
     // Slice-Optik statt der normalen Partikel-Explosion zu zeigen.

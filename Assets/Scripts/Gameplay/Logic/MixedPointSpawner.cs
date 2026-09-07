@@ -591,6 +591,11 @@ public class MixedPointSpawner : MonoBehaviour
         Vector2 viewportPos = FindSlotPosition(i, samplePrefab);
         Vector3 worldPos    = ViewportToWorldOnZ0(viewportPos);
 
+        // 3D-Modelle brauchen ggf. einen Z-Versatz, um vor/hinter den Hintergrund-Ebenen zu liegen
+        // (siehe BasePoint.SpawnDepthOffset) — 2D-Sprite-Prefabs bleiben unverändert bei Z=0.
+        var sampleBasePoint = samplePrefab != null ? samplePrefab.GetComponent<BasePoint>() : null;
+        if (sampleBasePoint != null) worldPos.z += sampleBasePoint.SpawnDepthOffset;
+
         // Position sofort reservieren, damit Geschwister-Slots sie in FindSlotPosition vermeiden
         _pendingSlotPositions[i] = worldPos;
 

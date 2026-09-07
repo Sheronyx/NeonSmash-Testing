@@ -34,6 +34,11 @@ public class VortexModeSystem : MonoBehaviour
     private int _spawnedCount = 0;
     private float _intensity = 1f;
 
+    /// <summary>0 = Special-Phase beginnt gerade, 1 = alle Elemente gespawnt — fuer UI, die den
+    /// Fortschritt der Phase live anzeigen will (z.B. Energiebalken-Countdown). 0 wenn kein
+    /// anzahl-limitierter Lauf aktiv ist.</summary>
+    public float Progress01 { get; private set; }
+
     [Header("Intensität (Wert kommt pro Phase vom PhaseManager)")]
     [Tooltip("Spawn-Intervall (Sekunden) bei Intensität = 1.0.")]
     [SerializeField] private float baseSpawnInterval = 1.2f;
@@ -120,6 +125,7 @@ public class VortexModeSystem : MonoBehaviour
         isActive = true;
         spawnLoopActive = true;
         _spawnedCount = 0;
+        Progress01 = 0f;
 
         if (portalEffect != null) portalEffect.SetActive(true);
 
@@ -162,6 +168,7 @@ public class VortexModeSystem : MonoBehaviour
             }
 
             _spawnedCount++;
+            if (totalCount > 0) Progress01 = Mathf.Clamp01((float)_spawnedCount / totalCount);
             if (totalCount > 0 && _spawnedCount >= totalCount)
                 spawnLoopActive = false;
 

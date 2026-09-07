@@ -32,6 +32,11 @@ public class GravityModeSystem : MonoBehaviour
     private int _spawnedCount = 0;
     private float _intensity = 1f;
 
+    /// <summary>0 = Special-Phase beginnt gerade, 1 = alle Elemente gespawnt — fuer UI, die den
+    /// Fortschritt der Phase live anzeigen will (z.B. Energiebalken-Countdown). 0 wenn kein
+    /// anzahl-limitierter Lauf aktiv ist.</summary>
+    public float Progress01 { get; private set; }
+
     GameObject ActiveGravityPrefab =>
         SkinManager.Instance?.ActiveTheme?.gravityPointPrefab ?? gravityTapPrefab;
 
@@ -110,6 +115,7 @@ public void Activate()
         isActive = true;
         spawnLoopActive = true;
         _spawnedCount = 0;
+        Progress01 = 0f;
 
         // 👉 normalen Spawner pausieren
         spawner.PauseSpawning(true);
@@ -153,6 +159,7 @@ public void Activate()
             }
 
             _spawnedCount++;
+            if (totalCount > 0) Progress01 = Mathf.Clamp01((float)_spawnedCount / totalCount);
             if (totalCount > 0 && _spawnedCount >= totalCount)
                 spawnLoopActive = false;
 

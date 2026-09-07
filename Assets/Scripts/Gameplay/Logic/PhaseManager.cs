@@ -181,6 +181,13 @@ public class PhaseManager : MonoBehaviour
     /// Für UI-Anzeigen wie "12/20". Args: Farbe, aktueller Stand, Schwelle.</summary>
     public static event Action<PointColor, int, int> OnColorProgressChanged;
 
+    /// <summary>Gefeuert bei JEDEM Rundenstart (auch "Play Again", die Szene wird dabei nicht neu
+    /// geladen) — fuer UI, die ihren kompletten Zustand hart zuruecksetzen muss, unabhaengig davon,
+    /// wie die vorherige Runde geendet hat (z.B. Tod MITTEN in einem Special Mode, wodurch dessen
+    /// normales Abschluss-Event nie feuert und ein reiner OnColorProgressChanged-Reset ignoriert
+    /// werden koennte, wenn die UI gerade noch im "wartet auf Special-Mode-Ende"-Zustand haengt).</summary>
+    public static event Action OnRunReset;
+
     /// <summary>Gefeuert, sobald in einer diamant-aktiven Normal-Phase die Bonus-Schwelle erreicht wird
     /// UND noch mindestens eine Farbe ohne Bonus übrig ist. Übergibt die zufällig unter den Farben OHNE
     /// Bonus geloste Farbe — der Bonus bleibt aktiv, bis GENAU diese Farbe ihren eigenen Special Mode
@@ -312,6 +319,8 @@ public class PhaseManager : MonoBehaviour
         _running = true;
         Array.Clear(_destroyedCount, 0, _destroyedCount.Length);
         _currentIndex = 0;
+
+        OnRunReset?.Invoke();
 
         // Ramp-Zustand für einen frischen Run zurücksetzen (bei "Play Again" darf kein Ramp-Rest vom
         // vorherigen Run überleben) — Phase 1 startet direkt ohne Überblendung, es gibt ja nichts,

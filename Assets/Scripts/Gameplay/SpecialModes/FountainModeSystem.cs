@@ -38,6 +38,11 @@ public class FountainModeSystem : MonoBehaviour
     private int _spawnedCount = 0;
     private float _intensity = 1f;
 
+    /// <summary>0 = Special-Phase beginnt gerade, 1 = alle Elemente gespawnt — fuer UI, die den
+    /// Fortschritt der Phase live anzeigen will (z.B. Energiebalken-Countdown). 0 wenn kein
+    /// anzahl-limitierter Lauf aktiv ist.</summary>
+    public float Progress01 { get; private set; }
+
     GameObject ActiveFountainPrefab =>
         SkinManager.Instance?.ActiveTheme?.fountainPointPrefab ?? fountainPointPrefab;
 
@@ -135,6 +140,7 @@ public class FountainModeSystem : MonoBehaviour
     private IEnumerator SpawnRoutine(int maxSpawnCount = -1, bool diamondBonusActive = false)
     {
         _spawnedCount = 0;
+        Progress01 = 0f;
 
         // Diamant-Bonus: ZUSÄTZLICH zu maxSpawnCount (z.B. 20+5=25 statt 20 ersetzt), Zeitpunkte
         // innerhalb der Phase zufällig verteilt — kein Chance-Roll pro Tick mehr, garantiert exakt
@@ -172,6 +178,7 @@ public class FountainModeSystem : MonoBehaviour
             }
 
             _spawnedCount++;
+            if (totalCount > 0) Progress01 = Mathf.Clamp01((float)_spawnedCount / totalCount);
             if (totalCount > 0 && _spawnedCount >= totalCount)
                 spawnLoopActive = false;
 

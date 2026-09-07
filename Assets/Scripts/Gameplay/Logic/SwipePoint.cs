@@ -22,6 +22,20 @@ public class SwipePoint : BasePoint
              "90° falscher Anzeige hier 90 oder -90 eintragen, je nachdem in welche Richtung es kippen muss.")]
     [SerializeField] private float iconRotationOffset = 90f;
 
+    [Header("3D-Element: feste Rotation pro Richtung (statt der 2D-Icon-Drehung oben)")]
+    [Tooltip("Aktivieren für 3D-Modelle: statt der reinen Z-Achsen-Icon-Drehung wird eine feste, " +
+             "im Prefab definierte XYZ-Rotation je nach Wisch-Richtungsgruppe verwendet — die " +
+             "Rotation bleibt danach unverändert (kein Live-Tracking mehr über iconRotationOffset).")]
+    [SerializeField] private bool use3DDirectionRotations = false;
+    [Tooltip("Links/Rechts (horizontal).")]
+    [SerializeField] private Vector3 rotationHorizontal = new Vector3(-90f, 120f, 20f);
+    [Tooltip("Hoch/Runter (vertikal).")]
+    [SerializeField] private Vector3 rotationVertical = new Vector3(-90f, 120f, 50f);
+    [Tooltip("Diagonal oben-links ↔ unten-rechts.")]
+    [SerializeField] private Vector3 rotationDiagonalTopLeftToBottomRight = new Vector3(-50f, 105f, 42f);
+    [Tooltip("Diagonal unten-links ↔ oben-rechts.")]
+    [SerializeField] private Vector3 rotationDiagonalBottomLeftToTopRight = new Vector3(-50f, 255f, -100f);
+
     private SwipeDirection direction;
     private float effectiveRadius;
     private bool _directionSet = false;
@@ -224,6 +238,20 @@ public class SwipePoint : BasePoint
 
     private void RotateIcon(SwipeDirection dir)
     {
+        if (use3DDirectionRotations)
+        {
+            Vector3 euler = dir switch
+            {
+                SwipeDirection.Left or SwipeDirection.Right => rotationHorizontal,
+                SwipeDirection.Up or SwipeDirection.Down => rotationVertical,
+                SwipeDirection.UpLeft or SwipeDirection.DownRight => rotationDiagonalTopLeftToBottomRight,
+                SwipeDirection.UpRight or SwipeDirection.DownLeft => rotationDiagonalBottomLeftToTopRight,
+                _ => rotationHorizontal
+            };
+            transform.rotation = Quaternion.Euler(euler);
+            return;
+        }
+
         float angle = dir switch
         {
             SwipeDirection.Up => 0f,
