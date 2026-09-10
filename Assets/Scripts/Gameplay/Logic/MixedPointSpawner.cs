@@ -38,22 +38,18 @@ public class MixedPointSpawner : MonoBehaviour
         _floatingScorePool.Enqueue(fst);
     }
 
-    [SerializeField] private GameObject fountainModeActivationPointPrefab;
-    [SerializeField] private GameObject gravityModeActivationPointPrefab;
-    [SerializeField] private GameObject vortexModeActivationPointPrefab;
-
     [SerializeField] private GameUIManager uiManager;
+    // Wird nur noch vom Tutorial (ForceTutorialSpawn) belegt; die Special-Mode-Kugeln sind entfallen.
     private GameObject currentActivationPoint;
 
     private int CurrentScore =>
         ScoreManager.Instance ? ScoreManager.Instance.CurrentScore : 0;
 
-    [Header("Activation Orb Cooldown (geteilt)")]
-    [SerializeField] private float activationOrbCooldown = 60f;
+    // Leftover aus dem alten Kugel-System: verzögert nur noch harmlos das (nicht mehr existierende)
+    // erste Orb-Spawn-Fenster. Kann bei Gelegenheit ganz raus.
     [SerializeField] private float initialOrbDelayMin = 30f;
     [SerializeField] private float initialOrbDelayMax = 40f;
     private bool activationOrbOnCooldown = false;
-    private SpecialMode lastSpawnedOrbMode = SpecialMode.None;
     private bool isConvertingPoints = false;
 
 
@@ -1700,76 +1696,6 @@ public class MixedPointSpawner : MonoBehaviour
         activationOrbOnCooldown = false;
     }
 
-
-    private IEnumerator SharedOrbCooldownRoutine()
-    {
-        yield return new WaitForSeconds(activationOrbCooldown);
-        activationOrbOnCooldown = false;
-    }
-
-    private void StartSharedCooldown()
-    {
-        activationOrbOnCooldown = true;
-        StartCoroutine(SharedOrbCooldownRoutine());
-    }
-
-    // ─── Activation Orb (gemeinsam) ───────────────────────────────────────────
-
-    private bool TrySpawnActivationOrb()
-    {
-        if (activationOrbOnCooldown) return false;
-        if (currentActivationPoint != null) return false;
-
-        // Tutorial erzwingt immer Gravity-Orb an fester Position
-        if (TutorialManager.IsWaitingForTutorialOrb)
-            return TrySpawnGravityModePoint();
-
-        if (SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive)
-            return false;
-
-        return TrySpawnGravityModePoint() || TrySpawnFountainModePoint();
-    }
-
-    // ─── Gravity Mode ─────────────────────────────────────────────────────────
-
-    private bool TrySpawnGravityModePoint()
-    {
-        if (currentActivationPoint != null) return false;
-        if (activationOrbOnCooldown) return false;
-        if (lastSpawnedOrbMode == SpecialMode.Gravity) return false;
-        if (!TutorialManager.IsWaitingForTutorialOrb && Random.value > 0.3f) return false;
-
-        Vector3 worldPos;
-        if (TutorialManager.IsWaitingForTutorialOrb)
-        {
-            worldPos = ViewportToWorldOnZ0(TutorialManager.TutorialOrbViewport);
-        }
-        else
-        {
-            Rect allowedViewport = GetOrbSpawnViewport();
-            float orbHalf = GetHalfSizePixels(gravityModeActivationPointPrefab);
-            Vector2 vp = Vector2.zero;
-            int attempts = 0;
-            do
-            {
-                vp = GetRandomViewportPosition(allowedViewport);
-                attempts++;
-                if (IsFarEnoughFromCurrentPoint(vp, orbHalf)) break;
-            } while (attempts < 20);
-            worldPos = ViewportToWorldOnZ0(vp);
-        }
-
-        var orb = Instantiate(gravityModeActivationPointPrefab, worldPos, Quaternion.identity);
-        var script = orb.GetComponent<GravityModeActivationPoint>();
-        if (script != null) script.spawner = this;
-
-        currentActivationPoint = orb;
-        lastSpawnedOrbMode = SpecialMode.Gravity;
-        StartSharedCooldown();
-        return true;
-    }
-
-
     // ─── Utility / Public ─────────────────────────────────────────────────────
 
     public void PauseSpawning(bool pause)
@@ -2021,38 +1947,14 @@ public class MixedPointSpawner : MonoBehaviour
         CurrentSwipePoint = null;
     }
 
-    public void ClearAllActivationOrbs()
-    {
-        foreach (var orb in FindObjectsByType<GravityModeActivationPoint>(FindObjectsSortMode.None))
-            Destroy(orb.gameObject);
-    }
-
     public void ClearActivationPoint()
     {
         currentActivationPoint = null;
     }
 
-    /// <summary>Vom PhaseManager: den Activation-Orb des gewählten Modus spawnen. Der Orb spielt
-    /// seine Animation selbst ab und ruft am Ende StartMode(mode) auf.</summary>
-    public void SpawnActivationOrb(SpecialMode mode)
-    {
-        GameObject prefab = mode switch
-        {
-            SpecialMode.Fountain => fountainModeActivationPointPrefab,
-            SpecialMode.Vortex   => vortexModeActivationPointPrefab,
-            _                    => gravityModeActivationPointPrefab
-        };
-        if (prefab == null) { Debug.LogWarning($"[Spawner] Kein Activation-Orb-Prefab für {mode}."); return; }
-
-        Vector3 pos = ViewportToWorldOnZ0(new Vector2(0.5f, 0.5f));
-        var orb = Instantiate(prefab, pos, Quaternion.identity);
-
-        var g = orb.GetComponent<GravityModeActivationPoint>();  if (g != null) g.spawner = this;
-        var f = orb.GetComponent<FountainModeActivationPoint>(); if (f != null) f.spawner = this;
-        var v = orb.GetComponent<VortexModeActivationPoint>();   if (v != null) v.spawner = this;
-
-        currentActivationPoint = orb;
-    }
+    // Special-Mode-Einleitung läuft jetzt über FairyChoreographyDirector (Feen-Choreo statt
+    // Aktivierungs-Kugel) — siehe PhaseManager.Co_TriggerSpecialMode. Die früheren
+    // SpawnActivationOrb / TrySpawn*ModePoint / ClearAllActivationOrbs sind damit entfallen.
 
     public bool IsLevelUpActive()
     {
@@ -2129,30 +2031,4 @@ public class MixedPointSpawner : MonoBehaviour
         }
     }
 
-    /// <summary>Registriert einen vom TutorialManager manuell gespawnten Orb im Tracking.</summary>
-    public void RegisterTutorialOrb(GameObject orb)
-    {
-        currentActivationPoint = orb;
-    }
-
-    private bool TrySpawnFountainModePoint()
-    {
-        if (currentActivationPoint != null) return false;
-        if (activationOrbOnCooldown) return false;
-        if (lastSpawnedOrbMode == SpecialMode.Fountain) return false;
-        if (TutorialManager.IsWaitingForTutorialOrb) return false;
-        if (Random.value > 0.3f) return false;
-
-        Rect allowedViewport = GetOrbSpawnViewport();
-        Vector3 worldPos = ViewportToWorldOnZ0(GetRandomViewportPosition(allowedViewport));
-
-        var orb = Instantiate(fountainModeActivationPointPrefab, worldPos, Quaternion.identity);
-        var script = orb.GetComponent<FountainModeActivationPoint>();
-        if (script != null) script.spawner = this;
-
-        currentActivationPoint = orb;
-        lastSpawnedOrbMode = SpecialMode.Fountain;
-        StartSharedCooldown();
-        return true;
-    }
 }

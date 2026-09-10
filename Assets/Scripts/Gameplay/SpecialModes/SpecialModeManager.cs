@@ -28,13 +28,6 @@ public void StartMode(SpecialMode mode)
 
     Debug.Log($"🚀 Mode START: {mode}");
 
-    // 🔥 NEU: alle Activation Orbs löschen
-    var spawner = FindFirstObjectByType<MixedPointSpawner>();
-    if (spawner != null)
-    {
-        spawner.ClearAllActivationOrbs();
-    }
-
     OnModeStarted?.Invoke(mode);
 }
 

@@ -218,27 +218,10 @@ public class TutorialManager : MonoBehaviour
         tutorialActive = false;
         if (pauseButton != null) pauseButton.SetActive(true);
 
-        // ── Warten bis ein Activation-Orb spawnt (echtes Spiel-System) ──────────
-        // Der Spawner erzwingt dabei die Mitte als Spawn-Position (TutorialOrbVP).
-        _waitingForOrb    = true;
-        _orbSpawnReceived = false;
-        yield return new WaitUntil(() => _orbSpawnReceived && !_gamePaused);
-        _waitingForOrb = false;
-
-        // Orb-Phase starten: normalen Punkt wegräumen, Spawner pausieren
-        IsOrbPhaseActive = true;
-        spawner.ForceClearCurrentPoint();
-        spawner.PauseSpawning(true);
-
-        // Kurz warten damit der Orb in Ruhe sichtbar ist, bevor Overlay erscheint
-        yield return WaitUnscaled(orbRevealDelay);
-
-        // ── Special-Orb Erklärung ─────────────────────────────────────────────
-        yield return ShowAndWaitForOrb(_receivedOrbType, _receivedOrbWorldPos,
-            new TutorialStepData(textSpecialOrb, TutorialAnimType.Tap));
-
-        IsOrbPhaseActive = false;
-        spawner.PauseSpawning(false);
+        // HINWEIS: Die frühere "Special-Orb antippen"-Phase ist entfallen — Special Modes starten
+        // jetzt automatisch über die Feen-Choreo (FairyChoreographyDirector), es gibt keine tappbare
+        // Aktivierungs-Kugel mehr. Das Tutorial wird ohnehin komplett neu gemacht; bis dahin endet es
+        // hier nach den Grundlagen-Schritten.
 
         // ── Tutorial abgeschlossen – Spiel läuft weiter ───────────────────────
         NeonAnalytics.LogTutorialCompleted();

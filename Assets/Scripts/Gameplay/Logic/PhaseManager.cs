@@ -452,7 +452,13 @@ public class PhaseManager : MonoBehaviour
                 break;
         }
 
-        spawner.SpawnActivationOrb(mode);
+        // Feen-Choreo statt Aktivierungs-Kugel: die Lead-Fee fliegt ihre Intro-Bahn und ruft am Ende
+        // selbst SpecialModeManager.StartMode(mode) auf (ersetzt 1:1 das frühere FinishCombo der Kugel).
+        if (FairyChoreographyDirector.Instance != null)
+            FairyChoreographyDirector.Instance.PlaySpecialModeIntro(mode);
+        else
+            SpecialModeManager.Instance?.StartMode(mode); // Fallback, damit das WaitUntil nicht hängt
+
         yield return new WaitUntil(() => SpecialModeManager.Instance != null && SpecialModeManager.Instance.IsModeActive);
 
         _triggerRoutine = null;
