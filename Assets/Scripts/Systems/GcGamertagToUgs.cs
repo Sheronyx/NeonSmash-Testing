@@ -18,6 +18,13 @@ public static class GcGamertagToUgs
     public static async Task TryApplyAsync()
     {
 #if UNITY_IOS
+#if UNITY_EDITOR
+        // Game Center (GameKit) existiert im Editor/Simulator nicht — Social.localUser.Authenticate
+        // ruft dort den Callback nie zuverlässig auf und blockiert den Boot-Flow (Splash hängt fest,
+        // nur der 20s-Failsafe rettet, manchmal nicht mal das). Im Editor einfach überspringen.
+        await Task.CompletedTask;
+        return;
+#else
         await Task.Yield(); // sicherstellen, dass wir auf dem Mainthread sind
         GameCenterPlatform.ShowDefaultAchievementCompletionBanner(true);
 
@@ -115,6 +122,7 @@ public static class GcGamertagToUgs
         // Safety Timeout
         _ = FailSafe(tcs, 20000);
         await tcs.Task;
+#endif
 #else
         await Task.CompletedTask;
 #endif

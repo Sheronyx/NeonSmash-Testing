@@ -30,7 +30,7 @@ public class SlashTrail : MonoBehaviour
 
     [Header("Trail Einstellungen")]
     [Range(0.01f, 2f)]
-    public float width = 0.06f;
+    public float width = 0.14f;
     public float trailTime = 0.15f;
 
     [Header("Electric Trail Einstellungen (Combo >= 10)")]
@@ -97,7 +97,9 @@ public class SlashTrail : MonoBehaviour
                 foreach (TrailRenderer tr in activeTrails)
                 {
                     tr.sortingLayerName = sortingLayerName;
-                    tr.sortingOrder     = sortingOrder;
+                    // Die schwarze "Outline"-Kopie (falls vorhanden) muss HINTER dem eigentlichen
+                    // farbigen Trail liegen, damit sie wie ein Rand statt wie ein eigener Strich wirkt.
+                    tr.sortingOrder = tr.gameObject.name == "Outline" ? sortingOrder - 1 : sortingOrder;
                 }
             }
         }

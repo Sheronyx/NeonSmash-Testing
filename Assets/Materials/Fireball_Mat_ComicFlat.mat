@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: FireballTrail
+  m_Name: Fireball_Mat_ComicFlat
   m_Shader: {fileID: -6465566751694194690, guid: ca6120cad5e694425b4359dbd1e30181, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -41,7 +41,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 6fc3488c278724f18a30b7d2f351560a, type: 3}
+        m_Texture: {fileID: 2800000, guid: 848b923ebd2cb0345afc1b7f96c8b4c3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -65,18 +65,18 @@ Material:
     - _Cull: 2
     - _DstBlend: 10
     - _DstBlendAlpha: 10
-    - _MainTexPower: 4
+    - _MainTexPower: 10
     - _QueueControl: 0
     - _QueueOffset: 0
     - _SrcBlend: 5
     - _SrcBlendAlpha: 1
     - _Surface: 1
-    - _ZTest: 8
+    - _ZTest: 4
     - _ZWrite: 0
     - _ZWriteControl: 0
     m_Colors:
-    - _Color: {r: 4.759381, g: 4.759381, b: 4.759381, a: 1}
-    - _MainTexSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _Color: {r: 1.6, g: 1.6, b: 1.6, a: 1}
+    - _MainTexSpeed: {r: 0, g: 0.5, b: 0, a: 0}
     - _MainTexTiling: {r: 1, g: 1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -478,6 +478,12 @@ public class PhaseManager : MonoBehaviour
     private IEnumerator Co_DelayedAdvanceToNormalPhase()
     {
         yield return new WaitForSeconds(postSpecialModePause);
+
+        // Erst weiterschalten, wenn die Feen-Choreo ihr Outro fertig hat (alle Feen wieder an ihren
+        // Startpositionen) — sonst würden schon Normal-Elemente spawnen, während die Feen noch heimfliegen.
+        if (FairyChoreographyDirector.Instance != null)
+            yield return new WaitUntil(() => !FairyChoreographyDirector.Instance.IsOutroActive);
+
         AdvanceToNextNormalPhase();
     }
 

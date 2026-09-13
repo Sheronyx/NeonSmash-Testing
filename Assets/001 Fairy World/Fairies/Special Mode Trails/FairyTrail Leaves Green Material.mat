@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: cfxr leave a ab lit normal
+  m_Name: FairyTrail Leaves Green Material
   m_Shader: {fileID: -6465566751694194690, guid: 1a29b4d27eb8b04479ef89c00dea533d, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -15,11 +15,11 @@ Material:
   - _ALPHABLEND_ON
   - _ALPHATEST_ON
   - _CFXR_DITHERED_SHADOWS_ON
-  - _CFXR_LIGHTING_ALL
   - _CFXR_LIGHTING_BACK
   - _FADING_ON
   - _NORMALMAP
   m_InvalidKeywords:
+  - _
   - _CFXR_OVERLAYBLEND_RGBA
   - _CFXR_OVERLAYTEX_OFF
   m_LightmapFlags: 0
@@ -84,7 +84,7 @@ Material:
     - _EdgeFadePow: 1
     - _FadeAlongU: 0
     - _HdrBoost: 0
-    - _HdrMultiply: 1
+    - _HdrMultiply: 2
     - _IndirectLightingMix: 1
     - _InvertDissolveTex: 0
     - _LightingWorldPosStrength: 1
@@ -107,7 +107,7 @@ Material:
     - _UseFB: 0
     - _UseFontColor: 0
     - _UseGradientMap: 0
-    - _UseLighting: 3
+    - _UseLighting: 0
     - _UseLightingWorldPosOffset: 0
     - _UseNormalMap: 1
     - _UseSP: 1

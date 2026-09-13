@@ -3,27 +3,38 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Großes visuelles Intro beim Antippen von PLAY im Hauptmenü: die drei Feen fliegen selbst (auf
-// einem Bogen, nicht reingezogen) ins aktuell angezeigte Skin-Portal und verschwinden, danach zoomt
-// die Kamera nah an die Portal-Mitte heran — erst DANACH wechselt die Szene zum eigentlichen Spiel
-// (siehe ModeSelectController.OnInfinity).
+// Großes visuelles Intro beim Antippen von PLAY im Hauptmenü: die drei (jetzt 3D-) Feen fliegen
+// selbst (auf einem Bogen, nicht reingezogen) ins aktuell angezeigte Skin-Portal — sie drehen sich
+// dabei um (Rücken zum Spieler) und wechseln parallel von Idle_Fly in ihre Flugmodus-Animation
+// (Special-Mode-Fly-Clip, per Animator-Bool "IsSpecialMode"), dann fliegen sie kleiner werdend ins
+// Portal und verschwinden. Danach zoomt die Kamera nah an die Portal-Mitte heran — erst DANACH
+// wechselt die Szene zum eigentlichen Spiel (siehe ModeSelectController.OnInfinity).
 // Antippen während der Sequenz überspringt den Rest sofort (kein Warten bei jedem Spielstart).
 public class PlayIntroSequence : MonoBehaviour
 {
     public static PlayIntroSequence Instance { get; private set; }
 
-    [Header("Feen (fliegen selbst ins Portal und verschwinden)")]
+    [Header("Feen (3D, stehen standardmäßig im Idle-Flug, fliegen selbst ins Portal und verschwinden)")]
     [SerializeField] private Transform[] fairies;
-    [SerializeField] private float fairyFlightDuration = 0.5f;
+    [SerializeField] private string specialModeBool = "IsSpecialMode";
+    [SerializeField] private float fairyFlightDuration = 1.15f;
+    [Tooltip("Anteil des Flugs (Sekunden), über den sich die Fee vom Spieler weg dreht (Rücken zur " +
+             "Kamera) — läuft PARALLEL zum Umschalten auf die Flugmodus-Animation, danach hält sie " +
+             "die Rückenrotation bis sie im Portal verschwindet.")]
+    [SerializeField] private float fairyTurnDuration = 0.22f;
     [Tooltip("Versatz zwischen dem Start der einzelnen Feen-Flüge — 0 = alle gleichzeitig los.")]
     [SerializeField] private float fairyStagger = 0.12f;
     [Tooltip("Wie stark der Flugweg von der geraden Linie zum Portal abweicht (Bogen statt starrer Linie).")]
     [SerializeField] private float fairyCurveStrength = 1.2f;
-    [Tooltip("Wie viel schneller die Flügel während des Flugs schlagen (sanft hochgeeast über " +
-             "FairyWingFlap.SetSpeedBoost, kein abrupter Sprung).")]
-    [SerializeField] private float fairyFlapSpeedBoost = 1.6f;
+    [Tooltip("Zusätzliches Nach-vorn-Kippen (Liege-/Superman-Haltung) beim Flug Richtung Portal, in Grad. " +
+             "0 = bleibt aufrecht, ~50-70 = flach liegend fliegend.")]
+    [Range(0f, 90f)]
+    [SerializeField] private float fairyFlightLeanDegrees = 60f;
 
     [Header("Kamera-Zoom zur Portal-Mitte")]
+    [Tooltip("Wartezeit, bevor der Zoom beginnt — läuft danach PARALLEL zu den noch fliegenden Feen " +
+             "(nicht erst danach), spart also Gesamtzeit gegenüber einem rein sequentiellen Ablauf.")]
+    [SerializeField] private float cameraZoomStartDelay = 0.35f;
     [SerializeField] private float cameraZoomDuration = 0.8f;
     [Tooltip("Ziel-Orthographic-Size relativ zur aktuellen (kleiner = näher reingezoomt).")]
     [Range(0.02f, 1f)] [SerializeField] private float cameraZoomTargetFactor = 0.12f;
@@ -71,20 +82,28 @@ public class PlayIntroSequence : MonoBehaviour
             StartCoroutine(Co_FadeOutMenuUi());
 
         Transform portal = MenuPortalSwitcher.Instance != null ? MenuPortalSwitcher.Instance.ActivePortalTransform : null;
-
-        if (portal != null && fairies != null && fairies.Length > 0)
-            yield return Co_FairiesIntoPortal(portal);
-
         Camera cam = Camera.main;
-        if (portal != null && cam != null && cam.orthographic)
-            yield return Co_ZoomToPortal(cam, portal);
+
+        bool fairiesDone = !(portal != null && fairies != null && fairies.Length > 0);
+        bool zoomDone     = !(portal != null && cam != null && cam.orthographic);
+
+        if (!fairiesDone)
+            StartCoroutine(Co_FairiesIntoPortal(portal, () => fairiesDone = true));
+
+        // Der Kamera-Zoom startet jetzt schon WÄHREND die Feen noch reinfliegen (nach kurzer
+        // Verzögerung, damit man den Flug noch sieht) statt erst danach — spart Gesamtzeit, ohne dass
+        // sich der Flug selbst schneller anfühlen muss.
+        if (!zoomDone)
+            StartCoroutine(Co_DelayedZoom(cam, portal, () => zoomDone = true));
+
+        while (!fairiesDone || !zoomDone) yield return null;
 
         DimOverlay.Instance?.Hide();
         _playing = false;
         onComplete?.Invoke();
     }
 
-    private IEnumerator Co_FairiesIntoPortal(Transform portal)
+    private IEnumerator Co_FairiesIntoPortal(Transform portal, Action onAllDone)
     {
         int remaining = 0;
         for (int i = 0; i < fairies.Length; i++)
@@ -113,44 +132,32 @@ public class PlayIntroSequence : MonoBehaviour
         // Bei Skip: alle Feen sofort ausblenden statt mitten in der Flugbahn stehen zu lassen.
         foreach (var fairy in fairies)
             if (fairy != null) fairy.gameObject.SetActive(false);
+
+        onAllDone?.Invoke();
     }
 
     private IEnumerator Co_SingleFairyIntoPortal(Transform fairy, Transform portal, Action onDone)
     {
-        // Eigene Bewegungs-Skripte pausieren, während das Intro selbst die Position steuert (gleiches
-        // Prinzip wie die Tap-Gimmicks: nie zwei Bewegungsquellen gleichzeitig). Der Flügelschlag
-        // (FairyWingFlap) bleibt bewusst aktiv, sieht im Flug lebendiger aus als starre Flügel.
-        var fairyFloat = fairy.GetComponent<FairyFloat>();
-        if (fairyFloat != null) fairyFloat.enabled = false;
-        var col = fairy.GetComponent<Collider2D>();
-        if (col != null) col.enabled = false;
+        // Parallel zum Umdrehen (siehe unten) auf die Flugmodus-Animation wechseln — derselbe Bool
+        // und dieselbe Special-Mode-Fly-Animation wie im eigentlichen Spiel (FairyChoreographyDirector).
+        var animator = fairy.GetComponentInChildren<Animator>();
+        SetSpecialBool(animator, true);
 
-        // Falls PLAY genau während eines eigenen Tap-Gimmicks (Loop/Bubble/...) gedrückt wurde, dessen
-        // Coroutine stoppen — sonst würde die parallel weiter an Position/Pose rumfummeln.
-        fairy.GetComponent<FairyTapGimmick>()?.StopAllCoroutines();
-        fairy.GetComponent<FairyLoopFlight>()?.StopAllCoroutines();
-        fairy.GetComponent<FairyBubbleBurst>()?.StopAllCoroutines();
+        Vector3    startPos      = fairy.position;
+        Vector3    startScale    = fairy.localScale;
+        Quaternion startRot      = fairy.rotation;
+        // Umdrehen = zusätzliche 180°-Drehung um die eigene Y-Achse (Rücken statt Gesicht zur Kamera),
+        // plus nach vorn kippen (Liege-/Superman-Haltung) für den Flug Richtung Portal.
+        Quaternion backFacingRot = startRot * Quaternion.Euler(0f, 180f, 0f) * Quaternion.AngleAxis(fairyFlightLeanDegrees, Vector3.right);
 
-        // ReleasePoseSmoothly blendet sanft aus einer evtl. hängenden gehaltenen Flügel-Pose (z.B.
-        // während der Vibrationsphase von Blau) in den automatischen Takt über — kein Sprung, egal
-        // in welchem Zustand die Flügel gerade waren. SetSpeedBoost fährt den Flügelschlag zusätzlich
-        // sanft hoch (gleiche exponentielle Ease-Logik wie bei den Tap-Gimmicks).
-        var wingFlap = fairy.GetComponent<FairyWingFlap>();
-        if (wingFlap != null)
-        {
-            wingFlap.ReleasePoseSmoothly();
-            wingFlap.SetSpeedBoost(fairyFlapSpeedBoost);
-        }
+        // Bogen statt gerader Linie — zufälliger seitlicher Kontrollpunkt, damit die Fee aktiv
+        // reinfliegt statt reingezogen zu wirken.
+        Vector3 toPortal = portal.position - startPos;
+        Vector3 perp     = new Vector3(-toPortal.y, toPortal.x, 0f).normalized;
+        perp            *= (UnityEngine.Random.value < 0.5f ? -1f : 1f);
+        Vector3 control  = startPos + toPortal * 0.5f + perp * fairyCurveStrength;
 
-        Vector3 startPos   = fairy.position;
-        Vector3 startScale = fairy.localScale;
-
-        // Bogen statt gerader Linie (gleiches Prinzip wie Co_MoveCurved bei den Tap-Gimmicks) —
-        // zufälliger seitlicher Kontrollpunkt, damit die Fee aktiv reinfliegt statt reingezogen zu wirken.
-        Vector3 toPortal   = portal.position - startPos;
-        Vector3 perp       = new Vector3(-toPortal.y, toPortal.x, 0f).normalized;
-        perp              *= (UnityEngine.Random.value < 0.5f ? -1f : 1f);
-        Vector3 control    = startPos + toPortal * 0.5f + perp * fairyCurveStrength;
+        float turnT = Mathf.Clamp(fairyTurnDuration, 0.05f, fairyFlightDuration);
 
         float t = 0f;
         while (t < fairyFlightDuration && !_skipRequested)
@@ -164,11 +171,28 @@ public class PlayIntroSequence : MonoBehaviour
             Vector3 b = Vector3.Lerp(control, portal.position, p);
             fairy.position   = Vector3.Lerp(a, b, p);
             fairy.localScale = Vector3.Lerp(startScale, Vector3.zero, p);
+
+            // Dreht sich zu Beginn des Flugs (parallel zum Animations-Wechsel oben) einmal um und
+            // hält danach die Rückenrotation, bis sie im Portal verschwindet.
+            float turnP = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / turnT));
+            fairy.rotation = Quaternion.Slerp(startRot, backFacingRot, turnP);
+
             yield return null;
         }
 
         fairy.gameObject.SetActive(false);
         onDone?.Invoke();
+    }
+
+    private void SetSpecialBool(Animator a, bool value)
+    {
+        if (a == null) return;
+        foreach (var p in a.parameters)
+            if (p.type == AnimatorControllerParameterType.Bool && p.name == specialModeBool)
+            {
+                a.SetBool(specialModeBool, value);
+                return;
+            }
     }
 
     private IEnumerator Co_FadeOutMenuUi()
@@ -184,6 +208,20 @@ public class PlayIntroSequence : MonoBehaviour
             yield return null;
         }
         menuUiCanvasGroup.alpha = 0f;
+    }
+
+    // Startet den Zoom erst nach `cameraZoomStartDelay` (damit man den Feen-Abflug noch kurz sieht),
+    // läuft aber PARALLEL zu den noch fliegenden Feen statt erst danach — spart Gesamtzeit.
+    private IEnumerator Co_DelayedZoom(Camera cam, Transform portal, Action onDone)
+    {
+        float t = 0f;
+        while (t < cameraZoomStartDelay && !_skipRequested)
+        {
+            t += Time.deltaTime;
+            yield return null;
+        }
+        yield return Co_ZoomToPortal(cam, portal);
+        onDone?.Invoke();
     }
 
     private IEnumerator Co_ZoomToPortal(Camera cam, Transform portal)

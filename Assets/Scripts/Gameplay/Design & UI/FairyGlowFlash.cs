@@ -41,6 +41,9 @@ public class FairyGlowFlash : MonoBehaviour
     private Vector3 baseScale;
     private Coroutine flashRoutine;
 
+    private Coroutine outlineGlowRoutine;
+    private bool outlineGlowHeld;   // true, solange die Fee im Special Mode dauerhaft leuchtet
+
     private void Awake()
     {
         if (glowRenderers == null || glowRenderers.Length == 0)
@@ -64,6 +67,41 @@ public class FairyGlowFlash : MonoBehaviour
 
         if (outlineTarget != null)
             outlineBaseColor = outlineTarget.color;
+    }
+
+    private void OnDisable()
+    {
+        // Outline liegt in einem .asset — Laufzeit-Änderungen bleiben im Editor sonst nach dem
+        // Play-Stop erhalten. Beim Deaktivieren/Beenden sauber auf die Ruhe-Farbe (Schwarz) zurück.
+        if (outlineTarget != null) outlineTarget.color = outlineBaseColor;
+        outlineGlowHeld = false;
+    }
+
+    /// <summary>Hält die Leucht-Umrandung dauerhaft an/aus (Special Mode) — weich übergeblendet.</summary>
+    public void SetOutlineGlow(bool on)
+    {
+        if (outlineTarget == null) return;
+        outlineGlowHeld = on;
+        if (outlineGlowRoutine != null) StopCoroutine(outlineGlowRoutine);
+        if (isActiveAndEnabled)
+            outlineGlowRoutine = StartCoroutine(Co_OutlineGlow(on ? outlineFlashColor : outlineBaseColor));
+        else
+            outlineTarget.color = on ? outlineFlashColor : outlineBaseColor;
+    }
+
+    private IEnumerator Co_OutlineGlow(Color to)
+    {
+        Color from = outlineTarget.color;
+        const float dur = 0.35f;
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.deltaTime;
+            outlineTarget.color = Color.LerpUnclamped(from, to, Mathf.SmoothStep(0f, 1f, t / dur));
+            yield return null;
+        }
+        outlineTarget.color = to;
+        outlineGlowRoutine = null;
     }
 
     public void Flash()
@@ -123,7 +161,9 @@ public class FairyGlowFlash : MonoBehaviour
             mats[i].SetColor(glowColorProperty, Color.LerpUnclamped(baseColors[i], boosted, k));
         }
 
-        if (outlineTarget != null)
+        // Während der Special Mode die Umrandung dauerhaft leuchten lässt (SetOutlineGlow), nicht
+        // vom kurzen Energiekugel-Flash überschreiben.
+        if (outlineTarget != null && !outlineGlowHeld)
             outlineTarget.color = Color.LerpUnclamped(outlineBaseColor, outlineFlashColor, k);
     }
 }
