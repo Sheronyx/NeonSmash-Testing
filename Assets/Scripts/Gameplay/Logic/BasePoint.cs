@@ -46,10 +46,13 @@ public abstract class BasePoint : MonoBehaviour
 
         var fx = Instantiate(explodeVFXPrefab, transform.position, Quaternion.identity);
 
-        // Klassische Partikel-Explosion: alle Kind-Partikelsysteme abspielen, nach der längsten
-        // Laufzeit selbst aufräumen. Neuere 3D-Brocken-Explosionen (z.B. ElementChunkExplosion) haben
-        // KEINE ParticleSystems — die räumen sich stattdessen über ihre eigene Coroutine selbst auf,
-        // hier also nichts Destroy() mit Dauer 0 aufrufen (würde die Animation sofort abwürgen).
+        // Neuere 3D-Brocken-Explosionen (ElementChunkExplosion) verwalten Abspielen UND Aufräumen
+        // komplett selbst (auch wenn sie zusätzlich ein Glow-Partikelsystem als Kind-Objekt enthalten) —
+        // hier also nichts anfassen. Nur bei alten, reinen Partikel-Explosions-Prefabs (kein
+        // ElementChunkExplosion) übernehmen wir Play()/Destroy() wie bisher.
+        if (fx.GetComponent<ElementChunkExplosion>() != null)
+            return;
+
         var particleSystems = fx.GetComponentsInChildren<ParticleSystem>(true);
         if (particleSystems.Length > 0)
         {

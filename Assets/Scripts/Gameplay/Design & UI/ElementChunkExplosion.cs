@@ -5,8 +5,12 @@ using UnityEngine;
 // Comic-Material + schwarze Outline-Shell wie die Tap-/Swipe-Elemente) fliegen beim Spawnen
 // auseinander, drehen sich und schrumpfen gegen Ende auf 0 — dann räumt sich das ganze Prefab selbst
 // auf. Wird wie das alte explodeVFXPrefab einfach per Instantiate(...) an der Trefferposition erzeugt
-// (siehe BasePoint.SpawnExplosion) — kein ParticleSystem nötig, daher zerstört sich dieses Skript
-// sich selbst statt sich auf Partikel-Laufzeiten zu verlassen.
+// (siehe BasePoint.SpawnExplosion). Optional kann ein zusätzliches leuchtendes Glow-Partikelsystem als
+// Kind-Objekt angehängt werden (z.B. "Energy Explosion Tap/Swipe Element <Farbe>") — jedes
+// ParticleSystem, das NICHT selbst ein Brocken-Mesh trägt, wird beim Start einfach abgespielt und
+// zählt nicht zu den fliegenden/rotierenden/schrumpfenden Brocken. Dieses Skript verwaltet seinen
+// eigenen Lebenszyklus komplett selbst (siehe BasePoint.SpawnExplosion: kein Destroy(fx, dur) von
+// außen, wenn eine ElementChunkExplosion-Komponente vorhanden ist).
 public class ElementChunkExplosion : MonoBehaviour
 {
     [Tooltip("Wie lange die Brocken insgesamt sichtbar sind, bevor sie verschwinden.")]
@@ -26,12 +30,33 @@ public class ElementChunkExplosion : MonoBehaviour
 
     private void Start()
     {
-        StartCoroutine(Co_Explode());
+        // Optionales Glow-Partikelsystem (z.B. "Energy Explosion Tap/Swipe Element <Farbe>") einfach
+        // abspielen — läuft komplett unabhängig von den Brocken weiter (eigenes Simulationsraum/-timing).
+        var glowSystems = GetComponentsInChildren<ParticleSystem>(true);
+        float maxParticleLifetime = 0f;
+        foreach (var ps in glowSystems)
+        {
+            ps.Play();
+            var main = ps.main;
+            maxParticleLifetime = Mathf.Max(maxParticleLifetime, main.startDelay.constantMax + main.duration + main.startLifetime.constantMax);
+        }
+
+        StartCoroutine(Co_Explode(Mathf.Max(duration, maxParticleLifetime)));
     }
 
-    private IEnumerator Co_Explode()
+    private IEnumerator Co_Explode(float totalLifetime)
     {
-        int count = transform.childCount;
+        // Nur echte Brocken (mit eigenem Mesh) fliegen/rotieren/schrumpfen — ein evtl. angehängtes
+        // Glow-Partikelsystem (kein MeshFilter) bleibt davon unberührt und läuft einfach für sich.
+        var chunkList = new System.Collections.Generic.List<Transform>();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            var child = transform.GetChild(i);
+            if (child.GetComponent<MeshFilter>() != null)
+                chunkList.Add(child);
+        }
+
+        int count = chunkList.Count;
         var chunks       = new Transform[count];
         var startDir     = new Vector3[count];
         var startSpeed   = new float[count];
@@ -50,7 +75,7 @@ public class ElementChunkExplosion : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            var chunk = transform.GetChild(i);
+            var chunk = chunkList[i];
             chunks[i] = chunk;
             startScale[i] = chunk.localScale;
             baseRot[i] = chunk.rotation;
@@ -100,6 +125,12 @@ public class ElementChunkExplosion : MonoBehaviour
             }
             yield return null;
         }
+
+        // Falls ein angehängtes Glow-Partikelsystem länger läuft als die Brocken-Animation, hier noch
+        // warten, statt es mitten in seiner Lebenszeit abzuwürgen.
+        float remaining = totalLifetime - duration;
+        if (remaining > 0f)
+            yield return new WaitForSeconds(remaining);
 
         Destroy(gameObject);
     }
