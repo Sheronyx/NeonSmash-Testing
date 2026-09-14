@@ -45,12 +45,21 @@ public abstract class BasePoint : MonoBehaviour
             return;
 
         var fx = Instantiate(explodeVFXPrefab, transform.position, Quaternion.identity);
-        float dur = 0f;
-        foreach (var ps in fx.GetComponentsInChildren<ParticleSystem>(true))
+
+        // Klassische Partikel-Explosion: alle Kind-Partikelsysteme abspielen, nach der längsten
+        // Laufzeit selbst aufräumen. Neuere 3D-Brocken-Explosionen (z.B. ElementChunkExplosion) haben
+        // KEINE ParticleSystems — die räumen sich stattdessen über ihre eigene Coroutine selbst auf,
+        // hier also nichts Destroy() mit Dauer 0 aufrufen (würde die Animation sofort abwürgen).
+        var particleSystems = fx.GetComponentsInChildren<ParticleSystem>(true);
+        if (particleSystems.Length > 0)
         {
-            ps.Play();
-            dur = Mathf.Max(dur, ps.main.duration + ps.main.startLifetime.constantMax);
+            float dur = 0f;
+            foreach (var ps in particleSystems)
+            {
+                ps.Play();
+                dur = Mathf.Max(dur, ps.main.duration + ps.main.startLifetime.constantMax);
+            }
+            Destroy(fx, dur);
         }
-        Destroy(fx, dur);
     }
 }
