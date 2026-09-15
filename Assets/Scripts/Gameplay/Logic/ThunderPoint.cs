@@ -128,6 +128,8 @@ public class ThunderPoint : MonoBehaviour
     {
         foreach (var sr in GetComponentsInChildren<SpriteRenderer>())
             sr.enabled = false;
+        foreach (var mr in GetComponentsInChildren<MeshRenderer>())
+            mr.enabled = false;
 
         var col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;

@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8522490081494073370}
@@ -5283,7 +5283,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.17587052, y: -0.43845075, z: -0.76457286, w: 0.43847328}
   m_LocalPosition: {x: -0.06387972, y: -0.070597485, z: 0.034691274}
-  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_LocalScale: {x: 0.54, y: 0.54, z: 0.54}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4491131407783484922}
@@ -5374,7 +5374,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.7778739, y: 0.27082214, z: -0.369695, w: -0.42999217}
   m_LocalPosition: {x: 0.115689375, y: 0.05580983, z: -0.046210114}
-  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_LocalScale: {x: 0.54, y: 0.54, z: 0.54}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1467197386840507082}
@@ -5465,7 +5465,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.003716536, y: 0.06886704, z: 0.8879462, w: 0.4547473}
   m_LocalPosition: {x: -0.02303053, y: -0.04430919, z: -0.027530136}
-  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_LocalScale: {x: 0.54, y: 0.54, z: 0.54}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8664329326041239618}
@@ -5556,7 +5556,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0.6017326, y: 0.046428144, z: 0.65830487, w: 0.44988555}
   m_LocalPosition: {x: -0.09660364, y: -0.079939894, z: -0.023240168}
-  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_LocalScale: {x: 0.54, y: 0.54, z: 0.54}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2403149061992614210}
@@ -5630,7 +5630,7 @@ GameObject:
   - component: {fileID: 4402727590939448425}
   - component: {fileID: 3510806777412149011}
   m_Layer: 0
-  m_Name: Explosion3D Green
+  m_Name: Explosion3D Green Small
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5670,7 +5670,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ElementChunkExplosion
   duration: 0.4
-  speedRange: {x: 2.2, y: 3.2}
+  speedRange: {x: 1.32, y: 1.9200001}
   spinSpeedDegrees: 0
   shrinkStart: 0.3
 --- !u!1 &6360881521188389402
@@ -5701,7 +5701,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.27921295, y: 0.3600181, z: 0.48039642, w: 0.7494307}
   m_LocalPosition: {x: -0.054735474, y: -0.05822609, z: -0.011624258}
-  m_LocalScale: {x: 0.9, y: 0.9, z: 0.9}
+  m_LocalScale: {x: 0.54, y: 0.54, z: 0.54}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7613349932012484600}

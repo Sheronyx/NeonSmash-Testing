@@ -21,7 +21,7 @@ public class ElementChunkExplosion : MonoBehaviour
     [SerializeField] private Vector2 speedRange = new Vector2(2.2f, 3.2f);
     [Tooltip("Rotationsgeschwindigkeit der Brocken um die EIGENE Achse (Grad/Sek) — rein kosmetisch, hat " +
              "keinerlei Einfluss auf die (geradlinige) Flugrichtung.")]
-    [SerializeField] private float spinSpeedDegrees = 720f;
+    [SerializeField] private float spinSpeedDegrees = 0f;
     [Tooltip("Anteil der Gesamtdauer, ab dem die Brocken anfangen zu schrumpfen (0.75 = nur die letzten " +
              "25% der Zeit) — die Brocken bleiben also die meiste Zeit in voller Größe sichtbar und " +
              "verschwinden erst ganz am Ende schnell, statt die ganze Zeit langsam wegzufaden.")]
