@@ -65,6 +65,11 @@ public class FairyChoreographyDirector : MonoBehaviour
              "wirkt, als flöge sie in den Hintergrund). Das Outro skaliert wieder auf Heimat-Größe.")]
     [Range(0.2f, 1f)]
     [SerializeField] private float spiralEndScale = 0.55f;
+    [Tooltip("Zeitversatz (Sekunden), mit dem der Blätter-Trail der Spiralbahn 'hinterherhinkt' — sorgt " +
+             "dafür, dass die Blätter sichtbar aus dem tatsächlich geflogenen Weg kommen statt aus der " +
+             "aktuellen (in engen Kurven optisch 'falschen') Fee-Position/-Rotation.")]
+    [Range(0f, 0.3f)]
+    [SerializeField] private float trailDelay = 0.1f;
 
     [Header("Gravity — pinke Fee (2 Durchflüge von oben nach unten)")]
     [Tooltip("Sekunden für EINEN sichtbaren Durchflug von oben durchs Bild nach unten. Höher = langsamer.")]
@@ -363,6 +368,26 @@ public class FairyChoreographyDirector : MonoBehaviour
             if (t < travelT)
             {
                 SlerpTo(f, FlightRotation(SpiralTangent(angle)), turnSpeed);
+
+                // Der Trail hängt als Kind an der Fee und würde sonst ihre (bewusst geglättete,
+                // rate-limitierte) Körper-Rotation UND -Position 1:1 übernehmen — das sieht in der engen
+                // Spiral-Mitte (Radius schrumpft auf 0, Kurve wird dort extrem eng) unnatürlich aus.
+                // Fix: Trail-Position/-Rotation stattdessen von einem leicht ZURÜCKLIEGENDEN Punkt auf
+                // derselben analytischen Spiralbahn ableiten (~0.1s "Verzögerung") — die Blätter kommen
+                // dadurch sichtbar aus dem tatsächlich geflogenen Weg, nicht aus der aktuellen Fee-Pose.
+                if (trail != null)
+                {
+                    try
+                    {
+                        float tDelayed     = Mathf.Max(0f, t - trailDelay);
+                        float pDelayed     = Mathf.Clamp01(tDelayed / spiralT);
+                        float radiusDelayed = RadiusAt(pDelayed);
+                        float angleDelayed  = startAngle + totalSweep * pDelayed;
+                        trail.transform.position = SpiralPos(angleDelayed, radiusDelayed);
+                        trail.transform.rotation = FlightRotation(SpiralTangent(angleDelayed));
+                    }
+                    catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+                }
             }
             else
             {
@@ -370,7 +395,22 @@ public class FairyChoreographyDirector : MonoBehaviour
                 float sp = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - travelT) / settleT));
                 f.rotation = Quaternion.Slerp(settleFrom, homeRot, sp);
             }
-            SetTrailVisible(trail, f.position);
+
+            // Die letzten ~20% sind die engste Kurve kurz vorm Verschwinden im Zentrum (Radius nahe 0) —
+            // selbst mit der oben korrigierten Trail-Rotation sieht das Blätter-Auswerfen dort noch
+            // unruhig aus. Trail hier einfach schon vorher abschalten, statt bis zum Schluss laufen zu lassen.
+            if (p > 0.8f)
+            {
+                if (trail != null)
+                {
+                    try { var em = trail.emission; em.enabled = false; }
+                    catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+                }
+            }
+            else
+            {
+                SetTrailVisible(trail, f.position);
+            }
             yield return null;
         }
 
@@ -818,11 +858,15 @@ public class FairyChoreographyDirector : MonoBehaviour
         catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren, Flug läuft weiter */ }
     }
 
+    // Großzügiger Rand statt exakter Bildschirmkante: dient NUR dazu, Emission am Anfang/Ende des
+    // Flugs (Fee klar außerhalb des sichtbaren Bereichs) zu unterdrücken. Ein enger Rand (~3%) würde
+    // sonst bei jeder normalen Flugbewegung nah an der echten Kante jeden Frame zwischen an/aus
+    // umschalten (sichtbares Stottern der Blätter-Emission), obwohl die Fee die ganze Zeit im Bild ist.
     private bool IsOnScreen(Vector3 worldPos)
     {
         if (_cam == null) return true;
         Vector3 vp = _cam.WorldToViewportPoint(worldPos);
-        return vp.x > 0.03f && vp.x < 0.97f && vp.y > 0.03f && vp.y < 0.97f;
+        return vp.x > -0.3f && vp.x < 1.3f && vp.y > -0.3f && vp.y < 1.3f;
     }
 
     private IEnumerator Co_LerpScale(Transform f, Vector3 from, Vector3 to, float duration)

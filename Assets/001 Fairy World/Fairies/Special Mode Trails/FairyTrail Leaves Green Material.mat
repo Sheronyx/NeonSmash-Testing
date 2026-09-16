@@ -13,7 +13,6 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _ALPHABLEND_ON
-  - _ALPHATEST_ON
   - _CFXR_DITHERED_SHADOWS_ON
   - _CFXR_LIGHTING_BACK
   - _FADING_ON
@@ -98,7 +97,7 @@ Material:
     - _SoftParticlesFadeDistanceNear: 0
     - _SrcBlend: 5
     - _UVDistortionAdd: 0
-    - _UseAlphaClip: 1
+    - _UseAlphaClip: 0
     - _UseBackLighting: 1
     - _UseDissolve: 0
     - _UseDissolveOffsetUV: 0
