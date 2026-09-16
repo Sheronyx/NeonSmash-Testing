@@ -57,7 +57,7 @@ public class MainMenuController : MonoBehaviour
 
     public void OpenSettings()
     {
-        Debug.Log("Einstellungen werden später implementiert.");
+        SettingsController.Instance?.Open();
     }
 
     public void OpenTasks()

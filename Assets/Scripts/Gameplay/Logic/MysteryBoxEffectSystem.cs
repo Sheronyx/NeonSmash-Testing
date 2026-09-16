@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -6,8 +7,14 @@ public enum MysteryBoxEffect { MultiplierX3, MultiplierX2, MultiplierMinus1, Smo
 
 // Zentrale Steuerung der Zufallsbox-Effekte (Mario-Kart-artige "?"-Box, siehe MysteryBoxPoint /
 // MixedPointSpawner.SpawnMysteryBox). Beim Einsammeln wird GEWICHTET ein Effekt gewählt, angewendet
-// und nach seiner Dauer wieder aufgehoben. Solange IRGENDEIN Effekt aktiv ist, darf laut Design keine
-// weitere Box spawnen — dafür prüft MixedPointSpawner vor jedem Box-Spawn-Wurf IsEffectActive.
+// und nach seiner Dauer wieder aufgehoben.
+//
+// STACKING: mehrere Effekte (auch aus derselben Kategorie) können gleichzeitig aktiv sein — jede
+// Kategorie führt dafür einen eigenen Zähler statt eines einzelnen Zustands. Multiplikator und Größe
+// kombinieren sich dabei rein multiplikativ (z.B. x3 + x2 gleichzeitig = x6; Bigger + Bigger =
+// biggerSizeMultiplier²), Smoke/Colorless bleiben aktiv, bis die LETZTE ihrer laufenden Instanzen
+// abgelaufen ist. Eine neue Box darf laut Design jederzeit spawnen (siehe MixedPointSpawner.Update),
+// solange nur nicht schon eine andere Box im Feld liegt — NICHT mehr an aktive Effekte gekoppelt.
 public class MysteryBoxEffectSystem : MonoBehaviour
 {
     public static MysteryBoxEffectSystem Instance { get; private set; }
@@ -63,37 +70,78 @@ public class MysteryBoxEffectSystem : MonoBehaviour
              "bis diese Animation fertig ist.")]
     [SerializeField] private GameObject extraLifeConsumedPrefab;
 
-    /// <summary>Solange true, darf keine neue Zufallsbox spawnen (siehe Klassenkommentar).</summary>
-    public bool IsEffectActive { get; private set; }
+    // Ein Zähler pro Effekt-Kategorie statt eines einzelnen Zustands — erlaubt mehrere gleichzeitig
+    // laufende Instanzen (auch aus derselben Kategorie), siehe Klassenkommentar oben.
+    private int _multX3Count, _multX2Count, _multMinus1Count;
+    private int _biggerCount, _smallerCount;
+    private int _smokeCount, _colorlessCount;
+    private readonly List<GameObject> _activeSmokeOverlays = new List<GameObject>();
 
-    public int CurrentScoreMultiplier { get; private set; } = 1;
-    public bool IsColorlessActive { get; private set; }
-    public bool IsSmokeActive { get; private set; }
-    public float CurrentSizeMultiplier { get; private set; } = 1f;
+    /// <summary>True, solange irgendein Effekt (irgendeiner Kategorie) noch aktiv ist. Wird aktuell
+    /// nicht mehr zum Blocken neuer Boxen genutzt (siehe Klassenkommentar), aber weiter gepflegt, falls
+    /// woanders nützlich (z.B. Debugging).</summary>
+    public bool IsEffectActive =>
+        _multX3Count > 0 || _multX2Count > 0 || _multMinus1Count > 0 ||
+        _biggerCount > 0 || _smallerCount > 0 || _smokeCount > 0 || _colorlessCount > 0;
+
+    public bool IsMultiplierX3Active     => _multX3Count > 0;
+    public bool IsMultiplierX2Active     => _multX2Count > 0;
+    public bool IsMultiplierMinus1Active => _multMinus1Count > 0;
+    public bool IsColorlessActive        => _colorlessCount > 0;
+    public bool IsSmokeActive            => _smokeCount > 0;
     public bool HasExtraLifeCharge { get; private set; }
 
-    private GameObject smokeOverlayInstance;
+    // Rohe Zähler (statt nur bool) für die Icon-Leiste — bei gestapelten Effekten (z.B. zwei gleichzeitig
+    // aktive x2-Boosts) soll pro Instanz ein eigenes Icon erscheinen, nicht nur ein einzelnes an/aus.
+    public int MultiplierX3Count     => _multX3Count;
+    public int MultiplierX2Count     => _multX2Count;
+    public int MultiplierMinus1Count => _multMinus1Count;
+    public int SmokeCount            => _smokeCount;
+
+    /// <summary>Kombinierter Punkte-Multiplikator aller aktiven Multiplikator-Effekte (rein
+    /// multiplikativ, siehe Klassenkommentar) — z.B. x3 + x2 gleichzeitig ergibt 6.</summary>
+    public int CurrentScoreMultiplier
+    {
+        get
+        {
+            int m = 1;
+            for (int i = 0; i < _multX3Count; i++) m *= 3;
+            for (int i = 0; i < _multX2Count; i++) m *= 2;
+            for (int i = 0; i < _multMinus1Count; i++) m *= -1;
+            return m;
+        }
+    }
+
+    /// <summary>Kombinierter Größen-Multiplikator aller aktiven Größen-Effekte (rein multiplikativ).</summary>
+    public float CurrentSizeMultiplier
+    {
+        get
+        {
+            float m = 1f;
+            for (int i = 0; i < _biggerCount; i++) m *= biggerSizeMultiplier;
+            for (int i = 0; i < _smallerCount; i++) m *= smallerSizeMultiplier;
+            return m;
+        }
+    }
 
     private void Awake() => Instance = this;
 
     /// <summary>Bei Game Over / Start eines neuen Runs aufgerufen (siehe PhaseManager) — "Play Again"
-    /// lädt die Szene NICHT neu, daher würden sonst laufende Effekt-Coroutinen, ein hängendes
-    /// Rauch-Overlay, eine ungenutzte Extra-Life-Ladung oder ein noch aktiver Größen-/Farblos-Zustand
-    /// in den nächsten Run überlaufen (u.a. IsEffectActive dauerhaft true → keine neuen Boxen,
-    /// CurrentSizeMultiplier ≠ 1 → übergroße Elemente zu Run-Beginn). Analog zum ForceStop() der
-    /// Special-Mode-Systeme.</summary>
+    /// lädt die Szene NICHT neu, daher würden sonst laufende Effekt-Coroutinen, hängende Rauch-Overlays,
+    /// eine ungenutzte Extra-Life-Ladung oder ein noch aktiver Größen-/Farblos-Zustand in den nächsten
+    /// Run überlaufen (u.a. CurrentSizeMultiplier ≠ 1 → übergroße Elemente zu Run-Beginn). Analog zum
+    /// ForceStop() der Special-Mode-Systeme.</summary>
     public void ResetState()
     {
         StopAllCoroutines();
 
-        if (smokeOverlayInstance != null) Destroy(smokeOverlayInstance);
-        smokeOverlayInstance = null;
+        foreach (var overlay in _activeSmokeOverlays)
+            if (overlay != null) Destroy(overlay);
+        _activeSmokeOverlays.Clear();
 
-        IsEffectActive = false;
-        CurrentScoreMultiplier = 1;
-        IsColorlessActive = false;
-        IsSmokeActive = false;
-        CurrentSizeMultiplier = 1f;
+        _multX3Count = _multX2Count = _multMinus1Count = 0;
+        _biggerCount = _smallerCount = 0;
+        _smokeCount = _colorlessCount = 0;
         HasExtraLifeCharge = false;
     }
 
@@ -118,12 +166,6 @@ public class MysteryBoxEffectSystem : MonoBehaviour
 
     private IEnumerator Co_CollectSequence(MixedPointSpawner spawner)
     {
-        if (IsEffectActive) // Spawn-Gate sollte das schon verhindern, defensiv trotzdem
-        {
-            spawner?.ResumeSpawningAfterPause();
-            yield break;
-        }
-
         MysteryBoxEffect effect = RollEffect();
 
         // 1) Kurzer, fester Delay ab dem Antippen (nicht an die Explosionsdauer gekoppelt).
@@ -222,91 +264,119 @@ public class MysteryBoxEffectSystem : MonoBehaviour
     {
         switch (effect)
         {
-            case MysteryBoxEffect.MultiplierX3:     StartCoroutine(Co_Multiplier(3));   break;
-            case MysteryBoxEffect.MultiplierX2:     StartCoroutine(Co_Multiplier(2));   break;
-            case MysteryBoxEffect.MultiplierMinus1: StartCoroutine(Co_Multiplier(-1));  break;
-            case MysteryBoxEffect.Smoke:            StartCoroutine(Co_Smoke(spawner));  break;
-            case MysteryBoxEffect.Colorless:        StartCoroutine(Co_Colorless());     break;
-            case MysteryBoxEffect.BiggerSize:       StartCoroutine(Co_Size(biggerSizeMultiplier));  break;
-            case MysteryBoxEffect.SmallerSize:       StartCoroutine(Co_Size(smallerSizeMultiplier)); break;
+            case MysteryBoxEffect.MultiplierX3:
+            case MysteryBoxEffect.MultiplierX2:
+            case MysteryBoxEffect.MultiplierMinus1: StartCoroutine(Co_Multiplier(effect)); break;
+            case MysteryBoxEffect.Smoke:            StartCoroutine(Co_Smoke(spawner));     break;
+            case MysteryBoxEffect.Colorless:        StartCoroutine(Co_Colorless());        break;
+            case MysteryBoxEffect.BiggerSize:       StartCoroutine(Co_Size(bigger: true));  break;
+            case MysteryBoxEffect.SmallerSize:      StartCoroutine(Co_Size(bigger: false)); break;
             case MysteryBoxEffect.ExtraLife:        ActivateExtraLife(); break;
         }
     }
 
     private MysteryBoxEffect RollEffect()
     {
+        // Farblos und Extra Life dürfen sich nicht mit sich selbst überschneiden (im Gegensatz zu
+        // allen anderen Effekten, die sich bewusst stapeln dürfen, siehe Klassenkommentar) — ihre
+        // Gewichte fallen auf 0, solange schon eine Instanz/Ladung aktiv ist, statt einer echten
+        // zweiten Box-Sperre. Alle anderen Effekte bleiben ganz normal weiterhin würfelbar.
+        float wColorless  = IsColorlessActive    ? 0f : weightColorless;
+        float wExtraLife  = HasExtraLifeCharge   ? 0f : weightExtraLife;
+
         float total = weightMultiplierX3 + weightMultiplierX2 + weightMultiplierMinus1 + weightSmoke +
-                      weightColorless + weightBiggerSize + weightSmallerSize + weightExtraLife;
+                      wColorless + weightBiggerSize + weightSmallerSize + wExtraLife;
         float r = Random.Range(0f, total);
 
         if ((r -= weightMultiplierX3) < 0f) return MysteryBoxEffect.MultiplierX3;
         if ((r -= weightMultiplierX2) < 0f) return MysteryBoxEffect.MultiplierX2;
         if ((r -= weightMultiplierMinus1) < 0f) return MysteryBoxEffect.MultiplierMinus1;
         if ((r -= weightSmoke) < 0f) return MysteryBoxEffect.Smoke;
-        if ((r -= weightColorless) < 0f) return MysteryBoxEffect.Colorless;
+        if ((r -= wColorless) < 0f) return MysteryBoxEffect.Colorless;
         if ((r -= weightBiggerSize) < 0f) return MysteryBoxEffect.BiggerSize;
         if ((r -= weightSmallerSize) < 0f) return MysteryBoxEffect.SmallerSize;
         return MysteryBoxEffect.ExtraLife;
     }
 
-    private IEnumerator Co_Multiplier(int value)
+    private IEnumerator Co_Multiplier(MysteryBoxEffect type)
     {
-        IsEffectActive = true;
-        CurrentScoreMultiplier = value;
+        ChangeMultiplierCount(type, +1);
         yield return new WaitForSeconds(multiplierDuration);
-        CurrentScoreMultiplier = 1;
-        IsEffectActive = false;
+        ChangeMultiplierCount(type, -1);
+    }
+
+    private void ChangeMultiplierCount(MysteryBoxEffect type, int delta)
+    {
+        switch (type)
+        {
+            case MysteryBoxEffect.MultiplierX3:     _multX3Count     += delta; break;
+            case MysteryBoxEffect.MultiplierX2:     _multX2Count     += delta; break;
+            case MysteryBoxEffect.MultiplierMinus1: _multMinus1Count += delta; break;
+        }
     }
 
     private IEnumerator Co_Smoke(MixedPointSpawner spawner)
     {
-        IsEffectActive = true;
-        IsSmokeActive = true;
+        _smokeCount++;
+
+        // Lokale Instanz statt eines gemeinsamen Felds: mehrere gleichzeitig aktive Smoke-Effekte
+        // brauchen je ihr EIGENES Overlay, das nur SEIN EIGENES Ende aufräumt (siehe Klassenkommentar).
+        GameObject overlay = null;
         if (smokeVfxPrefab != null)
         {
-            smokeOverlayInstance = Instantiate(smokeVfxPrefab);
-            RandomizeSmokeParticlePositions(smokeOverlayInstance, spawner);
+            overlay = Instantiate(smokeVfxPrefab);
+            _activeSmokeOverlays.Add(overlay);
+            RandomizeSmokeParticlePositions(overlay, spawner);
         }
 
         yield return new WaitForSeconds(smokeDuration);
 
-        if (smokeOverlayInstance != null) Destroy(smokeOverlayInstance);
-        smokeOverlayInstance = null;
-        IsSmokeActive = false;
-        IsEffectActive = false;
+        if (overlay != null)
+        {
+            _activeSmokeOverlays.Remove(overlay);
+            Destroy(overlay);
+        }
+        _smokeCount--;
     }
 
     // Positioniert jedes Kind-Partikelsystem des Overlays im normalen Spawn-Bereich (derselbe Bereich
     // wie die 3 Farb-Slots), statt in einem festen Weltbereich um den Ursprung — verhindert Rauch
     // außerhalb des Spielfelds unabhängig von Kamera/Bildschirmgröße.
+    // Z-Tiefe, bei der die 3D-Tap-/Swipe-Elemente vor dem 2D-Hintergrund liegen (siehe
+    // BasePoint.SpawnDepthOffset, überall als -5 verwendet). Der Nebel muss NÄHER an der Kamera liegen
+    // als das (also ein noch negativerer Z-Wert), sonst rendert er hinter den 3D-Elementen statt über
+    // ihnen.
+    private const float SmokeDepthZ = -8f;
+
     private void RandomizeSmokeParticlePositions(GameObject overlay, MixedPointSpawner spawner)
     {
         if (spawner == null) return;
         foreach (var ps in overlay.GetComponentsInChildren<ParticleSystem>(true))
-            ps.transform.position = spawner.GetRandomWorldPosInSpawnArea();
+        {
+            Vector3 pos = spawner.GetRandomWorldPosInSpawnArea();
+            pos.z = SmokeDepthZ;
+            ps.transform.position = pos;
+        }
     }
 
     private IEnumerator Co_Colorless()
     {
-        IsEffectActive = true;
-        IsColorlessActive = true;
+        _colorlessCount++;
         yield return new WaitForSeconds(colorlessDuration);
-        IsColorlessActive = false;
-        IsEffectActive = false;
+        _colorlessCount--;
     }
 
-    private IEnumerator Co_Size(float multiplier)
+    private IEnumerator Co_Size(bool bigger)
     {
-        IsEffectActive = true;
-        CurrentSizeMultiplier = multiplier;
+        if (bigger) _biggerCount++; else _smallerCount++;
         yield return new WaitForSeconds(sizeDuration);
-        CurrentSizeMultiplier = 1f;
-        IsEffectActive = false;
+        if (bigger) _biggerCount--; else _smallerCount--;
     }
 
-    // Setzt bewusst NICHT IsEffectActive — im Gegensatz zu den anderen 5 Effekten soll das Halten einer
-    // ungenutzten Extra-Life-Ladung neue Zufallsboxen nicht blockieren, sie kann beliebig lange
-    // unbenutzt herumliegen, bis sie tatsächlich einen Fehler verhindert (siehe ConsumeExtraLifeIfActive).
+    // Extra Life blockiert weiterhin nie neue Zufallsboxen (unabhängig vom Stacking-Umbau) — im
+    // Gegensatz zu den anderen Effekten soll das Halten einer ungenutzten Ladung beliebig lange
+    // unbenutzt herumliegen können, bis sie tatsächlich einen Fehler verhindert (siehe
+    // ConsumeExtraLifeIfActive).
     private void ActivateExtraLife()
     {
         HasExtraLifeCharge = true;

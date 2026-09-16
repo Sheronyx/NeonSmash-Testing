@@ -479,11 +479,11 @@ public class MixedPointSpawner : MonoBehaviour
             bool diamondsAvailable = _diamondsEnabledThisPhase && _diamondsSpawnedThisPhase < diamondsPerPhase;
             _roundHasDiamond = diamondsAvailable && _currentDiamond == null && Random.value < diamondSpawnChance;
 
-            // Zufallsbox: mit Chance zusätzlich zu den 3 Farb-Slots — aber nur, solange gerade kein
-            // Zufalls-Effekt aktiv ist (Design: keine zweite Box, während noch eine wirkt) UND nicht
-            // gleichzeitig zum Diamant (Design: die beiden sollen sich nie überschneiden).
-            bool mysteryBoxBlocked = (MysteryBoxEffectSystem.Instance != null && MysteryBoxEffectSystem.Instance.IsEffectActive)
-                                      || _roundHasDiamond || _currentDiamond != null;
+            // Zufallsbox: mit Chance zusätzlich zu den 3 Farb-Slots. Darf jetzt auch spawnen, während
+            // schon Zufalls-Effekte aktiv sind (Design: Effekte dürfen sich stapeln, siehe
+            // MysteryBoxEffectSystem) — bleibt aber weiterhin exklusiv zum Diamant (die beiden sollen
+            // sich nie überschneiden) und es liegt wie bisher nie mehr als EINE Box gleichzeitig im Feld.
+            bool mysteryBoxBlocked = _roundHasDiamond || _currentDiamond != null;
             _roundHasMysteryBox = !mysteryBoxBlocked && _currentMysteryBox == null && Random.value < mysteryBoxSpawnChance;
         }
 

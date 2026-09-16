@@ -851,22 +851,24 @@ public class FairyChoreographyDirector : MonoBehaviour
         if (trail == null) return;
         try
         {
-            bool visible = IsOnScreen(worldPos);
             var em = trail.emission;
+            // Hysterese statt einer einzigen Schwelle: zum EINSCHALTEN muss die Fee wirklich im
+            // sichtbaren Bereich sein (enger Rand) — sonst würden Blasen/Steine/Blätter sichtbar
+            // außerhalb des Bildschirms emittieren (z.B. beim ersten Hochfliegen aus dem Bild raus).
+            // Zum AUSSCHALTEN reicht ein kleiner zusätzlicher Puffer, der nur das Rand-Flackern bei
+            // Bewegungen exakt an der Kante verhindert (kein großzügiger Off-Screen-Bereich mehr).
+            bool visible = IsOnScreen(worldPos, em.enabled);
             if (em.enabled != visible) em.enabled = visible;
         }
         catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren, Flug läuft weiter */ }
     }
 
-    // Großzügiger Rand statt exakter Bildschirmkante: dient NUR dazu, Emission am Anfang/Ende des
-    // Flugs (Fee klar außerhalb des sichtbaren Bereichs) zu unterdrücken. Ein enger Rand (~3%) würde
-    // sonst bei jeder normalen Flugbewegung nah an der echten Kante jeden Frame zwischen an/aus
-    // umschalten (sichtbares Stottern der Blätter-Emission), obwohl die Fee die ganze Zeit im Bild ist.
-    private bool IsOnScreen(Vector3 worldPos)
+    private bool IsOnScreen(Vector3 worldPos, bool currentlyVisible)
     {
         if (_cam == null) return true;
         Vector3 vp = _cam.WorldToViewportPoint(worldPos);
-        return vp.x > -0.3f && vp.x < 1.3f && vp.y > -0.3f && vp.y < 1.3f;
+        float margin = currentlyVisible ? 0.08f : -0.03f; // Aus-Schwelle etwas großzügiger als Ein-Schwelle
+        return vp.x > -margin && vp.x < 1f + margin && vp.y > -margin && vp.y < 1f + margin;
     }
 
     private IEnumerator Co_LerpScale(Transform f, Vector3 from, Vector3 to, float duration)
