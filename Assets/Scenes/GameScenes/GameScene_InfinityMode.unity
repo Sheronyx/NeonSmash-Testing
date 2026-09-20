@@ -12306,6 +12306,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6c6da1f151080462a9db292b943315d2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1554404935}
+    - targetCorrespondingSourceObject: {fileID: -8751334383989581337, guid: 6c6da1f151080462a9db292b943315d2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2101764967}
   m_SourcePrefab: {fileID: 100100000, guid: 6c6da1f151080462a9db292b943315d2, type: 3}
 --- !u!1 &1554404931 stripped
 GameObject:
@@ -17383,6 +17386,24 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2080129134}
   m_CullTransparentMesh: 1
+--- !u!1 &2101764966 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -8751334383989581337, guid: 6c6da1f151080462a9db292b943315d2, type: 3}
+  m_PrefabInstance: {fileID: 1554404930}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2101764967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101764966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13b56bdb5218a4bc6940aaf582ad5d00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FairyAccessorySlot
+  catalogue: {fileID: 11400000, guid: a3263b52d503944d1b89e228da589c92, type: 2}
 --- !u!1 &2120070568
 GameObject:
   m_ObjectHideFlags: 0

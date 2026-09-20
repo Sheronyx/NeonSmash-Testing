@@ -11,6 +11,10 @@ public class ShopController : MonoBehaviour
     [Header("Panel")]
     [SerializeField] CanvasGroup panel;
 
+    // Header und Tab Bar liegen in einem eigenen Canvas vor den 3D-Feen der Skin-Karten
+    // (siehe ShopFrontLayer) und müssen die Ein-/Ausblend-Animation dieses Panels spiegeln.
+    public CanvasGroup PanelGroup => panel;
+
     [Header("Dream Energy Display")]
     [FormerlySerializedAs("coinBalanceLabel")]
     [SerializeField] TextMeshProUGUI dreamEnergyBalanceLabel;
@@ -51,6 +55,12 @@ public class ShopController : MonoBehaviour
     [Tooltip("Boxlose, breitere Karten-Variante speziell für den Bundle-Tab (kein Rahmen, großes " +
              "Bild als Hintergrund) — siehe 'Shop Item Card Bundle.prefab'.")]
     [SerializeField] ShopItemCardUI  bundleItemPrefab;
+    [Tooltip("Eigener Container für den Skin-Tab — einspaltige Liste mit Live-3D-Vorschau-Karten " +
+             "(siehe skinItemPrefab). Wird per ScrollRect.content getauscht.")]
+    [SerializeField] Transform       skinGridParent;
+    [Tooltip("Karten-Variante mit Live-3D-RenderTexture-Vorschau für den Skin-Tab " +
+             "(siehe 'Shop Item Card Skin.prefab').")]
+    [SerializeField] ShopItemCardUI  skinItemPrefab;
     [Tooltip("Eigener Container für den Booster-Tab — einspaltige, zentrierte Liste (gleiches Muster " +
              "wie bundleGridParent), damit die breiten Booster-Karten nicht wie im 2-spaltigen " +
              "gridParent seitlich abgeschnitten werden. Wird per ScrollRect.content getauscht.")]
@@ -224,16 +234,20 @@ public class ShopController : MonoBehaviour
         bool useBundleGrid = _activeTab == ShopItemType.Bundle
             && bundleItemPrefab != null && bundleGridParent != null;
         bool useBoosterGrid = _activeTab == ShopItemType.Booster && boosterGridParent != null;
+        bool useSkinGrid = _activeTab == ShopItemType.Skin
+            && skinItemPrefab != null && skinGridParent != null;
 
-        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid && !useBoosterGrid);
+        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid && !useBoosterGrid && !useSkinGrid);
         if (currencyGridParent != null) currencyGridParent.gameObject.SetActive(useCurrencyGrid);
         if (bundleGridParent   != null) bundleGridParent.gameObject.SetActive(useBundleGrid);
         if (boosterGridParent  != null) boosterGridParent.gameObject.SetActive(useBoosterGrid);
+        if (skinGridParent     != null) skinGridParent.gameObject.SetActive(useSkinGrid);
         if (itemScrollRect     != null)
         {
             itemScrollRect.content = useCurrencyGrid ? (RectTransform)currencyGridParent
                 : useBundleGrid     ? (RectTransform)bundleGridParent
                 : useBoosterGrid    ? (RectTransform)boosterGridParent
+                : useSkinGrid       ? (RectTransform)skinGridParent
                 : (RectTransform)gridParent;
         }
 
@@ -270,6 +284,19 @@ public class ShopController : MonoBehaviour
             {
                 if (item == null) continue;
                 var card = Instantiate(boosterPrefab, boosterGridParent);
+                card.Bind(item, OnBuyItem, OnEquipItem);
+            }
+            return;
+        }
+
+        if (useSkinGrid)
+        {
+            foreach (Transform child in skinGridParent)
+                Destroy(child.gameObject);
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                var card = Instantiate(skinItemPrefab, skinGridParent);
                 card.Bind(item, OnBuyItem, OnEquipItem);
             }
             return;
@@ -312,6 +339,17 @@ public class ShopController : MonoBehaviour
 
     void OnEquipItem(ShopItem item)
     {
+        // Accessoires (z.B. Sonnenbrille) haben ihren eigenen Equip-Slot, unabhaengig vom
+        // Skin-Slot (siehe ShopInventory.SetAccessoryEquipped) -- toggle statt fixem Equip,
+        // damit ein zweiter Tap das Accessoire wieder ablegt.
+        if (item.accessoryPrefab != null)
+        {
+            bool nowOn = !ShopInventory.IsAccessoryEquipped(item.itemId);
+            ShopInventory.SetAccessoryEquipped(item.itemId, nowOn);
+            return;
+        }
+
+
         if (item.type == ShopItemType.Bundle)
         {
             // Bundle equippt Skin + Sound zugleich. Damit RestoreEquipped (das

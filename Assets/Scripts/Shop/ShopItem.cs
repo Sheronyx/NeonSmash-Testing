@@ -34,6 +34,11 @@ public class ShopItem : ScriptableObject
     [Header("Gameplay Assets")]
     public SkinTheme  skinTheme;   // nur für type == Skin
     public SoundTheme soundTheme;  // nur für type == Sound
+    [Tooltip("Optionales Accessoire-Prefab (z.B. Sonnenbrille), das beim Equip zusätzlich am " +
+             "Armature_Crystal-Root des Fee-Charakters eingehängt wird (siehe FairyAccessorySlot). " +
+             "Nutzt bewusst denselben Skin-Equip-Slot -- Ausruestungs-Skins ersetzen sich also " +
+             "gegenseitig, bis es ein echtes Mehrschicht-System gibt.")]
+    public GameObject accessoryPrefab;
 
     [Header("Booster (type == Booster)")]
     [Tooltip("Welcher Booster-Typ verkauft wird — die Stückzahl wird pro BoostType.ToString() als " +

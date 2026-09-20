@@ -19,7 +19,13 @@ public class HomeMenuFairyVisibility : MonoBehaviour
              "GameObject des jeweiligen Canvas bzw. Popups).")]
     [SerializeField] private GameObject[] watchedWindows;
 
+    [Tooltip("Weitere Renderer mit demselben Problem -- vor allem die Ambient-Glow-Partikel des " +
+             "Startmenüs und der Portale. Sie liegen wie die Feen im Weltraum nahe der Kamera und " +
+             "würden sonst durch das offene Fenster hindurchscheinen.")]
+    [SerializeField] private Renderer[] additionalRenderers;
+
     private bool _fairiesHidden;
+    private bool[] _additionalWasEnabled;
 
     private void Update()
     {
@@ -34,5 +40,27 @@ public class HomeMenuFairyVisibility : MonoBehaviour
 
         foreach (var r in fairyRenderers)
             if (r != null) r.enabled = !anyWindowOpen;
+
+        // Anders als die Feen dürfen diese Renderer beim Schließen NICHT pauschal eingeschaltet
+        // werden: Ein Teil davon ist bewusst deaktiviert (z.B. Hilfs-/Maskenobjekte der Portale und
+        // die Effekte gerade nicht gewählter Portale). Deshalb den Ausgangszustand merken und exakt
+        // wiederherstellen.
+        if (anyWindowOpen)
+        {
+            if (_additionalWasEnabled == null || _additionalWasEnabled.Length != additionalRenderers.Length)
+                _additionalWasEnabled = new bool[additionalRenderers.Length];
+
+            for (int i = 0; i < additionalRenderers.Length; i++)
+            {
+                if (additionalRenderers[i] == null) continue;
+                _additionalWasEnabled[i] = additionalRenderers[i].enabled;
+                additionalRenderers[i].enabled = false;
+            }
+        }
+        else if (_additionalWasEnabled != null)
+        {
+            for (int i = 0; i < additionalRenderers.Length && i < _additionalWasEnabled.Length; i++)
+                if (additionalRenderers[i] != null) additionalRenderers[i].enabled = _additionalWasEnabled[i];
+        }
     }
 }

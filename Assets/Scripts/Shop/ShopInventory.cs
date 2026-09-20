@@ -105,6 +105,22 @@ public static class ShopInventory
         OnEquippedChanged?.Invoke();
     }
 
+    // Getrennt vom normalen Skin-Equip-Slot (SetEquipped/GetEquipped) -- Accessoires (z.B.
+    // Sonnenbrille) werden NICHT ueber ShopItemType.Skin equippt, weil dieser Slot auch von
+    // MenuPortalSwitcher als Welt-Auswahl gelesen wird. Ein Accessoire-Equip wuerde dort
+    // faelschlich als ungueltige Welt interpretiert und die Startseite sperren.
+    const string AccessoryPrefKey = "shop_accessory_equipped";
+
+    public static bool IsAccessoryEquipped(string itemId) =>
+        PlayerPrefs.GetString(AccessoryPrefKey, "") == itemId;
+
+    public static void SetAccessoryEquipped(string itemId, bool on)
+    {
+        PlayerPrefs.SetString(AccessoryPrefKey, on ? itemId : "");
+        PlayerPrefs.Save();
+        OnEquippedChanged?.Invoke();
+    }
+
     public static void ClaimFree(ShopItem item)
     {
         if (item == null || IsOwned(item.itemId)) return;
