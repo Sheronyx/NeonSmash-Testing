@@ -109,7 +109,11 @@ public class ShopSkin3DPreview : MonoBehaviour
         // Bei einer orthografischen Kamera ist die z-Komponente der Abstand entlang der Blickrichtung.
         float distance = worldDepth - cam.transform.position.z;
         Vector3 world  = cam.ScreenToWorldPoint(new Vector3(screen.x, screen.y, distance));
-        _instance.transform.position = world;
+
+        // Der Ursprung der Figur liegt an ihren Füßen. Würde er direkt auf den Ankerpunkt gesetzt,
+        // ragte der Körper nach oben und die Fee säße sichtbar zu hoch in der Karte. Deshalb um die
+        // Höhe ihrer Bounds-Mitte nach unten versetzen -- damit landet ihre optische Mitte auf dem Anker.
+        _instance.transform.position = world - new Vector3(0f, _boundsCenterY, 0f);
 
         bool visible = IsFullyFadedIn() && IsWorthRendering(cam, world);
         if (_instance.activeSelf != visible) _instance.SetActive(visible);
@@ -132,10 +136,10 @@ public class ShopSkin3DPreview : MonoBehaviour
     {
         if (_viewport == null) return true;
 
-        Rect  view    = ScreenRect(_viewport, cam);
-        float centerY = world.y + _boundsCenterY;
-        float top     = cam.WorldToScreenPoint(new Vector3(world.x, centerY + _boundsHalfHeight, world.z)).y;
-        float bottom  = cam.WorldToScreenPoint(new Vector3(world.x, centerY - _boundsHalfHeight, world.z)).y;
+        // 'world' ist bereits die optische Mitte der Figur (siehe Versatz in LateUpdate).
+        Rect  view   = ScreenRect(_viewport, cam);
+        float top    = cam.WorldToScreenPoint(new Vector3(world.x, world.y + _boundsHalfHeight, world.z)).y;
+        float bottom = cam.WorldToScreenPoint(new Vector3(world.x, world.y - _boundsHalfHeight, world.z)).y;
 
         return top >= view.yMin && bottom <= view.yMax;
     }
