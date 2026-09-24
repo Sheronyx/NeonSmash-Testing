@@ -11195,7 +11195,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3661112375474038715, guid: f0bd346419c5347199d5e46a447a15a0, type: 3}
       propertyPath: m_Name
-      value: FairyCrystal Home Menu (3D)
+      value: FairyCrystal Home Menu (3D) ALT
+      objectReference: {fileID: 0}
+    - target: {fileID: 3661112375474038715, guid: f0bd346419c5347199d5e46a447a15a0, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4144774979455220993, guid: f0bd346419c5347199d5e46a447a15a0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -11248,11 +11252,6 @@ PrefabInstance:
 --- !u!4 &246964534 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4144774979455220993, guid: f0bd346419c5347199d5e46a447a15a0, type: 3}
-  m_PrefabInstance: {fileID: 246964533}
-  m_PrefabAsset: {fileID: 0}
---- !u!137 &246964535 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 1737171198196577729, guid: f0bd346419c5347199d5e46a447a15a0, type: 3}
   m_PrefabInstance: {fileID: 246964533}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &248745693
@@ -56327,11 +56326,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HomeMenuFairyVisibility
   fairyRenderers:
   - {fileID: 1253245848}
-  - {fileID: 246964535}
+  - {fileID: 1312226754}
   - {fileID: 381178598}
   - {fileID: 381178597}
   - {fileID: 381178596}
   - {fileID: 381178595}
+  - {fileID: 1312226753}
+  - {fileID: 1312226752}
+  - {fileID: 1312226751}
   watchedWindows:
   - {fileID: 153370486}
   - {fileID: 1111588637}
@@ -109056,6 +109058,109 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1001 &1312226748
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1708094253}
+    m_Modifications:
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.8528699
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.049899936
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6402539791597017313, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      propertyPath: m_Name
+      value: PinkFairy Home Menu (3D)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 371711595579631039, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1312226755}
+  m_SourcePrefab: {fileID: 100100000, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+--- !u!4 &1312226749 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6021792811102356059, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+  m_PrefabInstance: {fileID: 1312226748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1312226750 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 371711595579631039, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+  m_PrefabInstance: {fileID: 1312226748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &1312226751 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 6773582638093313451, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+  m_PrefabInstance: {fileID: 1312226748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &1312226752 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 4451244627952882888, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+  m_PrefabInstance: {fileID: 1312226748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &1312226753 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8510569432862997141, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+  m_PrefabInstance: {fileID: 1312226748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &1312226754 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 2480344872599872710, guid: 3a8497934cdf1488f8a9d6b956aec943, type: 3}
+  m_PrefabInstance: {fileID: 1312226748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1312226755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1312226750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13b56bdb5218a4bc6940aaf582ad5d00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FairyAccessorySlot
+  catalogue: {fileID: 11400000, guid: a3263b52d503944d1b89e228da589c92, type: 2}
 --- !u!1 &1322236341
 GameObject:
   m_ObjectHideFlags: 0
@@ -151197,6 +151302,7 @@ Transform:
   - {fileID: 786559752}
   - {fileID: 2128037924}
   - {fileID: 246964534}
+  - {fileID: 1312226749}
   - {fileID: 1253245847}
   - {fileID: 381178594}
   m_Father: {fileID: 0}
@@ -219959,13 +220065,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 7822868659360769387, guid: e1ce34ac2c60b4871acda41947e9489a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 7822868659360769387, guid: e1ce34ac2c60b4871acda41947e9489a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e1ce34ac2c60b4871acda41947e9489a, type: 3}
 --- !u!4 &2128037924 stripped
 Transform:
@@ -220755,7 +220855,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayIntroSequence
   fairies:
   - {fileID: 381178594}
-  - {fileID: 246964534}
+  - {fileID: 1312226749}
   - {fileID: 1253245847}
   specialModeBool: IsSpecialMode
   fairyFlightDuration: 1.2
