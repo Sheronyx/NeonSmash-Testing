@@ -61,6 +61,10 @@ public class ShopController : MonoBehaviour
     [Tooltip("Karten-Variante mit Live-3D-RenderTexture-Vorschau für den Skin-Tab " +
              "(siehe 'Shop Item Card Skin.prefab').")]
     [SerializeField] ShopItemCardUI  skinItemPrefab;
+    [Tooltip("Eigener Container für den Sound-Tab — einspaltige, zentrierte Liste (gleiches Muster " +
+             "wie boosterGridParent), damit die Musik-Karten mittig untereinander stehen statt " +
+             "zweispaltig im gridParent. Wird per ScrollRect.content getauscht.")]
+    [SerializeField] Transform       soundGridParent;
     [Tooltip("Eigener Container für den Booster-Tab — einspaltige, zentrierte Liste (gleiches Muster " +
              "wie bundleGridParent), damit die breiten Booster-Karten nicht wie im 2-spaltigen " +
              "gridParent seitlich abgeschnitten werden. Wird per ScrollRect.content getauscht.")]
@@ -236,18 +240,21 @@ public class ShopController : MonoBehaviour
         bool useBoosterGrid = _activeTab == ShopItemType.Booster && boosterGridParent != null;
         bool useSkinGrid = _activeTab == ShopItemType.Skin
             && skinItemPrefab != null && skinGridParent != null;
+        bool useSoundGrid = _activeTab == ShopItemType.Sound && soundGridParent != null;
 
-        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid && !useBoosterGrid && !useSkinGrid);
+        if (gridParent         != null) gridParent.gameObject.SetActive(!useCurrencyGrid && !useBundleGrid && !useBoosterGrid && !useSkinGrid && !useSoundGrid);
         if (currencyGridParent != null) currencyGridParent.gameObject.SetActive(useCurrencyGrid);
         if (bundleGridParent   != null) bundleGridParent.gameObject.SetActive(useBundleGrid);
         if (boosterGridParent  != null) boosterGridParent.gameObject.SetActive(useBoosterGrid);
         if (skinGridParent     != null) skinGridParent.gameObject.SetActive(useSkinGrid);
+        if (soundGridParent    != null) soundGridParent.gameObject.SetActive(useSoundGrid);
         if (itemScrollRect     != null)
         {
             itemScrollRect.content = useCurrencyGrid ? (RectTransform)currencyGridParent
                 : useBundleGrid     ? (RectTransform)bundleGridParent
                 : useBoosterGrid    ? (RectTransform)boosterGridParent
                 : useSkinGrid       ? (RectTransform)skinGridParent
+                : useSoundGrid      ? (RectTransform)soundGridParent
                 : (RectTransform)gridParent;
         }
 
@@ -284,6 +291,19 @@ public class ShopController : MonoBehaviour
             {
                 if (item == null) continue;
                 var card = Instantiate(boosterPrefab, boosterGridParent);
+                card.Bind(item, OnBuyItem, OnEquipItem);
+            }
+            return;
+        }
+
+        if (useSoundGrid)
+        {
+            foreach (Transform child in soundGridParent)
+                Destroy(child.gameObject);
+            foreach (var item in items)
+            {
+                if (item == null) continue;
+                var card = Instantiate(itemCardPrefab, soundGridParent);
                 card.Bind(item, OnBuyItem, OnEquipItem);
             }
             return;

@@ -34,6 +34,11 @@ public class FairyChoreographyDirector : MonoBehaviour
         [Tooltip("Optional: Partikelspur (z.B. Blasen/Blätter/Steine), die NUR während der Special-Mode-" +
                  "Flugbahn hinter der Fee herausströmt — läuft automatisch synchron zum Flug-Start/-Ende.")]
         public ParticleSystem specialModeTrail;
+        [Tooltip("Die komplette Special-Mode-Bewegung steckt bereits in der Blender-Animation " +
+                 "(SpecialMode_Fly). Unity fliegt dann KEINE eigene Bahn mehr (keine Spirale, kein " +
+                 "Anflug) und laesst die Fee an ihrem Platz stehen -- das Intro wartet nur noch " +
+                 "introDuration ab. Pro Fee einzeln, weil nicht jede schon eine eigene Animation hat.")]
+        public bool animationOnlyIntro;
         [System.NonSerialized] public FairyGlowFlash glow;
     }
 
@@ -42,6 +47,23 @@ public class FairyChoreographyDirector : MonoBehaviour
 
     [Header("Intro")]
     [SerializeField] private float introDuration = 5f;
+
+    [Tooltip("Wartet vor dem Special-Mode-Intro, bis die GetEnergy-Animation der Lead-Fee " +
+             "durchgelaufen ist. Ohne das bricht sie mitten im Faustschlag ab, weil der Trigger " +
+             "schon beim 20. Element faellt, waehrend die Energiekugel noch zur Fee fliegt.")]
+    [SerializeField] private bool waitForGetEnergy = true;
+    [Tooltip("Name der maskierten Arm-Ebene im Animator.")]
+    [SerializeField] private string armLayerName = "Arme";
+    [Tooltip("Name des GetEnergy-Zustands auf dieser Ebene.")]
+    [SerializeField] private string getEnergyStateName = "GetEnergy";
+    [Tooltip("Wie lange hoechstens auf den START der GetEnergy-Animation gewartet wird " +
+             "(die Energiekugel fliegt ~0.45s).")]
+    [SerializeField] private float getEnergyStartTimeout = 1.2f;
+    [Tooltip("Wie lange hoechstens auf das ENDE der GetEnergy-Animation gewartet wird.")]
+    [SerializeField] private float getEnergyEndTimeout = 2.5f;
+    [Tooltip("Name des Special-Mode-Zustands auf der Base Layer. Bei animationOnlyIntro wartet das " +
+             "Intro, bis dieser Clip EINMAL durchgelaufen ist, statt stur introDuration abzuwarten.")]
+    [SerializeField] private string specialModeStateName = "SpecialMode_Fly";
     [Tooltip("Anteil der Intro-Zeit, in dem die Lead-Fee kurz aus dem Bild raus fliegt, bevor die eigentliche Choreo beginnt.")]
     [Range(0.05f, 0.4f)]
     [SerializeField] private float leadExitPhase = 0.15f;
@@ -209,6 +231,12 @@ public class FairyChoreographyDirector : MonoBehaviour
         int lead = LeadIndex(mode);
         Vector3 center = ScreenCenterAtZ(lead >= 0 ? _homePos[lead].z : -5f);
 
+        // Die GetEnergy-Animation zuerst zu Ende bringen. Der Trigger faellt bereits beim 20.
+        // zerstoerten Element, die Energiekugel ist zu dem Zeitpunkt aber noch unterwegs zur Fee --
+        // ohne dieses Warten wuerde der Faustschlag mittendrin abgeschnitten.
+        if (lead >= 0 && waitForGetEnergy)
+            yield return Co_WaitForGetEnergy(fairies[lead].animator);
+
         // Nebenfeen parallel raus nach unten
         for (int i = 0; i < fairies.Length; i++)
         {
@@ -248,16 +276,27 @@ public class FairyChoreographyDirector : MonoBehaviour
         // off-screen unterwegs ist, z.B. beim Reinfliegen in den Hintergrund).
         var trail = fairies[lead].specialModeTrail;
 
-        switch (mode)
+        if (fairies[lead].animationOnlyIntro)
         {
-            case SpecialMode.Vortex:   yield return Co_VortexSpiral(f, center, homeRot, homeScale, trail); break;
-            case SpecialMode.Gravity:  yield return Co_GravityDrops(f, endPos, homeRot, trail);      break;
-            case SpecialMode.Fountain: yield return Co_FountainArcs(f, endPos, homeRot, homeScale, trail); break;
-            default:                   yield return Co_SimpleApproach(f, endPos, homeRot);          break;
+            // Die Bewegung kommt vollstaendig aus der Blender-Animation. Unity schiebt die Fee
+            // deshalb nicht zusaetzlich durchs Bild -- sonst addieren sich beide Bewegungen.
+            // Gewartet wird genau einen Durchlauf des Clips, nicht stur introDuration: so passt
+            // sich das Intro automatisch an, wenn die Animation spaeter umgetimt wird.
+            yield return Co_WaitForSpecialAnimationOnce(anim);
         }
+        else
+        {
+            switch (mode)
+            {
+                case SpecialMode.Vortex:   yield return Co_VortexSpiral(f, center, homeRot, homeScale, trail); break;
+                case SpecialMode.Gravity:  yield return Co_GravityDrops(f, endPos, homeRot, trail);      break;
+                case SpecialMode.Fountain: yield return Co_FountainArcs(f, endPos, homeRot, homeScale, trail); break;
+                default:                   yield return Co_SimpleApproach(f, endPos, homeRot);          break;
+            }
 
-        f.position   = endPos;
-        f.rotation   = homeRot;
+            f.position   = endPos;
+            f.rotation   = homeRot;
+        }
         SetSpecialBool(anim, false);
         // Stoppt nur das NEUE Emittieren — bereits ausgestoßene Blasen/Blätter/Steine klingen noch
         // natürlich aus, statt abrupt zu verschwinden. In try/catch: manche VFX-Assets (z.B. CFXR)
@@ -271,6 +310,57 @@ public class FairyChoreographyDirector : MonoBehaviour
             SpecialModeManager.Instance.StartMode(mode);
 
         _running = null;
+    }
+
+    // Wartet, bis die GetEnergy-Animation auf der maskierten Arm-Ebene gelaufen UND fertig ist.
+    // Zwei Phasen, weil sie beim Aufruf meist noch gar nicht begonnen hat (die Energiekugel fliegt
+    // noch). Beide Phasen haben ein Zeitlimit -- ein haengendes Intro waere schlimmer als ein
+    // abgeschnittener Faustschlag.
+    private IEnumerator Co_WaitForGetEnergy(Animator anim)
+    {
+        if (anim == null || anim.runtimeAnimatorController == null) yield break;
+
+        int ebene = -1;
+        for (int i = 0; i < anim.layerCount; i++)
+            if (anim.GetLayerName(i) == armLayerName) { ebene = i; break; }
+        if (ebene < 0) yield break;
+
+        bool Laeuft()
+        {
+            if (anim.IsInTransition(ebene)) return true;
+            var st = anim.GetCurrentAnimatorStateInfo(ebene);
+            return st.IsName(getEnergyStateName) && st.normalizedTime < 1f;
+        }
+
+        float t = 0f;
+        while (t < getEnergyStartTimeout && !Laeuft()) { t += Time.deltaTime; yield return null; }
+
+        t = 0f;
+        while (t < getEnergyEndTimeout && Laeuft()) { t += Time.deltaTime; yield return null; }
+    }
+
+    // Wartet einen vollstaendigen Durchlauf des Special-Mode-Clips auf der Base Layer ab.
+    private IEnumerator Co_WaitForSpecialAnimationOnce(Animator anim)
+    {
+        if (anim == null || anim.runtimeAnimatorController == null)
+        { yield return new WaitForSeconds(introDuration); yield break; }
+
+        float t = 0f;
+        while (t < introDuration)
+        {
+            var st = anim.GetCurrentAnimatorStateInfo(0);
+            if (!anim.IsInTransition(0) && st.IsName(specialModeStateName)) break;
+            t += Time.deltaTime; yield return null;
+        }
+
+        float grenze = introDuration * 2f;
+        t = 0f;
+        while (t < grenze)
+        {
+            var st = anim.GetCurrentAnimatorStateInfo(0);
+            if (st.IsName(specialModeStateName) && st.normalizedTime >= 1f) break;
+            t += Time.deltaTime; yield return null;
+        }
     }
 
     private IEnumerator Co_VortexSpiral(Transform f, Vector3 center, Quaternion homeRot, Vector3 homeScale, ParticleSystem trail)

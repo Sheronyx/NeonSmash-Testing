@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 // Blendet die 3 Feen-Charaktere im Startmenü aus, solange irgendeins der beobachteten Fenster
@@ -24,8 +25,17 @@ public class HomeMenuFairyVisibility : MonoBehaviour
              "würden sonst durch das offene Fenster hindurchscheinen.")]
     [SerializeField] private Renderer[] additionalRenderers;
 
+    [Tooltip("Eltern-Objekte der Feen (z.B. der 'Fairies'-Container). Alle Renderer darunter werden " +
+             "mit ausgeblendet -- auch solche, die erst zur Laufzeit entstehen, wie das Accessoire " +
+             "aus FairyAccessorySlot. Die feste Liste oben kann so etwas naturgemaess nicht erfassen.")]
+    [SerializeField] private Transform[] fairyContainers;
+
     private bool _fairiesHidden;
     private bool[] _additionalWasEnabled;
+
+    private readonly List<Renderer> _ausContainern = new List<Renderer>();
+    private readonly List<bool>     _containerWarAn = new List<bool>();
+    private readonly List<Renderer> _gefunden       = new List<Renderer>();
 
     private void Update()
     {
@@ -40,6 +50,33 @@ public class HomeMenuFairyVisibility : MonoBehaviour
 
         foreach (var r in fairyRenderers)
             if (r != null) r.enabled = !anyWindowOpen;
+
+        // Renderer unterhalb der Container jedes Mal neu einsammeln: zur Laufzeit erzeugte
+        // Accessoires (Sonnenbrille) gibt es beim Szenenstart noch gar nicht.
+        if (anyWindowOpen)
+        {
+            _ausContainern.Clear();
+            _containerWarAn.Clear();
+            foreach (var c in fairyContainers)
+            {
+                if (c == null) continue;
+                c.GetComponentsInChildren(true, _gefunden);
+                foreach (var r in _gefunden)
+                {
+                    if (r == null || System.Array.IndexOf(fairyRenderers, r) >= 0) continue;
+                    _ausContainern.Add(r);
+                    _containerWarAn.Add(r.enabled);
+                    r.enabled = false;
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < _ausContainern.Count && i < _containerWarAn.Count; i++)
+                if (_ausContainern[i] != null) _ausContainern[i].enabled = _containerWarAn[i];
+            _ausContainern.Clear();
+            _containerWarAn.Clear();
+        }
 
         // Anders als die Feen dürfen diese Renderer beim Schließen NICHT pauschal eingeschaltet
         // werden: Ein Teil davon ist bewusst deaktiviert (z.B. Hilfs-/Maskenobjekte der Portale und

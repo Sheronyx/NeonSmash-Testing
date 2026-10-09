@@ -500,14 +500,17 @@ MonoBehaviour:
     fairy: {fileID: 1894482120}
     animator: {fileID: 1894482118}
     specialModeTrail: {fileID: 109036256}
+    animationOnlyIntro: 1
   - color: 1
     fairy: {fileID: 1897096168}
     animator: {fileID: 1897096167}
     specialModeTrail: {fileID: 566928658}
+    animationOnlyIntro: 0
   - color: 2
     fairy: {fileID: 17095450}
     animator: {fileID: 17095449}
     specialModeTrail: {fileID: 1003589030}
+    animationOnlyIntro: 0
   specialModeBool: IsSpecialMode
   introDuration: 5
   leadExitPhase: 0.15
