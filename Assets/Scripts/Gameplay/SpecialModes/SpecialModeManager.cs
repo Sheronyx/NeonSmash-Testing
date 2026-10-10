@@ -47,6 +47,12 @@ public void StartMode(SpecialMode mode)
         int amount = ScoreManager.Instance?.AddPointsFromHit(10, extraMultiplier) ?? 0;
         // Special-Mode-Elemente haben keine Farbe → neutraler Treffer, kein Kombo-Aufbau
         MixedPointSpawner.Instance?.SpawnSpecialFloatingScore(amount, position, textMaterial);
+
+        // Auch im Special Mode soll die Lead-Fee auf jedes zerstoerte Element reagieren. Die
+        // Elemente tragen hier keine Farbe, deshalb ueber den laufenden Modus zurueckgerechnet.
+        if (Instance != null && Instance.IsModeActive)
+            FairyEnergyManager.Instance?.PlayGetEnergy(
+                PhaseManager.ColorForSpecialMode(Instance.CurrentMode));
     }
 
     public static void RegisterSpecialMiss()

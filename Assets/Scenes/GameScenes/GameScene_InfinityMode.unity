@@ -513,6 +513,12 @@ MonoBehaviour:
     animationOnlyIntro: 0
   specialModeBool: IsSpecialMode
   introDuration: 5
+  waitForGetEnergy: 1
+  armLayerName: Arme
+  getEnergyStateName: GetEnergy
+  getEnergyStartTimeout: 1.2
+  getEnergyEndTimeout: 2.5
+  specialModeStateName: SpecialMode_Fly
   leadExitPhase: 0.15
   spiralRevolutions: 3
   spiralOnScreenRadius: 1.4

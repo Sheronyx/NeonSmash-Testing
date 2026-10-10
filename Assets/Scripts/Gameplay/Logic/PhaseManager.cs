@@ -177,6 +177,16 @@ public class PhaseManager : MonoBehaviour
         _                => SpecialMode.Gravity // Pink
     };
 
+    /// <summary>Umkehrung von SpecialModeForColor: welche Fee gehoert zu diesem Modus. Gebraucht,
+    /// damit auch waehrend eines Special Modes die richtige Fee ihre GetEnergy-Animation spielt --
+    /// Special-Mode-Elemente tragen selbst keine Farbe.</summary>
+    public static PointColor ColorForSpecialMode(SpecialMode mode) => mode switch
+    {
+        SpecialMode.Fountain => PointColor.Blue,
+        SpecialMode.Vortex   => PointColor.Green,
+        _                    => PointColor.Pink
+    };
+
     /// <summary>Gefeuert bei jeder Änderung eines Farb-Zählers (Treffer ODER Reset bei Special-Mode-Trigger).
     /// Für UI-Anzeigen wie "12/20". Args: Farbe, aktueller Stand, Schwelle.</summary>
     public static event Action<PointColor, int, int> OnColorProgressChanged;
