@@ -44,6 +44,10 @@ public class FairyChoreographyDirector : MonoBehaviour
 
     [SerializeField] private FairyEntry[] fairies = new FairyEntry[3];
     [SerializeField] private string specialModeBool = "IsSpecialMode";
+    [Tooltip("Bool im Animator, das laeuft, solange der Special Mode aktiv ist. Darauf haengt die " +
+             "Beschwoerungs-Schleife (Arme kreisen) -- sie beginnt erst, wenn die Fee in der Mitte " +
+             "angekommen ist, und endet mit dem Modus. Feen ohne diesen Parameter ignorieren es.")]
+    [SerializeField] private string castingBool = "IsCasting";
 
     [Header("Intro")]
     [SerializeField] private float introDuration = 5f;
@@ -68,30 +72,75 @@ public class FairyChoreographyDirector : MonoBehaviour
     [Range(0.05f, 0.4f)]
     [SerializeField] private float leadExitPhase = 0.15f;
 
-    [Header("Vortex-Spirale")]
-    [Tooltip("Sichtbare Umdrehungen des Strudels (der Off-Screen-Anflug kommt oben drauf).")]
-    [SerializeField] private float spiralRevolutions = 3f;
-    [Tooltip("Größe des sichtbaren Strudels relativ zur KLEINEREN halben Bildschirmseite (Hochformat = " +
-             "halbe Breite). 1 = füllt die Bildbreite; <1 = enger. Alle sichtbaren Umdrehungen bleiben im Bild.")]
-    [SerializeField] private float spiralOnScreenRadius = 0.95f;
-    [Tooltip("Wie weit außerhalb die Spirale beginnt, relativ zur halben Bildhöhe (2 = doppelte halbe Höhe). " +
-             "Die Fee kommt von dort schon spiralend rein — kein Zwischenstopp.")]
-    [SerializeField] private float spiralOffScreenRadiusVH = 2f;
-    [Tooltip("Ovalität des Strudels: 1 = kreisrund, <1 = horizontal gestaucht (schmaler als hoch, passt zu " +
-             "Hochformat). ~0.65–0.8 wirkt natürlich.")]
-    [Range(0.4f, 1f)]
-    [SerializeField] private float spiralAspect = 0.72f;
-    [Tooltip("Muss zur Saugrichtung der Vortex-Elemente passen (VortexModeSystem.clockwise = true → hier true).")]
-    [SerializeField] private bool spiralClockwise = true;
-    [Tooltip("Zielgröße der Fee in der Strudelmitte, relativ zur Heimat-Größe (0.5 = halb so groß — " +
-             "wirkt, als flöge sie in den Hintergrund). Das Outro skaliert wieder auf Heimat-Größe.")]
+    [Header("Vortex-Anflug")]
+    [Tooltip("Sekunden fuer den Flug von der Startposition in die Bildmitte. Die Fee ist dabei " +
+             "bereits eingerollt -- das Einrollen selbst passiert vorher am Startplatz.")]
+    [SerializeField] private float vortexApproachDuration = 2.5f;
+    [Tooltip("Wie stark der Anflug gekruemmt ist, als Anteil der Streckenlaenge. 0 = schnurgerade, " +
+             "0.25 = deutlich sichtbarer Bogen.")]
+    [Range(0f, 0.6f)]
+    [SerializeField] private float vortexApproachCurve = 0.25f;
+    [Tooltip("Zielgroesse der Fee in der Bildmitte, relativ zur Heimat-Groesse. Das Kleinerwerden " +
+             "laesst sie nach hinten fliegen. Das Outro skaliert wieder auf Heimat-Groesse.")]
     [Range(0.2f, 1f)]
     [SerializeField] private float spiralEndScale = 0.55f;
-    [Tooltip("Zeitversatz (Sekunden), mit dem der Blätter-Trail der Spiralbahn 'hinterherhinkt' — sorgt " +
-             "dafür, dass die Blätter sichtbar aus dem tatsächlich geflogenen Weg kommen statt aus der " +
-             "aktuellen (in engen Kurven optisch 'falschen') Fee-Position/-Rotation.")]
-    [Range(0f, 0.3f)]
-    [SerializeField] private float trailDelay = 0.1f;
+
+    [Tooltip("Dreht die eingekugelte Fee um ihre eigene Seitwaerts-Achse (Grad/Sek) -- der Salto " +
+             "einer rollenden Kugel. Bewusst hier und nicht in Blender: der Flug dauert so lange " +
+             "wie der Anflug eingestellt ist, nicht die feste Clip-Laenge; ein gebackenes Rollen " +
+             "wuerde also mitten in der Drehung enden. 0 = kein Rollen.")]
+    [SerializeField] private float vortexRollSpeed = 0f;
+    [Tooltip("Anteil des Fluges, ueber den das Rollen anlaeuft bzw. am Ende wieder ausrollt. Ohne " +
+             "das wuerde sie aus dem Stand losrotieren und am Ziel mitten in der Drehung einfrieren, " +
+             "bevor sie sich wieder aufrollt.")]
+    [Range(0.05f, 0.45f)]
+    [SerializeField] private float vortexRollRamp = 0.2f;
+    [Tooltip("Knochen, um den sich die eingerollte Fee dreht. Der Wurzelpunkt des Fee-Objekts " +
+             "liegt an den Fuessen -- wuerde man darum drehen, schleuderte der Koerper auf einem " +
+             "Kreis von fast 80 cm herum, statt sich um sich selbst zu drehen.")]
+    [SerializeField] private string rollPivotBone = "mixamorig:Hips";
+    [Tooltip("Dreht die eingerollte Fee auf dem HINWEG mit dem Ruecken zum Spieler und beim " +
+             "Ankommen wieder zurueck. Der Rueckweg fuehrt nach vorn zum Spieler, dort bleibt " +
+             "sie durchgehend zugewandt.")]
+    [SerializeField] private bool vortexFaceBackground = true;   // nur auf dem Hinweg
+    [Tooltip("Sekunden, ueber die sie am Startplatz schon anrollt -- laeuft GLEICHZEITIG mit dem " +
+             "Strecken und Einrollen. Sollte etwa so lang sein wie der Einroll-Clip.")]
+    [SerializeField] private float vortexTurnBeforeFlight = 0.7f;
+    [Tooltip("Sekunden fuer das Rausrollen nach unten aus dem Bild. Danach wird sie unsichtbar " +
+             "unter dem Bildrand umgedreht und rollt von dort wieder herein.")]
+    [SerializeField] private float vortexExitDuration = 0.7f;
+    [Tooltip("Ab welcher Stelle des Einrollens sie schon anrollt. Sie steht dabei noch -- zu frueh " +
+             "wirkt es wie eine zusaetzliche Rolle auf der Stelle. 0.85 = nur das letzte Stueck. " +
+             "1 = gar nicht.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float vortexRollStartInCurl = 1f;
+    [Tooltip("Anteil des RUECKWEGS, nach dem das Rollen fertig ist. Der Flug bremst zum Schluss " +
+             "ab -- rollt sie bis zuletzt weiter, dreht sie sich am Ende fast auf der Stelle.")]
+    [Range(0.4f, 1f)]
+    [SerializeField] private float vortexRollEndOnReturn = 0.8f;
+    [Tooltip("Anteil des HINWEGS, nach dem das Rollen fertig ist. Danach gleitet sie nur noch in " +
+             "die Mitte und dreht sich dabei sichtbar vom Hintergrund zum Spieler. Rollt sie bis " +
+             "zuletzt, geht die Drehung im Ueberschlagen unter.")]
+    [Range(0.4f, 1f)]
+    [SerializeField] private float vortexRollEndOnApproach = 0.75f;
+    [Tooltip("Sekunden fuer das Herumdrehen zum Spieler am Ende des Hinwegs. Beginnt nie frueher " +
+             "als das Rollen aufhoert -- sonst ueberlagern sich beide und man sieht die Drehung nicht.")]
+    [SerializeField] private float vortexTurnBackTime = 0.35f;
+    [Tooltip("Sekunden VOR der Ankunft in der Mitte, ab denen sie sich schon aufklappt -- das " +
+             "Aufrollen laeuft dann parallel zum Herumdrehen statt erst danach. Entspricht sinnvoll " +
+             "etwa der Dauer des Herumdrehens. 0 = erst nach der Ankunft.")]
+    [SerializeField] private float vortexUncurlLead = 0.35f;
+    [Tooltip("Bool im Animator, das die Fee eingerollt haelt, solange sie zurueckfliegt. Ohne das " +
+             "klappt der Einroll-Clip nach seinem Ende von selbst wieder in den Idle auf -- mitten " +
+             "im Rueckflug. Feen ohne diesen Parameter ignorieren es.")]
+    [SerializeField] private string curledBool = "IsCurled";
+
+    [Tooltip("Sekunden, die das Einrollen am Modus-Ende dauert, bevor die Fee losfliegt -- Laenge " +
+             "des Einroll-Clips (SpecialMode_Curl). Nur dann wartet das Outro, sonst fliegt sie " +
+             "sofort los. 0 = kein Warten.")]
+    [SerializeField] private float vortexCurlTime = 0f;
+    [Tooltip("Name des GetEnergy-Ausloesers. Wird am Modus-Ende zurueckgesetzt.")]
+    [SerializeField] private string getEnergyTrigger = "GetEnergy";
 
     [Header("Gravity — pinke Fee (2 Durchflüge von oben nach unten)")]
     [Tooltip("Sekunden für EINEN sichtbaren Durchflug von oben durchs Bild nach unten. Höher = langsamer.")]
@@ -192,11 +241,21 @@ public class FairyChoreographyDirector : MonoBehaviour
         }
 
         SpecialModeManager.OnModeEnded += HandleModeEnded;
+        SpecialModeManager.OnModeStarted += HandleModeStarted;
     }
 
     private void OnDestroy()
     {
         SpecialModeManager.OnModeEnded -= HandleModeEnded;
+        SpecialModeManager.OnModeStarted -= HandleModeStarted;
+    }
+
+    // Der eigentliche Modus beginnt erst, wenn die Lead-Fee in der Mitte angekommen ist --
+    // genau dort soll ihre Beschwoerungs-Schleife einsetzen.
+    private void HandleModeStarted(SpecialMode mode)
+    {
+        int lead = LeadIndex(mode);
+        if (lead >= 0) SetBool(fairies[lead].animator, castingBool, true);
     }
 
     // ── Intro ────────────────────────────────────────────────────────────────
@@ -269,6 +328,8 @@ public class FairyChoreographyDirector : MonoBehaviour
             _                    => _homePos[lead],
         };
 
+        SetBool(anim, curledBool, false);    // Sicherheitsnetz, falls ein Outro abgebrochen wurde
+        SetBool(anim, castingBool, false);
         SetSpecialBool(anim, true);
         fairies[lead].glow?.SetOutlineGlow(true);   // Leucht-Umrandung an fürs Special-Mode
         // Partikelspur: Play() NICHT hier generell — die einzelnen Choreo-Coroutinen starten sie erst
@@ -288,7 +349,48 @@ public class FairyChoreographyDirector : MonoBehaviour
         {
             switch (mode)
             {
-                case SpecialMode.Vortex:   yield return Co_VortexSpiral(f, center, homeRot, homeScale, trail); break;
+                case SpecialMode.Vortex:
+                {
+                    // Das Umdrehen passiert bewusst HINTER dem Bildrand: eine Drehung mitten im
+                    // Bild sah mechanisch aus. Stattdessen rollt sie zum Spieler gerichtet nach
+                    // unten raus, wird unsichtbar gewendet und kommt umgedreht wieder herein.
+                    Vector3 startPos = f.position;
+                    float[] roll = new float[1];
+
+                    // 1) Einrollen am Platz, zum Spieler gerichtet -- gegen Ende rollt sie schon an.
+                    Coroutine anrollen = vortexTurnBeforeFlight > 0f
+                        ? StartCoroutine(Co_TurnInPlace(f, homeRot, 0f, vortexTurnBeforeFlight, -1f, roll))
+                        : null;
+                    yield return Co_WaitForSpecialAnimationOnce(anim);
+                    if (anrollen != null) yield return anrollen;
+
+                    // 2) Schraeg nach unten aus dem Bild rollen -- gleich auf die Hoehe der
+                    // Bildmitte, damit danach kein Umsetzen noetig ist. Rollrichtung wie auf dem
+                    // Rueckweg, sie bewegt sich hier ja ebenfalls nach unten.
+                    float mitteX = _cam != null ? _cam.WorldToViewportPoint(center).x : 0.5f;
+                    Vector3 unten = ViewportToWorldAtZ(new Vector2(mitteX, -0.4f), startPos.z);
+                    yield return Co_CurledFlight(f, startPos, unten, homeScale, homeScale, homeRot,
+                                                 unten - startPos, false, -1f, 0f,
+                                                 roll[0], 1f, vortexExitDuration, roll);
+
+                    // Kurz vor der Ankunft schon aufklappen, damit sich Aufrollen und
+                    // Herumdrehen ueberlagern. Nur die ANIMATION laeuft dadurch frueher an --
+                    // der eigentliche Modus startet weiterhin erst, wenn sie in der Mitte ist.
+                    if (vortexUncurlLead > 0f)
+                        StartCoroutine(Co_SetBoolAfter(anim, castingBool, true,
+                            Mathf.Max(0f, vortexApproachDuration - vortexUncurlLead)));
+
+                    // 3) Umgedreht wieder reinrollen, dabei in den Hintergrund schrumpfen. Sie
+                    // bewegt sich jetzt nach OBEN -- die Rollrichtung muss deshalb andersherum
+                    // sein als beim Rausrollen, sonst rollt die Kugel gegen ihre Flugrichtung.
+                    yield return Co_CurledFlight(f, unten, center, homeScale,
+                                                 homeScale * spiralEndScale, homeRot,
+                                                 center - unten, vortexFaceBackground, 1f,
+                                                 vortexFaceBackground ? 1f : 0f,
+                                                 roll[0], vortexRollEndOnApproach,
+                                                 vortexApproachDuration, roll);
+                    break;
+                }
                 case SpecialMode.Gravity:  yield return Co_GravityDrops(f, endPos, homeRot, trail);      break;
                 case SpecialMode.Fountain: yield return Co_FountainArcs(f, endPos, homeRot, homeScale, trail); break;
                 default:                   yield return Co_SimpleApproach(f, endPos, homeRot);          break;
@@ -304,6 +406,7 @@ public class FairyChoreographyDirector : MonoBehaviour
         // Referenz das rechtzeitig mitbekommt (MissingReferenceException trotz "?."-Check) — das darf
         // NIEMALS den Start des eigentlichen Special Modes (StartMode unten) verhindern.
         try { fairies[lead].specialModeTrail?.Stop(true, ParticleSystemStopBehavior.StopEmitting); }
+        catch (NullReferenceException) { }   // neuere Unity werfen das statt MissingReference
         catch (MissingReferenceException) { /* Trail-Objekt wurde extern zerstört — ignorieren */ }
 
         if (SpecialModeManager.Instance != null && !SpecialModeManager.Instance.IsModeActive)
@@ -363,150 +466,183 @@ public class FairyChoreographyDirector : MonoBehaviour
         }
     }
 
-    private IEnumerator Co_VortexSpiral(Transform f, Vector3 center, Quaternion homeRot, Vector3 homeScale, ParticleSystem trail)
+    // Vortex / gruen: die bereits eingerollte Fee fliegt in einer leichten Kurve in die Bildmitte
+    // und wird dabei kleiner -- sie wirkt dadurch, als flöge sie nach hinten. Die Schauwirkung kommt
+    // nicht mehr aus der Flugbahn, sondern aus dem schnellen Rollen um die eigene Achse.
+    // Vortex / gruen: die eingerollte Fee fliegt in einer leichten Kurve zwischen Startplatz und
+    // Bildmitte, waehrend sie sich um ihre eigene Mitte ueberschlaegt. Wird fuer den Hinweg und den
+    // Rueckweg benutzt -- mit derselben Kurvenreferenz fliegt sie exakt dieselbe Bahn zurueck.
+    private IEnumerator Co_CurledFlight(Transform f, Vector3 von, Vector3 nach,
+                                        Vector3 scaleVon, Vector3 scaleNach,
+                                        Quaternion homeRot, Vector3 kurvenReferenz,
+                                        bool wegdrehen, float rollRichtung, float drehungStart,
+                                        float rollStartWinkel, float rollEndeAnteil,
+                                        float dauerVorgabe, float[] rollAus)
     {
-        if (trail != null)
+        von  = new Vector3(von.x,  von.y,  f.position.z);
+        nach = new Vector3(nach.x, nach.y, f.position.z);
+
+        // Kontrollpunkt seitlich der Verbindungslinie -> leichter Bogen statt gerader Strecke.
+        // Die Seite haengt an kurvenReferenz und nicht an der Flugrichtung: nur so liegt der
+        // Rueckweg auf demselben Bogen wie der Hinweg.
+        Vector3 quer = new Vector3(-kurvenReferenz.y, kurvenReferenz.x, 0f);
+        quer = quer.sqrMagnitude > 0.0001f ? quer.normalized : Vector3.up;
+        Vector3 ctrl = (von + nach) * 0.5f + quer * ((nach - von).magnitude * vortexApproachCurve);
+
+        float dauer   = Mathf.Max(0.3f, dauerVorgabe);
+
+        Vector3 pivot = RollPivotLocal(f);
+        Quaternion rueckenRot = homeRot * Quaternion.AngleAxis(180f, Vector3.up);
+
+        // Sie rollt durchgehend bis zur Ankunft -- auch waehrend sie sich wieder zum Spieler dreht.
+        // Damit sie am Ende trotzdem exakt aufrecht steht (der Aufroll-Clip setzt das voraus), wird
+        // die Gesamtdrehung auf eine GANZE Zahl von Umdrehungen gerundet. Eine volle Umdrehung ist
+        // dieselbe Lage wie gar keine, also landet sie punktgenau, ohne zurueckgedreht zu werden.
+        float drehRamp = Mathf.Clamp(vortexRollRamp, 0.01f, 0.9f);
+        // Laeuft die Drehung schon aus dem Einrollen heraus, braucht sie keinen zweiten Anlauf.
+        float ramp = rollStartWinkel > 0f ? 0.02f : drehRamp;
+        float flaeche = 1f - ramp * 0.5f;                     // mittlere Geschwindigkeit beim Anlauf
+
+        // Rollstrecke endet ggf. vor der Ankunft -- der Flug bremst zum Schluss ab, und sie soll
+        // sich dort nicht noch auf der Stelle weiterdrehen.
+        float rollEnde = Mathf.Clamp(rollEndeAnteil, 0.2f, 1f);
+        float roh = vortexRollSpeed * dauer * rollEnde * flaeche;
+        // Auf eine GANZE Zahl von Umdrehungen runden -- einschliesslich dessen, was beim Einrollen
+        // schon gedreht wurde. Eine volle Umdrehung ist dieselbe Lage wie gar keine.
+        float ziel   = Mathf.Max(360f, Mathf.Round((rollStartWinkel + roh) / 360f) * 360f);
+        float gesamt = ziel - rollStartWinkel;
+
+        // Anteil der Drehung, der bis zum Zeitpunkt u geschafft ist (Anlauf, danach gleichmaessig).
+        float Fortschritt(float u)
         {
-            try
+            if (u <= ramp)
             {
-                trail.Play();
-                var em = trail.emission;
-                em.enabled = false;   // startet off-screen — erst per SetTrailVisible() an, sobald sichtbar
+                float w = u / ramp;
+                return ramp * (w * w * w - 0.5f * w * w * w * w) / flaeche;
             }
-            catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+            return (ramp * 0.5f + (u - ramp)) / flaeche;
         }
 
-        float z       = f.position.z;
-        float approachT = introDuration * leadExitPhase;   // kurzer Anflug zum Spiral-Startpunkt
-        float spiralT   = introDuration - approachT;       // die eigentliche, durchgehende Spirale
+        // Das Zurueckdrehen zum Spieler faengt fruehestens dort an, wo das Rollen aufhoert --
+        // sonst ueberlagern sich Ueberschlag und Drehung und man sieht von der Drehung nichts.
+        // Innerhalb dieses Fensters bestimmt vortexTurnBackTime, wie flott sie sich umdreht.
+        float rueckAnteil = Mathf.Clamp(
+            Mathf.Min(1f - rollEnde, vortexTurnBackTime / dauer), 0.05f, 0.9f);
 
-        float onScreenR  = ScreenHalfMinWorld() * spiralOnScreenRadius;
-        float offScreenR = HalfHeightWorld() * Mathf.Max(1.2f, spiralOffScreenRadiusVH);
-
-        float dirSign    = spiralClockwise ? -1f : 1f;
-        float totalSweep = spiralRevolutions * Mathf.PI * 2f * dirSign;
-
-        Vector3 startPos = f.position;
-        Vector3 awayDir  = (startPos - center).sqrMagnitude > 0.0001f
-            ? (startPos - center).normalized
-            : Vector3.down;
-        float startAngle = Mathf.Atan2(awayDir.y, awayDir.x);
-
-        // Ovale Spiral-Position + analytische Tangente (Ellipse: x um spiralAspect gestaucht).
-        Vector3 SpiralPos(float angle, float radius) => new Vector3(
-            center.x + Mathf.Cos(angle) * radius * spiralAspect,
-            center.y + Mathf.Sin(angle) * radius,
-            z);
-        Vector3 SpiralTangent(float angle) => new Vector3(
-            -Mathf.Sin(angle) * spiralAspect,
-             Mathf.Cos(angle),
-             0f) * Mathf.Sign(dirSign);
-
-        // Radius-Verlauf: erste ~25% schnell von offScreenR (weit draußen) auf onScreenR (Bildgröße),
-        // danach linear auf 0 — konstante Radial-Geschwindigkeit, kein Stillstand irgendwo.
-        float RadiusAt(float p)
-        {
-            const float enterP = 0.25f;
-            if (p < enterP)
-            {
-                float lp   = p / enterP;
-                float ease = 1f - (1f - lp) * (1f - lp);   // ease-out: sofort schnell rein
-                return Mathf.Lerp(offScreenR, onScreenR, ease);
-            }
-            float q = (p - enterP) / (1f - enterP);
-            return Mathf.Lerp(onScreenR, 0f, q);
-        }
-
-        Vector3 spiralStart = SpiralPos(startAngle, RadiusAt(0f));
-
-        // Phase A: kurzer Anflug von der Ausgangsposition zum (off-screen) Spiral-Startpunkt.
-        // Rotation weich aus der frontalen Idle-Haltung in die Spiral-Anfangs-Tangente.
-        Quaternion startFlightRot = FlightRotation(SpiralTangent(startAngle));
-        Vector3 prevPos = f.position;
         float t = 0f;
-        while (t < approachT)
+        while (t < dauer)
         {
             t += Time.deltaTime;
-            float lp = Mathf.Clamp01(t / approachT);
-            float p  = lp * lp;                         // ease-IN: beschleunigt, bremst NICHT ab
-            f.position = Vector3.Lerp(startPos, spiralStart, p);
-            SlerpTo(f, Quaternion.Slerp(homeRot, startFlightRot, FlightWeightIn(lp)), turnSpeed);
-            SetTrailVisible(trail, f.position);
-            prevPos = f.position;
+            float u = Mathf.Clamp01(t / dauer);
+            float p = Mathf.SmoothStep(0f, 1f, u);
+            Vector3 a2 = Vector3.Lerp(von, ctrl, p);
+            Vector3 b2 = Vector3.Lerp(ctrl, nach, p);
+            Vector3 bahn = Vector3.Lerp(a2, b2, p);
+            f.localScale = Vector3.Lerp(scaleVon, scaleNach, p);
+
+            // Ruecken zum Spieler drehen, am Ende wieder zurueck.
+            // Setzt dort an, wo die Drehung am Startplatz aufgehoert hat.
+            float hin     = Mathf.Lerp(drehungStart, 1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(u / drehRamp)));
+            float zurueck = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((u - (1f - rueckAnteil)) / rueckAnteil));
+            Quaternion basis = wegdrehen
+                ? Quaternion.Slerp(homeRot, rueckenRot, hin * (1f - zurueck))
+                : homeRot;
+
+            // Ueberschlag um die WAAGERECHTE BILDACHSE -- vorangestellt, damit die Rollrichtung
+            // nicht davon abhaengt, wie herum die Fee gerade steht. rollRichtung dreht sie auf dem
+            // Rueckweg um, damit die Kugel mit ihrer Flugrichtung rollt und nicht dagegen.
+            float winkel = rollStartWinkel + gesamt * Fortschritt(Mathf.Clamp01(u / rollEnde));
+            f.rotation = Quaternion.AngleAxis(winkel * rollRichtung, Vector3.right) * basis;
+            SetzeUmDrehpunkt(f, bahn, homeRot, pivot);
             yield return null;
         }
 
-        // Phase B: EINE durchgehende Spirale. Winkel läuft linear (konstante Drehrate). Über die
-        // letzten `rotationSettleTime` Sekunden geht die Rotation per reiner, direkt geglätteter
-        // Slerp in die Idle-Rotation über (kein Chase, kein Springen).
-        float settleT = Mathf.Min(rotationSettleTime, spiralT * 0.85f);
-        float travelT = spiralT - settleT;
-        Quaternion settleFrom = f.rotation;
-        bool captured = false;
-
-        t = 0f;
-        while (t < spiralT)
-        {
-            t += Time.deltaTime;
-            float p      = Mathf.Clamp01(t / spiralT);
-            float radius = RadiusAt(p);
-            float angle  = startAngle + totalSweep * p;
-
-            f.position   = SpiralPos(angle, radius);
-            f.localScale = Vector3.Lerp(homeScale, homeScale * spiralEndScale, Mathf.SmoothStep(0f, 1f, p));
-
-            if (t < travelT)
-            {
-                SlerpTo(f, FlightRotation(SpiralTangent(angle)), turnSpeed);
-
-                // Der Trail hängt als Kind an der Fee und würde sonst ihre (bewusst geglättete,
-                // rate-limitierte) Körper-Rotation UND -Position 1:1 übernehmen — das sieht in der engen
-                // Spiral-Mitte (Radius schrumpft auf 0, Kurve wird dort extrem eng) unnatürlich aus.
-                // Fix: Trail-Position/-Rotation stattdessen von einem leicht ZURÜCKLIEGENDEN Punkt auf
-                // derselben analytischen Spiralbahn ableiten (~0.1s "Verzögerung") — die Blätter kommen
-                // dadurch sichtbar aus dem tatsächlich geflogenen Weg, nicht aus der aktuellen Fee-Pose.
-                if (trail != null)
-                {
-                    try
-                    {
-                        float tDelayed     = Mathf.Max(0f, t - trailDelay);
-                        float pDelayed     = Mathf.Clamp01(tDelayed / spiralT);
-                        float radiusDelayed = RadiusAt(pDelayed);
-                        float angleDelayed  = startAngle + totalSweep * pDelayed;
-                        trail.transform.position = SpiralPos(angleDelayed, radiusDelayed);
-                        trail.transform.rotation = FlightRotation(SpiralTangent(angleDelayed));
-                    }
-                    catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
-                }
-            }
-            else
-            {
-                if (!captured) { settleFrom = f.rotation; captured = true; }
-                float sp = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - travelT) / settleT));
-                f.rotation = Quaternion.Slerp(settleFrom, homeRot, sp);
-            }
-
-            // Die letzten ~20% sind die engste Kurve kurz vorm Verschwinden im Zentrum (Radius nahe 0) —
-            // selbst mit der oben korrigierten Trail-Rotation sieht das Blätter-Auswerfen dort noch
-            // unruhig aus. Trail hier einfach schon vorher abschalten, statt bis zum Schluss laufen zu lassen.
-            if (p > 0.8f)
-            {
-                if (trail != null)
-                {
-                    try { var em = trail.emission; em.enabled = false; }
-                    catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
-                }
-            }
-            else
-            {
-                SetTrailVisible(trail, f.position);
-            }
-            yield return null;
-        }
-
-        f.position   = new Vector3(center.x, center.y, z);
+        f.position   = nach;
         f.rotation   = homeRot;
-        f.localScale = homeScale * spiralEndScale;
+        f.localScale = scaleNach;
+        if (rollAus != null) rollAus[0] = rollStartWinkel + gesamt;
+    }
+
+    // Dreht die Fee auf der Stelle weg. Position und Groesse bleiben unveraendert -- bewegt wird
+    // nur die Ausrichtung, und zwar um die Kugelmitte statt um den Fusspunkt. Laeuft parallel zum
+    // Einroll-Clip, damit aus Einrollen und Umdrehen eine einzige Bewegung wird.
+    // Dreht die Fee auf der Stelle weg und laesst sie gegen Ende schon anrollen. Position und
+    // Groesse bleiben unveraendert, gedreht wird um die Kugelmitte statt um den Fusspunkt. Laeuft
+    // parallel zum Einroll-Clip, damit daraus eine einzige Bewegung wird.
+    private IEnumerator Co_TurnInPlace(Transform f, Quaternion homeRot, float anteil, float dauer,
+                                       float rollRichtung, float[] rollAus)
+    {
+        rollAus[0] = 0f;
+        if (dauer <= 0f) yield break;
+
+        Quaternion rueckenRot = homeRot * Quaternion.AngleAxis(180f, Vector3.up);
+        Vector3 pivot = RollPivotLocal(f);
+        Vector3 bahn  = f.position;
+        float ab = Mathf.Clamp01(vortexRollStartInCurl);
+        float roll = 0f;
+
+        float t = 0f;
+        while (t < dauer)
+        {
+            t += Time.deltaTime;
+            float u = Mathf.Clamp01(t / dauer);
+
+            // Das Rollen laeuft schon waehrend des Einrollens an, sobald die Kugel fast fertig ist.
+            if (ab < 1f)
+            {
+                float g = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(ab, 1f, u));
+                roll += vortexRollSpeed * g * Time.deltaTime;
+            }
+
+            Quaternion basis = Quaternion.Slerp(homeRot, rueckenRot, Mathf.SmoothStep(0f, 1f, u) * anteil);
+            f.rotation = Quaternion.AngleAxis(roll * rollRichtung, Vector3.right) * basis;
+            SetzeUmDrehpunkt(f, bahn, homeRot, pivot);
+            yield return null;
+        }
+        rollAus[0] = roll;
+    }
+
+    private IEnumerator Co_SetBoolAfter(Animator a, string name, bool wert, float nachSekunden)
+    {
+        if (nachSekunden > 0f) yield return new WaitForSeconds(nachSekunden);
+        SetBool(a, name, wert);
+    }
+
+    private IEnumerator Co_ReleaseCurl(Animator a, float nachSekunden)
+    {
+        yield return new WaitForSeconds(nachSekunden);
+        SetBool(a, curledBool, false);
+    }
+
+    // Rueckweg: dieselbe Bahn wie der Hinweg, nur andersherum -- eingerollt und rollend.
+    private IEnumerator Co_CurledReturnHome(int i, Action onDone)
+    {
+        var f = fairies[i].fairy;
+        Vector3    homePos   = _homePos[i];
+        Quaternion homeRot   = _homeRot[i];
+        Vector3    homeScale = _homeScale[i];
+
+        // Erst einrollen lassen, dann losfliegen.
+        if (vortexCurlTime > 0f) yield return new WaitForSeconds(vortexCurlTime);
+
+        Vector3 von = f.position;
+
+        // Sobald sie aufhoert zu rollen, klappt sie sich auch schon auf -- der Rest des Fluges
+        // ist reines Ankommen. Vorher stand sie bis zuletzt als Kugel im Bild.
+        StartCoroutine(Co_ReleaseCurl(fairies[i].animator,
+            Mathf.Max(0.3f, vortexApproachDuration) * vortexRollEndOnReturn));
+
+        // Auf dem Rueckweg kommt sie nach vorn zum Spieler -- da stimmt die Blickrichtung
+        // bereits, sie muss sich weder weg- noch wieder zurueckdrehen.
+        yield return Co_CurledFlight(f, von, homePos, f.localScale, homeScale, homeRot,
+                                     von - homePos, false, -1f, 0f, 0f, vortexRollEndOnReturn,
+                                     vortexApproachDuration, null);
+
+        f.position   = homePos;
+        f.rotation   = homeRot;
+        f.localScale = homeScale;
+        SetBool(fairies[i].animator, curledBool, false);   // Sicherheitsnetz
+        onDone?.Invoke();
     }
 
     // Gravity / pink: 2 sichtbare Durchflüge von oben nach unten (1× mehr links, 1× mehr rechts).
@@ -541,7 +677,8 @@ public class FairyChoreographyDirector : MonoBehaviour
                 var em = trail.emission;
                 em.enabled = false;   // startet off-screen — erst per SetTrailVisible() an, sobald sichtbar
             }
-            catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+            catch (NullReferenceException) { }   // neuere Unity werfen das statt MissingReference
+        catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
         }
 
         // Durchflug 1 (links) + 2 (rechts): von oben nach unten, dabei um die eigene Y-Achse rotierend.
@@ -601,7 +738,8 @@ public class FairyChoreographyDirector : MonoBehaviour
                 var em = trail.emission;
                 em.enabled = false;   // Start (arcFrom) ist noch off-screen — erst per SetTrailVisible() an
             }
-            catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+            catch (NullReferenceException) { }   // neuere Unity werfen das statt MissingReference
+        catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
         }
 
         float spin = 0f;
@@ -723,7 +861,31 @@ public class FairyChoreographyDirector : MonoBehaviour
 
     // ── Outro ────────────────────────────────────────────────────────────────
 
-    private void HandleModeEnded(SpecialMode mode) => PlaySpecialModeOutro(mode);
+    private void HandleModeEnded(SpecialMode mode)
+    {
+        int lead = LeadIndex(mode);
+        if (lead >= 0)
+        {
+            SetBool(fairies[lead].animator, castingBool, false);
+            // Waehrend des Modus laufen GetEnergy-Ausloeser auf, die nirgends verbraucht werden:
+            // aus der Beschwoerungs-Schleife fuehrt auf der Base Layer kein Weg in den
+            // GetEnergy-Zustand. Ohne dieses Zuruecksetzen feuert direkt nach dem Outro ein
+            // nachtraeglicher Faustschlag.
+            ResetTrigger(fairies[lead].animator, getEnergyTrigger);
+            // Haelt den Einroll-Clip auf seinem letzten Bild stehen, bis sie zu Hause ist.
+            if (mode == SpecialMode.Vortex)
+                SetBool(fairies[lead].animator, curledBool, true);
+        }
+        PlaySpecialModeOutro(mode);
+    }
+
+    private static void ResetTrigger(Animator a, string name)
+    {
+        if (a == null || a.runtimeAnimatorController == null || string.IsNullOrEmpty(name)) return;
+        foreach (var p in a.parameters)
+            if (p.type == AnimatorControllerParameterType.Trigger && p.name == name)
+            { a.ResetTrigger(name); return; }
+    }
 
     /// <summary>Alle Feen zurück an ihre Ausgangsposition, alle wieder Idle_Fly.
     /// Die Lead-Fee fliegt dabei erst seitlich aus dem Bild und dann von unten hoch an ihren Platz.</summary>
@@ -751,6 +913,8 @@ public class FairyChoreographyDirector : MonoBehaviour
             bool alreadyHome = Vector3.Distance(fairies[ci].fairy.position, _homePos[ci]) < 0.15f;
             if (ci == lead && alreadyHome)
                 StartCoroutine(Co_SettleInPlace(ci, () => remaining--));   // z.B. pink: steht schon am Platz
+            else if (ci == lead && mode == SpecialMode.Vortex)
+                StartCoroutine(Co_CurledReturnHome(ci, () => remaining--));  // gruen: denselben Weg zurueck
             else if (ci == lead && mode == SpecialMode.Fountain)
                 StartCoroutine(Co_DirectReturnHome(ci, () => remaining--)); // blau: einfach direkt an den Platz
             else if (ci == lead)
@@ -827,20 +991,41 @@ public class FairyChoreographyDirector : MonoBehaviour
         float side = homePos.x >= 0f ? 1f : -1f;
         Vector3 sideExit = ViewportToWorldAtZ(new Vector2(side > 0f ? 1.35f : -0.35f, 0.5f), z);
 
+        // Erst einrollen lassen, dann losfliegen -- der Heimweg soll im eingerollten Zustand
+        // rollend passieren, genau wie der Hinweg.
+        bool rollen = vortexRollSpeed != 0f;
+        if (rollen && vortexCurlTime > 0f) yield return new WaitForSeconds(vortexCurlTime);
+        Vector3 pivot = rollen ? RollPivotLocal(f) : Vector3.zero;
+
         float p1T = outroDuration * 0.45f;
         Vector3 prevPos = f.position;
+        Quaternion basisRot = f.rotation;
+        float rollWinkel = 0f;
         float t = 0f;
         while (t < p1T)
         {
             t += Time.deltaTime;
             float rp = Mathf.Clamp01(t / p1T);
             float p  = Mathf.SmoothStep(0f, 1f, rp);
-            f.position   = Vector3.Lerp(fromPos, sideExit, p);
+            Vector3 bahn = Vector3.Lerp(fromPos, sideExit, p);
             f.localScale = Vector3.Lerp(fromScale, homeScale, p);
             // Weich aus der Idle-Rotation eindrehen (sie steht davor frontal in der Mitte).
-            Quaternion rot = Quaternion.Slerp(homeRot, FlightRotation(f.position - prevPos, f.rotation), FlightWeightIn(rp));
-            SlerpTo(f, rot, turnSpeed);
-            prevPos = f.position;
+            Quaternion rot = Quaternion.Slerp(homeRot, FlightRotation(bahn - prevPos, basisRot), FlightWeightIn(rp));
+            if (rollen)
+            {
+                basisRot = Quaternion.Slerp(basisRot, rot, 1f - Mathf.Exp(-turnSpeed * Time.deltaTime));
+                rollWinkel += vortexRollSpeed * Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(rp / vortexRollRamp))
+                            * Time.deltaTime;
+                f.rotation = Quaternion.AngleAxis(rollWinkel, Vector3.right) * basisRot;
+                SetzeUmDrehpunkt(f, bahn, homeRot, pivot);
+            }
+            else
+            {
+                f.position = bahn;
+                SlerpTo(f, rot, turnSpeed);
+                basisRot = f.rotation;
+            }
+            prevPos = bahn;
             yield return null;
         }
 
@@ -854,7 +1039,9 @@ public class FairyChoreographyDirector : MonoBehaviour
         // kurz vor der Ankunft (Settle-Teil) zur Ansicht Richtung Spieler gedreht ──
         float p2T = outroDuration - p1T;
         Vector3 belowCtrl = (belowPos + homePos) * 0.5f;
-        yield return Co_FlyAndSettle(f, belowPos, homePos, belowCtrl, homeRot, p2T, homeRot * Quaternion.Euler(0f, 180f, 0f));
+        yield return Co_FlyAndSettle(f, belowPos, homePos, belowCtrl, homeRot, p2T,
+            homeRot * Quaternion.Euler(0f, 180f, 0f), null,
+            rollen ? vortexRollSpeed : 0f, rollWinkel, pivot);
 
         f.position   = homePos;
         f.rotation   = homeRot;
@@ -896,7 +1083,9 @@ public class FairyChoreographyDirector : MonoBehaviour
     // Outro-Rückflüge: gerade mit dem Rücken zum Spieler rein, statt seitlich "liegend" gebankt.
     private IEnumerator Co_FlyAndSettle(Transform f, Vector3 fromPos, Vector3 toPos, Vector3 control,
                                         Quaternion homeRot, float duration, Quaternion? travelRot = null,
-                                        ParticleSystem trail = null)
+                                        ParticleSystem trail = null,
+                                        float rollSpeed = 0f, float rollStart = 0f,
+                                        Vector3 rollPivot = default)
     {
         float settleT = Mathf.Min(rotationSettleTime, duration * 0.85f);
         float travelT = duration - settleT;
@@ -904,6 +1093,10 @@ public class FairyChoreographyDirector : MonoBehaviour
         Vector3 prevPos = f.position;
         Quaternion settleFrom = f.rotation;
         bool captured = false;
+        // Eigenrotation der eingerollten Fee: wird getrennt von der Flughaltung gefuehrt, sonst
+        // daempft die traege Eindreh-Slerp das Rollen weg. Das Zurueckdrehen macht die Settle-Phase.
+        Quaternion basisRot = f.rotation;
+        float rollWinkel = rollStart;
 
         float t = 0f;
         while (t < duration)
@@ -912,12 +1105,25 @@ public class FairyChoreographyDirector : MonoBehaviour
             float p = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / duration));
             Vector3 a = Vector3.Lerp(fromPos, control, p);
             Vector3 b = Vector3.Lerp(control, toPos, p);
-            f.position = Vector3.Lerp(a, b, p);
+            Vector3 bahn = Vector3.Lerp(a, b, p);
+            f.position = bahn;
 
             if (t < travelT)
             {
-                Quaternion target = travelRot ?? FlightRotation(f.position - prevPos, f.rotation);
-                SlerpTo(f, target, turnSpeed);
+                Quaternion target = travelRot ?? FlightRotation(f.position - prevPos, basisRot);
+                if (rollSpeed != 0f)
+                {
+                    basisRot = Quaternion.Slerp(basisRot, target, 1f - Mathf.Exp(-turnSpeed * Time.deltaTime));
+                    float aus = travelT > 0f ? Mathf.SmoothStep(0f, 1f,
+                                   Mathf.Clamp01((1f - t / travelT) / Mathf.Max(0.01f, vortexRollRamp))) : 0f;
+                    rollWinkel += rollSpeed * aus * Time.deltaTime;
+                    f.rotation = Quaternion.AngleAxis(rollWinkel, Vector3.right) * basisRot;
+                }
+                else
+                {
+                    SlerpTo(f, target, turnSpeed);
+                    basisRot = f.rotation;
+                }
             }
             else
             {
@@ -925,8 +1131,9 @@ public class FairyChoreographyDirector : MonoBehaviour
                 float sp = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - travelT) / settleT));
                 f.rotation = Quaternion.Slerp(settleFrom, homeRot, sp);
             }
+            if (rollSpeed != 0f) SetzeUmDrehpunkt(f, bahn, homeRot, rollPivot);
             if (trail != null) SetTrailVisible(trail, f.position);
-            prevPos = f.position;
+            prevPos = bahn;
             yield return null;
         }
         f.position = toPos;
@@ -950,6 +1157,7 @@ public class FairyChoreographyDirector : MonoBehaviour
             bool visible = IsOnScreen(worldPos, em.enabled);
             if (em.enabled != visible) em.enabled = visible;
         }
+        catch (NullReferenceException) { }   // neuere Unity werfen das statt MissingReference
         catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren, Flug läuft weiter */ }
     }
 
@@ -1035,6 +1243,45 @@ public class FairyChoreographyDirector : MonoBehaviour
     private float FlightWeightIn(float rp)
         => rotationEaseIn > 0f ? Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(rp / rotationEaseIn)) : 1f;
 
+    // Lage des Drehknochens im lokalen Raum der Fee. Wird einmal zu Beginn des Fluges bestimmt,
+    // also in der bereits eingerollten Haltung -- dort liegt der Koerper um die Huefte herum.
+    private Vector3 RollPivotLocal(Transform f)
+    {
+        if (f == null) return Vector3.zero;
+
+        // Mittelpunkt der Huelle ueber alle Koerperknochen -- ein einzelner Knochen trifft die
+        // Mitte der Kugel nicht: die Huefte liegt rund 18 cm darunter, und der Koerper wuerde
+        // weiterhin sichtbar um diesen Versatz kreisen.
+        Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
+        int n = 0;
+        foreach (var t in f.GetComponentsInChildren<Transform>(true))
+        {
+            string nm = t.name;
+            if (!nm.StartsWith("mixamorig:") && !nm.StartsWith("Tail_")) continue;
+            // Fingerknochen auslassen -- davon gibt es 40 Stueck, sie wuerden den Mittelpunkt
+            // zu den Haenden ziehen.
+            if (nm.Contains("HandIndex") || nm.Contains("HandMiddle") || nm.Contains("HandPinky")
+                || nm.Contains("HandRing")  || nm.Contains("HandThumb")) continue;
+            Vector3 lp = f.InverseTransformPoint(t.position);
+            min = Vector3.Min(min, lp);
+            max = Vector3.Max(max, lp);
+            n++;
+        }
+        if (n > 0) return (min + max) * 0.5f;
+
+        foreach (var t in f.GetComponentsInChildren<Transform>(true))
+            if (t.name == rollPivotBone) return f.InverseTransformPoint(t.position);
+        return Vector3.zero;
+    }
+
+    // Setzt die Fee so, dass nicht ihr Wurzelpunkt, sondern der Drehknochen auf der Flugbahn liegt.
+    // Ohne das waere der Drehpunkt die Fussspitze und der Koerper wuerde grosse Kreise fahren.
+    private static void SetzeUmDrehpunkt(Transform f, Vector3 bahn, Quaternion ruheRot, Vector3 pivotLokal)
+    {
+        Vector3 skaliert = Vector3.Scale(f.localScale, pivotLokal);
+        f.position = bahn + ruheRot * skaliert - f.rotation * skaliert;
+    }
+
     private void SetSpecialBool(Animator a, bool value)
     {
         if (a == null) return;
@@ -1042,6 +1289,19 @@ public class FairyChoreographyDirector : MonoBehaviour
             if (p.type == AnimatorControllerParameterType.Bool && p.name == specialModeBool)
             {
                 a.SetBool(specialModeBool, value);
+                return;
+            }
+    }
+
+    // Setzt ein Bool nur, wenn der Controller es kennt -- Feen ohne eigene Animation bleiben so
+    // unberuehrt, ohne dass Unity eine Warnung wirft.
+    private static void SetBool(Animator a, string name, bool value)
+    {
+        if (a == null || a.runtimeAnimatorController == null || string.IsNullOrEmpty(name)) return;
+        foreach (var p in a.parameters)
+            if (p.type == AnimatorControllerParameterType.Bool && p.name == name)
+            {
+                a.SetBool(name, value);
                 return;
             }
     }
@@ -1057,21 +1317,6 @@ public class FairyChoreographyDirector : MonoBehaviour
             return c;
         }
         return new Vector3(0f, 0f, z);
-    }
-
-    private float HalfHeightWorld()
-    {
-        return _cam != null && _cam.orthographic ? _cam.orthographicSize : 5f;
-    }
-
-    // Kleinere halbe Bildschirmseite in Weltkoordinaten (bei Hochformat = halbe Breite). Damit passt
-    // eine kreisförmige Spirale mit diesem Radius komplett ins Bild.
-    private float ScreenHalfMinWorld()
-    {
-        if (_cam == null) return 2.3f;
-        float halfH = _cam.orthographic ? _cam.orthographicSize : 5f;
-        float halfW = halfH * _cam.aspect;
-        return Mathf.Min(halfH, halfW);
     }
 
     private Vector3 ViewportToWorldAtZ(Vector2 vp, float z)

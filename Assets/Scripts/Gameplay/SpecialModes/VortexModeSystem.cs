@@ -213,6 +213,10 @@ public class VortexModeSystem : MonoBehaviour
         float angle  = Mathf.Atan2(offset.y, offset.x);
 
         GameObject obj = Instantiate(prefab, spawnPos, Quaternion.identity);
+        // Vorlagen, die als deaktiviertes Szenen-Objekt in der Hierarchie liegen (z.B. das
+        // Portal-Fake), erzeugen sonst ebenfalls deaktivierte Klone -- die haengen dann unsichtbar
+        // im Bild, statt zum Zentrum zu fliegen. Bei echten Prefabs aendert das nichts.
+        if (!obj.activeSelf) obj.SetActive(true);
         MysteryBoxEffectSystem.ApplySizeMultiplier(obj);
 
         var vp2 = obj.GetComponent<VortexPoint>();

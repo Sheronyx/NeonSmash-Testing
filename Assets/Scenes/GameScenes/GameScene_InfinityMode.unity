@@ -504,7 +504,7 @@ MonoBehaviour:
   - color: 1
     fairy: {fileID: 1897096168}
     animator: {fileID: 1897096167}
-    specialModeTrail: {fileID: 566928658}
+    specialModeTrail: {fileID: 0}
     animationOnlyIntro: 0
   - color: 2
     fairy: {fileID: 17095450}
@@ -512,6 +512,7 @@ MonoBehaviour:
     specialModeTrail: {fileID: 1003589030}
     animationOnlyIntro: 0
   specialModeBool: IsSpecialMode
+  castingBool: IsCasting
   introDuration: 5
   waitForGetEnergy: 1
   armLayerName: Arme
@@ -520,13 +521,23 @@ MonoBehaviour:
   getEnergyEndTimeout: 2.5
   specialModeStateName: SpecialMode_Fly
   leadExitPhase: 0.15
-  spiralRevolutions: 3
-  spiralOnScreenRadius: 1.4
-  spiralOffScreenRadiusVH: 2
-  spiralAspect: 0.62
-  spiralClockwise: 1
+  vortexApproachDuration: 2.5
+  vortexApproachCurve: 0.25
   spiralEndScale: 0.55
-  trailDelay: 0.1
+  vortexRollSpeed: 1440
+  vortexRollRamp: 0.15
+  rollPivotBone: mixamorig:Hips
+  vortexFaceBackground: 1
+  vortexTurnBeforeFlight: 0.7
+  vortexExitDuration: 0.7
+  vortexRollStartInCurl: 1
+  vortexRollEndOnReturn: 0.8
+  vortexRollEndOnApproach: 0.75
+  vortexTurnBackTime: 0.35
+  vortexUncurlLead: 0.35
+  curledBool: IsCurled
+  vortexCurlTime: 0.75
+  getEnergyTrigger: GetEnergy
   gravityPassDuration: 1.6
   gravityPassOvershoot: 0.3
   gravityPassSpread: 0.22
@@ -8457,16 +8468,15 @@ PrefabInstance:
       propertyPath: m_Name
       value: SpecialMode Trail (Leaves)
       objectReference: {fileID: 0}
+    - target: {fileID: 4772634663576830964, guid: 49eabd7170f974795b93a7435d2dcf49, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 49eabd7170f974795b93a7435d2dcf49, type: 3}
---- !u!198 &566928658 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 4772634663558126228, guid: 49eabd7170f974795b93a7435d2dcf49, type: 3}
-  m_PrefabInstance: {fileID: 566928657}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &566928659 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4772634663576477652, guid: 49eabd7170f974795b93a7435d2dcf49, type: 3}
@@ -9334,7 +9344,7 @@ MonoBehaviour:
   diamondBonusCount: 5
   diamondBonusMultiplier: 5
   scoreTextMaterial: {fileID: 2100000, guid: 119cb11d3acc04556ac50b2446fb194a, type: 2}
-  portalEffect: {fileID: 984124719}
+  portalEffect: {fileID: 0}
   PendingMaxSpawnCount: -1
   PendingDiamondBonusActive: 0
   PendingIntensity: 1
@@ -23827,6 +23837,7 @@ MonoBehaviour:
     energyOrbPrefab: {fileID: 6237600531714503956, guid: f6e6f89ada2044675bfdd52d80c50676, type: 3}
     fairyTransform: {fileID: 17095450}
     glowFlash: {fileID: 17095451}
+  specialModeAnimSpeed: 1.6
 --- !u!1 &1942897533
 GameObject:
   m_ObjectHideFlags: 0
