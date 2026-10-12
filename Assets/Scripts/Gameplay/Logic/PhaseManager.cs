@@ -35,7 +35,7 @@ public class PhaseDefinition
 
 /// <summary>
 /// Dirigent für Infinity Mode: führt persistente Farb-Zähler (Pink/Green/Blue), löst bei 20 Treffern
-/// automatisch den passenden Special Mode aus und schaltet durch die 12 fest definierten Phasen
+/// automatisch den passenden Special Mode aus und schaltet durch die fest definierten Phasen
 /// (Normal/Special, ab Phase 5 Shocker, ab Phase 9 Diamanten, ab Phase 10 Diamant-Bonus-Elemente).
 /// Nur für GameMode.Infinity aktiv — Multiplayer läuft unverändert über die alte, phasenlose Logik.
 /// </summary>
@@ -47,6 +47,17 @@ public class PhaseManager : MonoBehaviour
 
     [Header("Phasen (Inspector-Feinjustierung)")]
     [SerializeField] private PhaseDefinition[] phases = BuildDefaultPhases();
+
+    [Header("Endlos ab der letzten Phase")]
+    [Tooltip("Um wie viel die Reaktionszeit je Stufe weiter sinkt. Eine Stufe umfasst eine Normal- " +
+             "und eine Special-Phase, genau wie in den fest definierten Phasen davor.")]
+    [SerializeField] private float endlessReactionStep = 0.1f;
+    [Tooltip("Untergrenze der Reaktionszeit. Darunter geht es nicht mehr, egal wie lange der Lauf dauert.")]
+    [SerializeField] private float endlessMinReactionTime = 0.6f;
+    [Tooltip("Um wie viel der Intensitaets-Multiplikator je Phase weiter steigt.")]
+    [SerializeField] private float endlessIntensityStep = 0.05f;
+    [Tooltip("Obergrenze des Intensitaets-Multiplikators.")]
+    [SerializeField] private float endlessMaxIntensity = 1.8f;
 
     [Header("Diamant-Bonus")]
     [Tooltip("Wie viele der 7 Diamanten pro Normal-Phase gesammelt werden müssen, damit eine zufällige Farbe den Bonus für ihren NÄCHSTEN Special Mode zugelost bekommt.")]
@@ -91,8 +102,68 @@ public class PhaseManager : MonoBehaviour
     private readonly bool[] _colorHasBonus = new bool[3];
     private bool _bonusRolledThisPhase = false;
 
-    public PhaseDefinition CurrentPhase =>
-        (_currentIndex >= 0 && phases != null && _currentIndex < phases.Length) ? phases[_currentIndex] : null;
+    public PhaseDefinition CurrentPhase
+    {
+        get
+        {
+            if (_currentIndex < 0 || phases == null || phases.Length == 0) return null;
+            if (_currentIndex < phases.Length) return phases[_currentIndex];
+            return EndlosPhase(_currentIndex);
+        }
+    }
+
+    // Ab der letzten fest definierten Phase laeuft der Lauf endlos weiter: Normal und Special
+    // wechseln sich wie gehabt ab, und der Lauf endet nur noch, wenn der Spieler stirbt.
+    //
+    // Alles ausser Reaktionszeit und Intensitaet wird aus der letzten Phase gleichen Typs im
+    // Inspector-Array uebernommen (Trigger-Schwelle, Shocker, Diamanten, Elementzahl, Multiplikator).
+    // Dadurch zieht der Endlos-Teil automatisch mit, wenn die hinteren Phasen nachjustiert werden,
+    // statt hier nochmal dieselben Zahlen zu pflegen.
+    private PhaseDefinition _endlosZwischenspeicher;
+    private int _endlosZwischenspeicherIndex = -1;
+
+    private PhaseDefinition EndlosPhase(int index)
+    {
+        if (_endlosZwischenspeicher != null && _endlosZwischenspeicherIndex == index)
+            return _endlosZwischenspeicher;
+
+        int phaseNummer = index + 1;
+        bool istSpecial = phaseNummer % 2 == 0;
+
+        // Vorlage: letzte Phase gleichen Typs aus dem Array (normalerweise 11 bzw. 12).
+        PhaseDefinition vorlage = null;
+        for (int i = phases.Length - 1; i >= 0; i--)
+        {
+            bool vorlageSpecial = phases[i].type == PhaseType.Special;
+            if (vorlageSpecial == istSpecial) { vorlage = phases[i]; break; }
+        }
+        if (vorlage == null) vorlage = phases[phases.Length - 1];
+
+        // Reaktionszeit sinkt paarweise weiter (Normal und Special einer Stufe teilen sich den Wert),
+        // bis endlessMinReactionTime erreicht ist. Intensitaet steigt je Phase bis endlessMaxIntensity.
+        int stufe = (phaseNummer - phases.Length - 1) / 2 + 1;   // 13/14 -> 1, 15/16 -> 2, ...
+        float reaktion  = Mathf.Max(endlessMinReactionTime,
+                                    vorlage.reactionTime - endlessReactionStep * stufe);
+        float intensitaet = Mathf.Min(endlessMaxIntensity,
+                                      vorlage.specialIntensityMultiplier
+                                      + endlessIntensityStep * (phaseNummer - phases.Length));
+
+        _endlosZwischenspeicher = new PhaseDefinition
+        {
+            label                      = $"Phase {phaseNummer}",
+            type                       = vorlage.type,
+            reactionTime               = reaktion,
+            colorTriggerThreshold      = vorlage.colorTriggerThreshold,
+            shockerEnabled             = vorlage.shockerEnabled,
+            shockerChance              = vorlage.shockerChance,
+            diamondsEnabled            = vorlage.diamondsEnabled,
+            specialElementCount        = vorlage.specialElementCount,
+            specialScoreMultiplier     = vorlage.specialScoreMultiplier,
+            specialIntensityMultiplier = intensitaet
+        };
+        _endlosZwischenspeicherIndex = index;
+        return _endlosZwischenspeicher;
+    }
 
     /// <summary>Reaktionszeit für die GERADE aktuelle Elementreihe — direkt nach einem Phasenwechsel noch
     /// sanft von der alten zur neuen Phase übergeblendet (siehe rampEaseCurve), danach der reine
@@ -507,16 +578,8 @@ public class PhaseManager : MonoBehaviour
 
         if (phases == null || phases.Length == 0) return;
 
-        if (_currentIndex >= phases.Length)
-        {
-            // Alle regulären Phasen durchlaufen → finale Kristall-Endphase statt endlosem
-            // Weiterlaufen. spawner.SetBannerPause(false) bleibt hier bewusst aus — die
-            // Kristallphase pausiert das normale Spawning ohnehin komplett selbst.
-            _running = false;
-            CrystalEndPhaseSystem.Instance?.Begin(spawner);
-            return;
-        }
-
+        // Hinter der letzten definierten Phase geht es endlos weiter (siehe EndlosPhase) — der Lauf
+        // endet ab hier nur noch dadurch, dass der Spieler stirbt.
         ApplyPhaseSettings();
         _running = true;
 

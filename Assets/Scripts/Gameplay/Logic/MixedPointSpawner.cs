@@ -1497,7 +1497,6 @@ public class MixedPointSpawner : MonoBehaviour
         GravityModeSystem.Instance?.ForceStop();
         FountainModeSystem.Instance?.ForceStop();
         VortexModeSystem.Instance?.ForceStop();
-        CrystalEndPhaseSystem.Instance?.ForceStop();
 
         if (MultiplayerManager.IsMultiplayerGame)
         {
@@ -1710,10 +1709,6 @@ public class MixedPointSpawner : MonoBehaviour
         // schon jetzt zurückspringen, nicht erst nach dem Spawn-Delay der nächsten Reihe.
         PhaseManager.Instance?.NotifyElementDestroyed();
 
-        // Kristall-Endphase: eigene Punktzahl, kein Slot-Ökosystem (Farben/Fake/Respawn-Runde) —
-        // komplett eigener Ablauf statt der normalen Treffer-Logik unten.
-        if (_crystalPhaseActive) { HandleCrystalPointHit(point); return; }
-
         DismissCurrentFake();
 
         int idx = FindSlotIndex(point);
@@ -1750,59 +1745,6 @@ public class MixedPointSpawner : MonoBehaviour
             StartCoroutine(Co_SpawnAfterDelay(GetSpawnDelay()));
     }
 
-    // ─── Kristall-Endphase ──────────────────────────────────────────────────────
-
-    private bool _crystalPhaseActive = false;
-
-    /// <summary>Vom CrystalEndPhaseSystem gesetzt/gelöscht — solange aktiv, läuft HandlePointHit
-    /// komplett am normalen Farb-/Slot-System vorbei (siehe HandleCrystalPointHit).</summary>
-    public void SetCrystalPhaseActive(bool active) => _crystalPhaseActive = active;
-
-    /// <summary>Spawnt ein Kristall-Element in Slot 0 — wie CreatePoint (Tutorial), aber ohne
-    /// Timer/Fuse/Fake-Verkabelung: die Kristall-Endphase steuert Timing/Punkte komplett selbst
-    /// über HandleCrystalPointHit + ihre eigene Reaktionszeit-Coroutine.</summary>
-    public void CreateCrystalPoint(GameObject prefab, Vector3 worldPos)
-    {
-        if (_slots[0].point != null) { Destroy(_slots[0].point); _slots[0].point = null; }
-
-        var newPoint = Instantiate(prefab, worldPos, Quaternion.identity);
-
-        var tap = newPoint.GetComponent<TapPoint>();
-        if (tap) tap.spawner = this;
-
-        var swipe = newPoint.GetComponent<SwipePoint>();
-        if (swipe) { swipe.spawner = this; CurrentSwipePoint = swipe; }
-        else       { CurrentSwipePoint = null; }
-
-        _slots[0].point = newPoint;
-        lastPoint = newPoint;
-    }
-
-    private void HandleCrystalPointHit(GameObject point)
-    {
-        int scored = ScoreManager.Instance?.AddPointsFromHit(CrystalEndPhaseSystem.Instance != null ? CrystalEndPhaseSystem.Instance.PointsPerHit : 50) ?? 0;
-        SpawnFloatingScore(scored, point.transform.position, PointColor.Pink, 0); // Farbe hier nur für Textfarbe, Kristall hat keine eigene
-
-        bool isSwipe = point.GetComponent<SwipePoint>() != null;
-        if (isSwipe) AudioManager.Instance?.PlaySwipePoint(0);
-        else         AudioManager.Instance?.PlayNormalPoint(0);
-
-        var bp = point.GetComponent<BasePoint>();
-        if (bp != null) bp.SendMessage("SpawnExplosion");
-
-        if (_slots[0].point == point) _slots[0].point = null;
-        if (CurrentSwipePoint != null && CurrentSwipePoint.gameObject == point) CurrentSwipePoint = null;
-
-        Destroy(point);
-
-        CrystalEndPhaseSystem.Instance?.OnElementHit();
-    }
-
-    public void TriggerGameOverFromCrystalPhase()
-    {
-        _gameOverCause = "crystal_phase";
-        StartCoroutine(Co_DelayedGameOver());
-    }
 
     private float GetSpawnDelay() => spawnDelayAfterHit;
 

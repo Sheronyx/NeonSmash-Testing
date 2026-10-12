@@ -538,15 +538,14 @@ MonoBehaviour:
   curledBool: IsCurled
   vortexCurlTime: 0.75
   getEnergyTrigger: GetEnergy
+  getEnergySpeedParam: GetEnergySpeed
   gravityPassDuration: 1.6
   gravityPassOvershoot: 0.3
   gravityPassSpread: 0.22
   gravitySpinSpeed: 420
-  fountainBackExitDuration: 0.9
-  fountainBackScale: 0.4
-  fountainArcDuration: 1.3
-  fountainArcPeakVpY: 1.15
-  fountainSpinSpeed: 340
+  fountainGlideDuration: 1.6
+  fountainGlideArcHeight: 0.9
+  fountainGlideGestureSpeed: 0.55
   sideFairyExitDuration: 1.2
   sideFairyExitViewportY: -0.35
   outroDuration: 1.8
@@ -5931,6 +5930,10 @@ MonoBehaviour:
     specialElementCount: 15
     specialScoreMultiplier: 3
     specialIntensityMultiplier: 1.5
+  endlessReactionStep: 0.1
+  endlessMinReactionTime: 0.6
+  endlessIntensityStep: 0.05
+  endlessMaxIntensity: 1.8
   diamondsNeededForBonus: 5
   postSpecialModePause: 2
   minRampRows: 1
@@ -23838,6 +23841,7 @@ MonoBehaviour:
     fairyTransform: {fileID: 17095450}
     glowFlash: {fileID: 17095451}
   specialModeAnimSpeed: 1.6
+  playDuringSpecialMode: 0
 --- !u!1 &1942897533
 GameObject:
   m_ObjectHideFlags: 0
@@ -23851,7 +23855,6 @@ GameObject:
   - component: {fileID: 1942897537}
   - component: {fileID: 1942897538}
   - component: {fileID: 1942897539}
-  - component: {fileID: 1942897540}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -24037,27 +24040,6 @@ MonoBehaviour:
   loseLifeClip: {fileID: 8300000, guid: 83829ff414f47a048b5387e4ab33571c, type: 3}
   loseLifeVolume: 6
   damagePerMiss: 3
---- !u!114 &1942897540
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1942897533}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4fb74054be878444fac057c47e3d1319, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CrystalEndPhaseSystem
-  crystalPrefab: {fileID: 537369980724498037, guid: 4cf1563460f174dcf9cb917f2ff8c382, type: 3}
-  crystalTapElementPrefab: {fileID: 7192270351057671792, guid: 67621bc7ee5a941989c2432705f6cee4, type: 3}
-  crystalSwipeElementPrefab: {fileID: 6597157216134799470, guid: 9ab8fe0fbeaf040f3b0874e6f8e27e6d, type: 3}
-  spawnAreaSize: {x: 2.76, y: 5.55}
-  spawnAreaOffset: {x: 0, y: 0}
-  phaseDuration: 6
-  elementReactionTime: 6
-  pointsPerHit: 50
-  swipeChance: 0
 --- !u!1 &1967027719
 GameObject:
   m_ObjectHideFlags: 0
