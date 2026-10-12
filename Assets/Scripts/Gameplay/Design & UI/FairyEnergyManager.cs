@@ -30,6 +30,11 @@ public class FairyEnergyManager : MonoBehaviour
              "Wirkt als Multiplikator auf die Geschwindigkeit des Animator-Zustands.")]
     [SerializeField] private float specialModeAnimSpeed = 1.6f;
 
+    [Tooltip("Ob die GetEnergy-Animation WAEHREND eines Special Modes ueberhaupt laufen soll. Aus: " +
+             "die Fee bleibt in ihrer Beschwoerungs-Animation, statt bei jedem Treffer dazwischen " +
+             "zu zucken. Nur wenn das an ist, greift der Tempo-Faktor darueber.")]
+    [SerializeField] private bool playDuringSpecialMode = false;
+
     private void Awake() => Instance = this;
 
     /// <summary>Spielt nur die GetEnergy-Animation der zur Farbe passenden Fee, ohne Energiekugel.
@@ -92,15 +97,18 @@ public class FairyEnergyManager : MonoBehaviour
         }
         if (!hatTrigger) return;   // Fee ohne eigene GetEnergy-Animation (Gruen/Blau)
 
+        bool imSpecialMode = SpecialModeManager.Instance != null
+                          && SpecialModeManager.Instance.IsModeActive;
+
+        // Im Special Mode laeuft die Beschwoerungs-Animation. Ein Faustschlag dazwischen wuerde
+        // sie unterbrechen -- und bei der Trefferdichte dort staendig.
+        if (imSpecialMode && !playDuringSpecialMode) return;
+
         // Im Special Mode schneller abspielen. Bewusst bei JEDEM Ausloesen gesetzt statt per
         // Start/Ende-Event: so stimmt der Wert auch, wenn ein Modus abbricht oder die Fee erst
         // mitten im Modus das erste Mal reagiert.
         if (hatTempo)
-        {
-            bool imSpecialMode = SpecialModeManager.Instance != null
-                              && SpecialModeManager.Instance.IsModeActive;
             anim.SetFloat(GetEnergySpeedParam, imSpecialMode ? specialModeAnimSpeed : 1f);
-        }
 
         anim.SetTrigger(GetEnergyTrigger);
     }

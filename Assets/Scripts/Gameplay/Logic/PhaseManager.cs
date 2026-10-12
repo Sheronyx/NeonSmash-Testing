@@ -370,6 +370,10 @@ public class PhaseManager : MonoBehaviour
         var def = CurrentPhase;
         if (def == null || spawner == null) return;
 
+        // Tonhoehen-Leiter der Zerstoer-Sounds wieder auf die unterste Stufe. Sie steigt innerhalb
+        // einer Phase durch und faengt mit der naechsten Phase von vorn an.
+        AudioManager.Instance?.ResetTonhoehe();
+
         // Ramp-Setup: von der zuletzt EFFEKTIVEN Reaktionszeit (falls die vorherige Phase selbst noch
         // mitten in einer Überblendung war, nicht vom rohen Phasenwert) sanft zum neuen Phasenwert
         // übergehen. Länge proportional zur relativen Größe des Sprungs, innerhalb Min/Max gekappt.

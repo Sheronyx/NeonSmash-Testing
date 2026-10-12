@@ -10,13 +10,18 @@ using UnityEngine;
 //    Animation (Animator-Bool "IsSpecialMode" = true) und fliegt eine choreografierte Bahn:
 //      Vortex  → kurz aus dem Bild raus, dann als großer Strudel wieder rein, Radius schrumpft bis
 //               Bildschirmmitte (Drehrichtung = VortexModeSystem.clockwise).
-//      sonst   → Platzhalter: direkter Anflug zur Mitte (bis Gravity/Fountain eigene Choreos haben).
+//      Gravity → pinke Fee: Co_GravityDrops an ihren eigenen Platz.
+//      Fountain→ blaue Fee: Co_FountainGlide, ein leichter Bogen direkt an den mittigen Platz, ohne
+//               Eigenrotation. Unterwegs spielt EINMAL die GetEnergy-Gebärde auf der maskierten
+//               Arm-Ebene; in die Beschwörungs-Schleife wechselt sie erst beim Ankommen (IsCasting).
+//      sonst   → direkter Anflug zur Mitte.
 //  - Die anderen beiden Feen fliegen nach unten aus dem Bild.
 //  - In der Mitte angekommen: Lead-Fee zurück auf Idle_Fly ("IsSpecialMode" = false), dann
 //    SpecialModeManager.StartMode(mode) — ab hier läuft der eigentliche Special Mode (Elemente spawnen).
 //
 // Ablauf Outro (bei SpecialModeManager.OnModeEnded, ~outroDuration): alle drei Feen fliegen im Bogen
-// zurück an ihre Ausgangsposition/-rotation/-größe, alle wieder Idle_Fly.
+// zurück an ihre Ausgangsposition/-rotation/-größe, alle wieder Idle_Fly. Die blaue Fee nimmt dabei
+// denselben leichten Bogen wie auf dem Hinweg (Co_DirectReturnHome), ohne Umdrehen, mit Gebärde.
 //
 // PhaseManager wartet nach PlaySpecialModeIntro per WaitUntil(IsModeActive) — StartMode() am Ende des
 // Intros ersetzt also 1:1 das frühere FinishCombo() der Aktivierungs-Kugel.
@@ -141,6 +146,8 @@ public class FairyChoreographyDirector : MonoBehaviour
     [SerializeField] private float vortexCurlTime = 0f;
     [Tooltip("Name des GetEnergy-Ausloesers. Wird am Modus-Ende zurueckgesetzt.")]
     [SerializeField] private string getEnergyTrigger = "GetEnergy";
+    [Tooltip("Name des Float-Parameters, der das Tempo der GetEnergy-Animation skaliert.")]
+    [SerializeField] private string getEnergySpeedParam = "GetEnergySpeed";
 
     [Header("Gravity — pinke Fee (2 Durchflüge von oben nach unten)")]
     [Tooltip("Sekunden für EINEN sichtbaren Durchflug von oben durchs Bild nach unten. Höher = langsamer.")]
@@ -155,19 +162,16 @@ public class FairyChoreographyDirector : MonoBehaviour
              "360 = eine volle Umdrehung pro Sekunde.")]
     [SerializeField] private float gravitySpinSpeed = 420f;
 
-    [Header("Fountain — blaue Fee (seitlich in den Hintergrund, dann 2x Bogenlampe nach vorn-unten raus)")]
-    [Tooltip("Sekunden für den ersten Rausflug seitlich in den Hintergrund (schrumpft dabei auf fountainBackScale).")]
-    [SerializeField] private float fountainBackExitDuration = 0.9f;
-    [Tooltip("Wie klein die Fee im Hintergrund (seitlich, weit hinten) wird, relativ zur Heimat-Größe.")]
-    [Range(0.15f, 0.6f)]
-    [SerializeField] private float fountainBackScale = 0.4f;
-    [Tooltip("Sekunden pro Bogenlampen-Flug (von hinten-seitlich-klein in einer Kurve nach vorn-unten-groß raus).")]
-    [SerializeField] private float fountainArcDuration = 1.3f;
-    [Tooltip("Scheitel-Höhe des Bogens als Viewport-Y (>1 = über dem oberen Bildrand). Muss höher liegen " +
-             "als Start- und Endpunkt, damit ein echtes \"umgekehrtes U\" (erst hoch, dann vorn/unten raus) entsteht.")]
-    [SerializeField] private float fountainArcPeakVpY = 1.15f;
-    [Tooltip("Eigenrotation der blauen Fee um ihre lokale Y-Achse während der Bögen (Grad/Sek).")]
-    [SerializeField] private float fountainSpinSpeed = 340f;
+    [Header("Fountain — blaue Fee (gleitet in einem leichten Bogen an den mittigen Platz)")]
+    [Tooltip("Sekunden für das Hinübergleiten an den mittigen Platz.")]
+    [SerializeField] private float fountainGlideDuration = 1.6f;
+    [Tooltip("Wie hoch der Bogen über der direkten Verbindung liegt, in Welteinheiten. 0 = schnurgerade.")]
+    [SerializeField] private float fountainGlideArcHeight = 0.9f;
+    [Tooltip("Tempo-Faktor für die GetEnergy-Gebärde während des Hinübergleitens (skaliert das " +
+             "Zustandstempo). Kleiner = langsamer, damit die Gebärde die ganze Strecke ausfüllt " +
+             "statt nach der halben fertig zu sein.")]
+    [Range(0.2f, 2f)]
+    [SerializeField] private float fountainGlideGestureSpeed = 0.55f;
 
     [Header("Nebenfeen (raus nach unten)")]
     [SerializeField] private float sideFairyExitDuration = 1.2f;
@@ -392,7 +396,7 @@ public class FairyChoreographyDirector : MonoBehaviour
                     break;
                 }
                 case SpecialMode.Gravity:  yield return Co_GravityDrops(f, endPos, homeRot, trail);      break;
-                case SpecialMode.Fountain: yield return Co_FountainArcs(f, endPos, homeRot, homeScale, trail); break;
+                case SpecialMode.Fountain: yield return Co_FountainGlide(f, anim, endPos, homeRot, homeScale, trail); break;
                 default:                   yield return Co_SimpleApproach(f, endPos, homeRot);          break;
             }
 
@@ -717,98 +721,49 @@ public class FairyChoreographyDirector : MonoBehaviour
     // Fountain / blau: erst seitlich raus in den Hintergrund (schrumpft), dann 2x "Bogenlampe" — von
     // hinten-seitlich-klein in einer Kurve nach vorn-unten-groß aus dem Bild raus (abwechselnde Seite),
     // dabei um die eigene Y-Achse rotierend — dann hoch an den (mittigen) Platz.
-    private IEnumerator Co_FountainArcs(Transform f, Vector3 endPos, Quaternion homeRot, Vector3 homeScale, ParticleSystem trail)
+    /// <summary>Blaue Fee: gleitet in einem leichten, hohen Bogen direkt von ihrem Platz an den
+    /// mittigen Platz. Keine Eigenrotation, keine Größenänderung, kein Umweg über den Hintergrund —
+    /// sie bleibt durchgehend sichtbar und lässt die Blasen unter sich fallen. Ihre
+    /// Beschwörungsanimation läuft dabei schon: der Animator steht beim Aufruf bereits auf
+    /// SpecialMode_Cast, weil ihr Controller direkt aus dem Idle dorthin wechselt.</summary>
+    private IEnumerator Co_FountainGlide(Transform f, Animator anim, Vector3 endPos, Quaternion homeRot,
+                                         Vector3 homeScale, ParticleSystem trail)
     {
-        float z = f.position.z;
-        Vector3 backScale = homeScale * fountainBackScale;
-        float bottomVpY   = -0.35f;
+        Vector3 startPos = f.position;
+        Vector3 target   = new Vector3(endPos.x, endPos.y, startPos.z);
 
-        float side = f.position.x >= 0f ? 1f : -1f;
-        Vector3 backSidePos = ViewportToWorldAtZ(new Vector2(side > 0f ? 1.3f : -0.3f, 0.6f), z);
-
-        // Phase 0: seitlich raus in den Hintergrund — schrumpft dabei auf fountainBackScale. Läuft
-        // bewusst OHNE Partikelspur: das ist der unsichtbare Teil, in dem sie "verschwindet".
-        yield return Co_FlySegmentScaled(f, f.position, backSidePos, homeScale, backScale, fountainBackExitDuration);
+        // Die GetEnergy-Gebaerde EINMAL waehrend des Hinuebergleitens. Sie laeuft auf der maskierten
+        // Arm-Ebene, und das ist hier entscheidend: der GetEnergy-Clip traegt die ersten 36 Frames
+        // der Schwebekurve und endet dadurch rund 36 cm hoeher, als er beginnt. Unmaskiert auf der
+        // Base Layer abgespielt wuerde sie beim Uebergang in SpecialMode_Cast genau um diese Strecke
+        // absacken. Maskiert kommt die Huefte weiter aus dem Idle, und es passiert nichts dergleichen.
+        SetzeFloat(anim, getEnergySpeedParam, fountainGlideGestureSpeed);
+        SetzeTrigger(anim, getEnergyTrigger);
 
         if (trail != null)
         {
-            try
-            {
-                trail.Play();
-                var em = trail.emission;
-                em.enabled = false;   // Start (arcFrom) ist noch off-screen — erst per SetTrailVisible() an
-            }
+            // Sie ist die ganze Strecke im Bild, die Blasen dürfen also sofort laufen.
+            // SetTrailVisible in Co_FlyAndSettle regelt das Emittieren am Bildrand.
+            try { trail.Play(); }
             catch (NullReferenceException) { }   // neuere Unity werfen das statt MissingReference
-        catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+            catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
         }
 
-        float spin = 0f;
-        Vector3 lastPos = backSidePos;
+        // Kontrollpunkt über der Mitte der Strecke → leichter, hoher Bogen statt gerader Linie.
+        Vector3 ctrl = (startPos + target) * 0.5f;
+        ctrl.y = Mathf.Max(startPos.y, target.y) + fountainGlideArcHeight;
+        ctrl.z = startPos.z;
 
-        for (int arc = 0; arc < 2; arc++)
-        {
-            Vector3 arcFrom = ViewportToWorldAtZ(new Vector2(side > 0f ? 1.3f : -0.3f, 0.6f), z);
-            Vector3 arcTo   = ViewportToWorldAtZ(new Vector2(0.5f - side * 0.18f, bottomVpY), z);
-            // Kontrollpunkt HÖHER als Start- und Endpunkt → echtes "umgekehrtes U" (erst hoch, dann
-            // nach vorn/unten raus), nicht nur eine flache Diagonale.
-            Vector3 ctrl    = ViewportToWorldAtZ(new Vector2(0.5f - side * 0.55f, fountainArcPeakVpY), z);
-            ctrl.z = z;
+        f.localScale = homeScale;
+        // travelRot: homeRot haelt sie aufrecht. Ohne das dreht Co_FlyAndSettle sie in Flugrichtung ein.
+        yield return Co_FlyAndSettle(f, startPos, target, ctrl, homeRot, fountainGlideDuration,
+                                     travelRot: homeRot, trail: trail);
 
-            f.position   = arcFrom;   // off-screen an den Bogen-Start (unsichtbar, klein/hinten)
-            f.localScale = backScale;
-
-            float t = 0f;
-            while (t < fountainArcDuration)
-            {
-                t += Time.deltaTime;
-                float p = Mathf.Clamp01(t / fountainArcDuration);
-                Vector3 q1 = Vector3.Lerp(arcFrom, ctrl, p);
-                Vector3 q2 = Vector3.Lerp(ctrl, arcTo, p);
-                f.position   = Vector3.Lerp(q1, q2, p);
-                // Wächst von "hinten klein" zu "vorn groß" — verstärkt den Tiefen-Eindruck der Kurve.
-                f.localScale = Vector3.Lerp(backScale, homeScale, Mathf.SmoothStep(0f, 1f, p));
-
-                spin += fountainSpinSpeed * Time.deltaTime;
-                // Analytische Bézier-Tangente (glatt) → Kopf voran, dazu Eigenrotation um die lokale Y-Achse.
-                Vector3 tangent = 2f * (1f - p) * (ctrl - arcFrom) + 2f * p * (arcTo - ctrl);
-                f.rotation = HeadFirstRotation(tangent) * Quaternion.AngleAxis(spin, Vector3.up);
-                SetTrailVisible(trail, f.position);   // Blasen nur, solange sie WIRKLICH im Bild ist
-                yield return null;
-            }
-            f.position   = arcTo;
-            f.localScale = homeScale;
-            lastPos = arcTo;
-            side = -side;   // zweiter Bogen von der anderen Seite hinten rein
-        }
-
-        // Letzter Weg: von unten hoch an den Platz, sauberer Settle.
-        yield return Co_FlyAndSettle(f, lastPos, endPos, new Vector3((lastPos.x + endPos.x) * 0.5f, endPos.y, z),
-            homeRot, fountainArcDuration * 0.8f, trail: trail);
+        f.position   = target;
+        f.rotation   = homeRot;
         f.localScale = homeScale;
     }
 
-    // Gerade Strecke a→b in `dur` Sekunden (SmoothStep), Skalierung parallel dazu, weich aus der
-    // Idle-Rotation eindrehend in Flugrichtung. Für den seitlichen Rausflug in den Hintergrund.
-    private IEnumerator Co_FlySegmentScaled(Transform f, Vector3 a, Vector3 b, Vector3 scaleFrom, Vector3 scaleTo, float dur)
-    {
-        Quaternion startRot = f.rotation;
-        Vector3 prevPos = f.position;
-        float t = 0f;
-        while (t < dur)
-        {
-            t += Time.deltaTime;
-            float rp = Mathf.Clamp01(t / dur);
-            float p  = Mathf.SmoothStep(0f, 1f, rp);
-            f.position   = Vector3.Lerp(a, b, p);
-            f.localScale = Vector3.Lerp(scaleFrom, scaleTo, p);
-            Quaternion rot = Quaternion.Slerp(startRot, FlightRotation(f.position - prevPos, f.rotation), FlightWeightIn(rp));
-            SlerpTo(f, rot, turnSpeed);
-            prevPos = f.position;
-            yield return null;
-        }
-        f.position   = b;
-        f.localScale = scaleTo;
-    }
 
     // Gerade Strecke a→b in `dur` Sekunden (SmoothStep), optional in Flugrichtung schauend.
     private IEnumerator Co_FlySegment(Transform f, Vector3 a, Vector3 b, float dur, bool faceVelocity)
@@ -877,6 +832,22 @@ public class FairyChoreographyDirector : MonoBehaviour
                 SetBool(fairies[lead].animator, curledBool, true);
         }
         PlaySpecialModeOutro(mode);
+    }
+
+    private static void SetzeTrigger(Animator a, string name)
+    {
+        if (a == null || a.runtimeAnimatorController == null || string.IsNullOrEmpty(name)) return;
+        foreach (var p in a.parameters)
+            if (p.type == AnimatorControllerParameterType.Trigger && p.name == name)
+            { a.SetTrigger(name); return; }
+    }
+
+    private static void SetzeFloat(Animator a, string name, float wert)
+    {
+        if (a == null || a.runtimeAnimatorController == null || string.IsNullOrEmpty(name)) return;
+        foreach (var p in a.parameters)
+            if (p.type == AnimatorControllerParameterType.Float && p.name == name)
+            { a.SetFloat(name, wert); return; }
     }
 
     private static void ResetTrigger(Animator a, string name)
@@ -955,20 +926,46 @@ public class FairyChoreographyDirector : MonoBehaviour
         onDone?.Invoke();
     }
 
-    // Direkter Rückflug ohne seitlich raus/unten rein — einfach von der aktuellen Position (mittiger
-    // Platz nach den Fountain-Bögen) auf direktem Weg zum eigenen Heimatplatz.
+    /// <summary>Blaue Fee zurück: derselbe leichte Bogen wie auf dem Hinweg, nur andersherum —
+    /// ohne Eigenrotation, ohne Umdrehen, und unterwegs noch einmal die GetEnergy-Gebärde.
+    /// Spiegelbild von Co_FountainGlide, damit Hin- und Rückweg gleich aussehen.</summary>
     private IEnumerator Co_DirectReturnHome(int i, Action onDone)
     {
-        var f = fairies[i].fairy;
-        Vector3    fromPos   = f.position;
-        Vector3    toPos     = _homePos[i];
-        Quaternion toRot     = _homeRot[i];
-        Vector3    toScale   = _homeScale[i];
+        var f     = fairies[i].fairy;
+        var anim  = fairies[i].animator;
+        var trail = fairies[i].specialModeTrail;
+        Vector3    fromPos = f.position;
+        Vector3    toPos   = _homePos[i];
+        Quaternion toRot   = _homeRot[i];
+        Vector3    toScale = _homeScale[i];
 
-        // Etwas schneller als der normale Outro — die Feen müssen nicht synchron ankommen, sie
-        // wartet danach einfach im Idle-Flug auf die anderen. Gerade rein mit dem Rücken zum Spieler,
-        // dreht sich erst kurz vor der Ankunft zur Ansicht Richtung Spieler.
-        yield return Co_FlyAndSettle(f, fromPos, toPos, (fromPos + toPos) * 0.5f, toRot, outroDuration * 0.6f, toRot * Quaternion.Euler(0f, 180f, 0f));
+        // Gebärde einmal auf der maskierten Arm-Ebene. Die Base Layer blendet parallel aus der
+        // Beschwörung zurück ins Idle (IsCasting ist beim Outro schon false) — die Hüfte kommt
+        // also wieder von dort, und die Gebärde legt sich sauber darüber.
+        SetzeFloat(anim, getEnergySpeedParam, fountainGlideGestureSpeed);
+        SetzeTrigger(anim, getEnergyTrigger);
+
+        if (trail != null)
+        {
+            try { trail.Play(); }
+            catch (NullReferenceException) { }   // neuere Unity werfen das statt MissingReference
+            catch (MissingReferenceException) { /* extern zerstörtes VFX-Objekt — ignorieren */ }
+        }
+
+        Vector3 ctrl = (fromPos + toPos) * 0.5f;
+        ctrl.y = Mathf.Max(fromPos.y, toPos.y) + fountainGlideArcHeight;
+
+        // travelRot: toRot hält sie aufrecht und zum Spieler gewandt — kein Umdrehen mehr.
+        yield return Co_FlyAndSettle(f, fromPos, toPos, ctrl, toRot, fountainGlideDuration,
+                                     travelRot: toRot, trail: trail);
+
+        if (trail != null)
+        {
+            // Nur das neue Emittieren stoppen, schon ausgestoßene Blasen klingen aus.
+            try { trail.Stop(true, ParticleSystemStopBehavior.StopEmitting); }
+            catch (NullReferenceException) { }
+            catch (MissingReferenceException) { }
+        }
 
         f.position   = toPos;
         f.rotation   = toRot;
