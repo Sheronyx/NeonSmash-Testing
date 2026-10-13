@@ -343,8 +343,14 @@ public class PhaseManager : MonoBehaviour
         VortexModeSystem.OnSpecialPhaseComplete -= HandleSpecialPhaseComplete;
     }
 
+    /// <summary>Die Farbe, die beim gerade eingesammelten Diamanten den Bonus bekommen hat.
+    /// null, wenn dieser Diamant keinen Bonus ausgeloest hat. Die Zahl ueber dem Diamanten
+    /// faerbt sich danach, damit sie zur Fee passt, die gleich die Aura bekommt.</summary>
+    public PointColor? LastDiamondBonusColor { get; private set; }
+
     private void HandleDiamondCollected(int totalThisPhase, Vector3 worldPos)
     {
+        LastDiamondBonusColor = null;
         if (_bonusRolledThisPhase) return; // in dieser Phase schon gelost
         if (totalThisPhase < diamondsNeededForBonus) return;
         if (CurrentPhase == null || CurrentPhase.type != PhaseType.Normal || !CurrentPhase.diamondsEnabled) return;
@@ -365,6 +371,7 @@ public class PhaseManager : MonoBehaviour
 
         PointColor chosen = eligible[UnityEngine.Random.Range(0, eligible.Count)];
         _colorHasBonus[(int)chosen] = true;
+        LastDiamondBonusColor = chosen;
 
         // Energiekugel vom 5. (gerade zerstörten) Diamanten zur Fairy, die den Bonus bekommt.
         FairyEnergyManager.Instance?.SpawnEnergyOrb(chosen, worldPos);

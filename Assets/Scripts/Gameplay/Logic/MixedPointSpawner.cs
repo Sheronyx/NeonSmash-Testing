@@ -1066,8 +1066,10 @@ public class MixedPointSpawner : MonoBehaviour
     {
         DiamondsCollectedThisPhase++;
         _currentDiamond = null;
-        SpawnFloatingDiamondCount(DiamondsCollectedThisPhase, worldPos);
+        // Reihenfolge ist wichtig: Der PhaseManager lost in diesem Event die Bonus-Farbe aus.
+        // Erst danach kennen wir sie und koennen die Zahl passend einfaerben.
         OnDiamondCollected?.Invoke(DiamondsCollectedThisPhase, worldPos);
+        SpawnFloatingDiamondCount(DiamondsCollectedThisPhase, worldPos);
 
         // Wie ein Farbtreffer: aktuelle Runde lautlos beenden (kein Score/Risiko für die 3 Farbelemente),
         // dann kommt die nächste Dreier-Reihe — der Diamant löst also genauso wie die Farbelemente die
@@ -1778,7 +1780,14 @@ public class MixedPointSpawner : MonoBehaviour
 
         // Bei Erreichen der Bonus-Schwelle statt der Zahl "BONUS" anzeigen.
         bool bonusJustReached = PhaseManager.Instance != null && count == PhaseManager.Instance.DiamondsNeededForBonus;
-        fst?.Play(count, Color.white, showPlusPrefix: false, holdDuration: diamondCountHoldDuration,
+
+        // "BONUS" in der Farbe der Fee, die ihn gerade bekommen hat. Ohne Bonus bleibt es
+        // farblos -- dann setzt Play() das Standardmaterial.
+        PointColor? farbe = bonusJustReached && PhaseManager.Instance != null
+            ? PhaseManager.Instance.LastDiamondBonusColor : null;
+
+        fst?.Play(count, Color.white, farbe, showPlusPrefix: false,
+            holdDuration: diamondCountHoldDuration,
             overrideText: bonusJustReached ? "BONUS" : null);
     }
 

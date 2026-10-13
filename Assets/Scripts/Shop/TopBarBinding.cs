@@ -15,6 +15,16 @@ public class TopBarBinding : MonoBehaviour
 {
     [Header("Score")]
     [SerializeField] private TextMeshProUGUI scoreText;
+    [Tooltip("Der sichtbare Kasten der Punkteanzeige. Leer lassen = das Elternobjekt von " +
+             "scoreText. Wird am Spielende ausgeblendet, weil der Punktestand dann im " +
+             "Ergebnisfenster steht.")]
+    [SerializeField] private GameObject scoreRoot;
+
+    /// <summary>Die Punkteanzeige dieser Top-Bar-Variante, zum Aus- und Einblenden.</summary>
+    public GameObject ScoreRoot
+        => scoreRoot != null ? scoreRoot
+         : scoreText != null && scoreText.transform.parent != null ? scoreText.transform.parent.gameObject
+         : null;
     [SerializeField] private TextMeshProUGUI personalBestText;
 
     [Header("Herzen (lifePoint3 = zuerst leer)")]

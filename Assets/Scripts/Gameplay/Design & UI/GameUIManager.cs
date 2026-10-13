@@ -72,14 +72,20 @@ public class GameUIManager : MonoBehaviour
 
     private IEnumerator Co_ShowGameOver(int score, int dreamEnergyReward, int diamondSplinterReward)
     {
+        // Der Pause-Knopf verschwindet erst zusammen mit der Punkteanzeige, wenn das
+        // Ergebnisfenster kommt. Anklickbar ist er aber ab sofort nicht mehr -- sonst liesse
+        // sich waehrend des Banners noch ein beendetes Spiel pausieren.
         if (pauseButton != null)
-            pauseButton.SetActive(false);
+        {
+            var knopf = pauseButton.GetComponent<Button>();
+            if (knopf != null) knopf.interactable = false;
+        }
 
-        string text = "GAME OVER";
-
+        // Der kurz eingeblendete Banner bleibt "GAME OVER" -- im Ergebnisfenster steht dagegen
+        // die Ueberschrift ueber dem Punktestand, da passt "SCORE".
         if (gameOverBanner != null && gameOverTextTMP != null)
         {
-            gameOverTextTMP.text = text;
+            gameOverTextTMP.text = "GAME OVER";
             yield return Fade(gameOverBanner, 0, 1, 0.25f);
             yield return new WaitForSeconds(0.6f);
             yield return Fade(gameOverBanner, 1, 0, 0.25f);
@@ -94,9 +100,20 @@ public class GameUIManager : MonoBehaviour
             yield return new WaitUntil(() => adClosed);
         }
 
+        // Punkteanzeige und Pause-Knopf gehen gemeinsam -- die Anzeige stuende sonst doppelt
+        // neben dem Ergebnisfenster. Ueber die aktive Top-Bar-Variante, damit es bei jedem Skin greift.
+        if (pauseButton != null) pauseButton.SetActive(false);
+
+        if (topBarCanvas != null)
+            foreach (var bar in topBarCanvas.GetComponentsInChildren<TopBarBinding>(false))
+            {
+                var anzeige = bar.ScoreRoot;
+                if (anzeige != null) anzeige.SetActive(false);
+            }
+
         if (resultPanel != null)
         {
-            resultHeadlineTMP.text = text;
+            resultHeadlineTMP.text = "SCORE";
             resultScoreTMP.text = ScoreManager.Format(score);
 
             if (resultDreamEnergyTMP != null)

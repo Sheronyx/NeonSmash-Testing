@@ -57,6 +57,13 @@ public class FloatingScoreText : MonoBehaviour
             };
             if (mat != null) label.fontMaterial = mat;
         }
+        else if (materialDefault != null)
+        {
+            // Wichtig: Diese Objekte kommen aus einem Pool. Ohne das Zuruecksetzen behaelt der
+            // Text das Material des vorherigen Treffers -- ein Diamant erschiene dann z. B. pink,
+            // nur weil davor ein pinkes Element dran war.
+            label.fontMaterial = materialDefault;
+        }
 
         StopAllCoroutines();
         StartCoroutine(Co_Animate(holdDuration));
