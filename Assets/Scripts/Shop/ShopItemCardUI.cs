@@ -11,6 +11,9 @@ public class ShopItemCardUI : MonoBehaviour
     [SerializeField] TextMeshProUGUI priceLabel;
     [SerializeField] Button          actionButton;
     [SerializeField] GameObject      ownedBadge;
+    [Tooltip("Ausrufezeichen auf der Karte: zeigt sich bei einem noch ungesehenen Item und beim " +
+             "noch nicht abgeholten Gratis-Item.")]
+    [SerializeField] GameObject      newBadge;
     [FormerlySerializedAs("coinIcon")]
     [SerializeField] GameObject      dreamEnergyIcon;
     [Tooltip("Splitter-Icon für Booster-Items (type == Booster) — Preis dort ist in Diamond Splinters, nicht Dream Energy.")]
@@ -68,6 +71,17 @@ public class ShopItemCardUI : MonoBehaviour
 
         if (thumbnail != null) thumbnail.sprite = item.thumbnail;
         if (nameLabel != null) nameLabel.text   = item.displayName;
+
+        // Badge auf der Karte: noch nie in diesem Tab gesehen, oder das Gratis-Item ist offen.
+        // Die Abfrage muss VOR dem Als-gesehen-Markieren laufen -- der ShopController markiert
+        // den Tab erst nach dem Befuellen des Rasters, genau deshalb stimmt es hier noch.
+        if (newBadge != null)
+        {
+            bool gratisOffen = ShopController.Instance != null
+                            && ShopController.Instance.DailyItem == item
+                            && !ShopInventory.IsOwned(item.itemId);
+            newBadge.SetActive(gratisOffen || ShopNewItems.IsUnseen(item));
+        }
 
         if (actionButton != null)
         {

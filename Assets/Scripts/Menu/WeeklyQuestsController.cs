@@ -24,7 +24,17 @@ public class WeeklyQuestsController : MonoBehaviour
     [SerializeField] private float popInDuration  = 0.28f;
     [SerializeField] private float popOutDuration = 0.2f;
 
+    [Header("Kachel-Einzug bei neuen Aufgaben")]
+    [Tooltip("Bei einer noch ungesehenen Woche poppen die Kacheln nacheinander herein.")]
+    [SerializeField] private float rowPopDuration = 0.34f;
+    [Tooltip("Versatz zwischen zwei Kacheln.")]
+    [SerializeField] private float rowPopStagger  = 0.12f;
+    [Tooltip("Wartet, bis das Fenster selbst da ist, bevor die erste Kachel kommt.")]
+    [SerializeField] private float rowPopInitialDelay = 0.12f;
+    [SerializeField] private float rowPopOvershoot = 1.6f;
+
     private bool _open;
+    private Coroutine _kachelEinzug;
 
     private void Awake()
     {
@@ -43,9 +53,19 @@ public class WeeklyQuestsController : MonoBehaviour
         if (_open) return;
         _open = true;
 
+        // VOR dem Markieren abfragen -- danach gilt die Woche als gesehen.
+        bool neueAufgaben = WeeklyQuestManager.IsWeekUnseen();
+
         Refresh();
         DimOverlay.Instance?.Show();
         StartCoroutine(Co_Open());
+
+        if (neueAufgaben)
+        {
+            if (_kachelEinzug != null) StopCoroutine(_kachelEinzug);
+            _kachelEinzug = StartCoroutine(Co_KachelnEinziehen());
+        }
+        WeeklyQuestManager.MarkWeekSeen();
     }
 
     public void Close()
@@ -53,6 +73,10 @@ public class WeeklyQuestsController : MonoBehaviour
         if (!_open) return;
         _open = false;
         DimOverlay.Instance?.Hide();
+        // Einen laufenden Einzug abbrechen und die Kacheln auf Normalgroesse setzen, sonst
+        // stehen sie beim naechsten Oeffnen zusammengeschrumpft da.
+        if (_kachelEinzug != null) { StopCoroutine(_kachelEinzug); _kachelEinzug = null; }
+        KachelnAufNormal();
         StartCoroutine(Co_Close());
     }
 
@@ -113,6 +137,52 @@ public class WeeklyQuestsController : MonoBehaviour
         }
         if (panel != null) panel.alpha   = 1f;
         if (rt    != null) rt.localScale = Vector3.one;
+    }
+
+    // Die drei Kacheln kommen nacheinander herein -- nur bei einer neuen, noch nicht
+    // angesehenen Woche. Beim normalen Oeffnen stehen sie sofort da.
+    private IEnumerator Co_KachelnEinziehen()
+    {
+        if (questRows == null) yield break;
+
+        foreach (var zeile in questRows)
+            if (zeile != null) zeile.transform.localScale = Vector3.zero;
+
+        if (rowPopInitialDelay > 0f) yield return new WaitForSecondsRealtime(rowPopInitialDelay);
+
+        for (int i = 0; i < questRows.Length; i++)
+        {
+            if (questRows[i] == null) continue;
+            StartCoroutine(Co_KachelPoppt(questRows[i].transform));
+            if (rowPopStagger > 0f) yield return new WaitForSecondsRealtime(rowPopStagger);
+        }
+
+        yield return new WaitForSecondsRealtime(rowPopDuration);
+        KachelnAufNormal();
+        _kachelEinzug = null;
+    }
+
+    private IEnumerator Co_KachelPoppt(Transform kachel)
+    {
+        float t = 0f;
+        while (t < rowPopDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(t / rowPopDuration);
+            float q = p - 1f;
+            // Ease-Out-Back: ueberschwingt einmal und rastet dann auf 1 ein.
+            float wert = 1f + (rowPopOvershoot + 1f) * q * q * q + rowPopOvershoot * q * q;
+            kachel.localScale = Vector3.one * wert;
+            yield return null;
+        }
+        kachel.localScale = Vector3.one;
+    }
+
+    private void KachelnAufNormal()
+    {
+        if (questRows == null) return;
+        foreach (var zeile in questRows)
+            if (zeile != null) zeile.transform.localScale = Vector3.one;
     }
 
     private IEnumerator Co_Close()

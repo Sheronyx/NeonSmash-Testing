@@ -98,6 +98,9 @@ public class ShopController : MonoBehaviour
     ShopItemType _activeTab = ShopItemType.Bundle;
     bool         _open;
 
+    /// <summary>Das aktuelle Gratis-Item. Die Karten fragen danach, um ihr Badge zu setzen.</summary>
+    public ShopItem DailyItem => dailyItem;
+
     void Awake()
     {
         Instance = this;
@@ -180,6 +183,10 @@ public class ShopController : MonoBehaviour
         _activeTab = tab;
         UpdateTabHighlights();
         PopulateGrid();
+
+        // Was der Spieler hier gerade sieht, ist ab jetzt nicht mehr neu.
+        ShopNewItems.MarkTabSeen(catalogue, tab);
+        shopButtonBadge?.Refresh();
     }
 
     void UpdateTabHighlights()

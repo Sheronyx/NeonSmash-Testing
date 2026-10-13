@@ -30,6 +30,13 @@ public class WeeklyQuestRowUI : MonoBehaviour
     [Tooltip("Gruener Haken -- nur sichtbar, nachdem die Belohnung abgeholt wurde.")]
     [SerializeField] private GameObject claimedCheck;
 
+    [Header("Abgeholt abdunkeln")]
+    [Tooltip("Werden nach dem Abholen abgedunkelt: Balken, Fuellung und Fortschrittszahl. Der " +
+             "Aufgabentext wird separat behandelt, der Haken bewusst gar nicht.")]
+    [SerializeField] private Graphic[] dimWhenClaimed;
+    [Tooltip("Helligkeit im abgeholten Zustand. 1 = unveraendert, 0 = schwarz.")]
+    [Range(0f, 1f)] [SerializeField] private float claimedDim = 0.4f;
+
     [Header("Farben")]
     [Tooltip("Titelfarbe, solange die Aufgabe laeuft.")]
     [SerializeField] private Color unfinishedColor = new Color(1f, 1f, 1f, 0.6f);
@@ -48,6 +55,7 @@ public class WeeklyQuestRowUI : MonoBehaviour
 
     private WeeklyQuestData _quest;
     private System.Action<WeeklyQuestData> _onClaim;
+    private Color[]   _dimRuhefarben;
     private bool      _warAbgeholt;
     private bool      _ersterBind = true;
     private Coroutine _popLauf;
@@ -55,7 +63,24 @@ public class WeeklyQuestRowUI : MonoBehaviour
     private void Awake()
     {
         if (claimButton != null) claimButton.onClick.AddListener(Claim);
+
+        RuhefarbenSichern();
     }
+
+    // Ruhefarben einmal merken: Bind() rechnet daraus ab, sonst wuerde sich das Abdunkeln bei
+    // jedem Aufruf erneut auf den schon dunklen Wert anwenden.
+    // Wird auch aus Bind() gerufen: das Panel ist beim Szenenstart ausgeschaltet, Awake() laeuft
+    // also erst beim ersten Oeffnen -- und der Controller bindet die Zeilen VORHER.
+    private void RuhefarbenSichern()
+    {
+        if (_dimRuhefarben != null || dimWhenClaimed == null) return;
+        _dimRuhefarben = new Color[dimWhenClaimed.Length];
+        for (int i = 0; i < dimWhenClaimed.Length; i++)
+            _dimRuhefarben[i] = dimWhenClaimed[i] != null ? dimWhenClaimed[i].color : Color.white;
+    }
+
+    private static Color Abdunkeln(Color farbe, float faktor)
+        => new Color(farbe.r * faktor, farbe.g * faktor, farbe.b * faktor, farbe.a);
 
     public void Bind(WeeklyQuestData quest, System.Action<WeeklyQuestData> onClaim)
     {
@@ -64,6 +89,7 @@ public class WeeklyQuestRowUI : MonoBehaviour
 
         if (quest == null) { gameObject.SetActive(false); return; }
         gameObject.SetActive(true);
+        RuhefarbenSichern();
 
         if (titleLabel    != null) titleLabel.text    = quest.Title;
         if (progressLabel != null) progressLabel.text = Mathf.Min(quest.Progress, quest.Target) + "/" + quest.Target;
@@ -80,8 +106,18 @@ public class WeeklyQuestRowUI : MonoBehaviour
             rt.offsetMax = Vector2.zero;
         }
 
+        // Nach dem Abholen ist die Kachel erledigt -- Text, Balken und Zahl treten zurueck,
+        // damit nur noch der gruene Haken ins Auge faellt.
+        float dim = quest.Claimed ? claimedDim : 1f;
+
         if (titleLabel != null)
-            titleLabel.color = quest.IsCompleted ? finishedColor : unfinishedColor;
+            titleLabel.color = Abdunkeln(quest.IsCompleted ? finishedColor : unfinishedColor, dim);
+
+        if (dimWhenClaimed != null && _dimRuhefarben != null
+            && _dimRuhefarben.Length == dimWhenClaimed.Length)
+            for (int i = 0; i < dimWhenClaimed.Length; i++)
+                if (dimWhenClaimed[i] != null)
+                    dimWhenClaimed[i].color = Abdunkeln(_dimRuhefarben[i], dim);
 
         // Nur der Knopf wechselt die Farbe: hell, solange es etwas zu holen gibt, sonst dunkel.
         // Nach dem Abholen faellt er damit wieder in den dunklen Zustand zurueck.

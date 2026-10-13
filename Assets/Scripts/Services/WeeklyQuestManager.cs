@@ -70,6 +70,7 @@ public static class WeeklyQuestManager
     const string PrefKeyDays  = "weekly_quests_days";   // Bitmaske der gespielten Wochentage
     const string PrefKeyLevel = "weekly_quests_startlevel";  // Spielerlevel zu Wochenbeginn
     const string PrefKeyTest  = "weekly_quests_testziele";
+    const string PrefKeySeen  = "weekly_quests_gesehen";   // Wochenkennung, die der Spieler schon offen hatte
 
     /// <summary>
     /// Nur zum Testen: deckelt beim Ziehen alle Ziele auf <see cref="TestZielObergrenze"/>,
@@ -160,6 +161,38 @@ public static class WeeklyQuestManager
 
     /// <summary>Holt die Belohnung einer erfuellten Aufgabe ab. Gibt false zurueck, wenn die Aufgabe
     /// nicht erfuellt oder schon abgeholt ist.</summary>
+    // ── Badge / "gesehen" ─────────────────────────────────────────────────────
+
+    /// <summary>True, sobald mindestens eine Aufgabe erfuellt und noch nicht abgeholt ist.</summary>
+    public static bool HasClaimable()
+    {
+        EnsureLoaded();
+        if (_quests == null) return false;
+        foreach (var q in _quests)
+            if (q != null && q.IsCompleted && !q.Claimed) return true;
+        return false;
+    }
+
+    /// <summary>True, solange der Spieler die Aufgaben dieser Woche noch nicht angesehen hat.</summary>
+    public static bool IsWeekUnseen()
+    {
+        EnsureLoaded();
+        return PlayerPrefs.GetString(PrefKeySeen, "") != AktuelleWochenKennung();
+    }
+
+    /// <summary>Badge am Quests-Knopf: entweder gibt es etwas abzuholen, oder die Woche ist neu.</summary>
+    public static bool ShouldShowBadge() => HasClaimable() || IsWeekUnseen();
+
+    /// <summary>Vom Quests-Fenster beim Oeffnen zu rufen.</summary>
+    public static void MarkWeekSeen()
+    {
+        string woche = AktuelleWochenKennung();
+        if (PlayerPrefs.GetString(PrefKeySeen, "") == woche) return;
+        PlayerPrefs.SetString(PrefKeySeen, woche);
+        PlayerPrefs.Save();
+        OnQuestsChanged?.Invoke();   // damit das Badge sofort nachzieht
+    }
+
     public static bool TryClaim(WeeklyQuestData quest)
     {
         EnsureLoaded();
