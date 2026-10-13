@@ -1518,7 +1518,7 @@ public class MixedPointSpawner : MonoBehaviour
         _gameOverCause = "timeout";
 
         AchievementManager.OnGameFinished(score, CurrentMode);
-        MissionManager.OnGameFinished(score);
+        WeeklyQuestManager.OnGameFinished(score);
         int dreamEnergyReward = DreamEnergyManager.OnGameFinished(score);
         // TE >> Traumsplitter-Verhältnis laut Session-Balancing-Tabelle: 7% der verdienten Traumenergie.
         int diamondSplinterReward = Mathf.RoundToInt(dreamEnergyReward * 0.07f);

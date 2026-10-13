@@ -120,7 +120,7 @@ public class FountainModeSystem : MonoBehaviour
 
         NeonAnalytics.LogSpecialModeTriggered("fountain");
         AchievementManager.OnSpecialModeTriggered("fountain");
-        MissionManager.OnSpecialModeTriggered();
+        WeeklyQuestManager.OnSpecialModeTriggered();
 
         isActive = true;
         spawnLoopActive = true;

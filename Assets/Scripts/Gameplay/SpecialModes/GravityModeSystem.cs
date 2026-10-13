@@ -84,7 +84,7 @@ public void Activate()
 
     NeonAnalytics.LogSpecialModeTriggered("gravity");
     AchievementManager.OnSpecialModeTriggered("gravity");
-    MissionManager.OnSpecialModeTriggered();
+    WeeklyQuestManager.OnSpecialModeTriggered();
     StartCoroutine(Co_GravityMode(maxSpawnCount, diamondBonusActive));
 }
 

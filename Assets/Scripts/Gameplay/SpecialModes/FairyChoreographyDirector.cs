@@ -44,6 +44,15 @@ public class FairyChoreographyDirector : MonoBehaviour
                  "Anflug) und laesst die Fee an ihrem Platz stehen -- das Intro wartet nur noch " +
                  "introDuration ab. Pro Fee einzeln, weil nicht jede schon eine eigene Animation hat.")]
         public bool animationOnlyIntro;
+        [Tooltip("Stimme der Fee beim Special-Mode-Intro.")]
+        public AudioClip voiceClip;
+        [Range(0f, 1f)] public float voiceVolume = 1f;
+        [Tooltip("Optional: Animationszustand, auf den die Stimme wartet (z. B. SpecialMode_Unroll, " +
+                 "wenn der Affe die Arme ausstreckt). Leer = ab dem Ausloesen des Intros rechnen.")]
+        public string voiceStateName;
+        [Tooltip("Sekunden Verzoegerung -- ab dem Ausloesen des Intros, oder ab dem Erreichen von " +
+                 "voiceStateName, falls dort einer steht.")]
+        public float voiceDelay = 0.5f;
         [System.NonSerialized] public FairyGlowFlash glow;
     }
 
@@ -56,6 +65,10 @@ public class FairyChoreographyDirector : MonoBehaviour
 
     [Header("Intro")]
     [SerializeField] private float introDuration = 5f;
+
+    [Tooltip("Reissleine: so lange wartet eine Stimme hoechstens auf ihren Animationszustand, " +
+             "bevor sie trotzdem spielt.")]
+    [SerializeField] private float voiceStateTimeout = 6f;
 
     [Tooltip("Wartet vor dem Special-Mode-Intro, bis die GetEnergy-Animation der Lead-Fee " +
              "durchgelaufen ist. Ohne das bricht sie mitten im Faustschlag ab, weil der Trigger " +
@@ -217,6 +230,7 @@ public class FairyChoreographyDirector : MonoBehaviour
     private Coroutine _running;
     private Camera _cam;
     private bool _outroActive;
+    private Coroutine _stimme;
     private Quaternion _choreoHomeRot = Quaternion.Euler(0f, 180f, 0f); // frontale Idle-Rotation der Feen
 
     /// <summary>True, solange das Outro läuft (Feen fliegen zurück an ihre Startpositionen).
@@ -269,6 +283,9 @@ public class FairyChoreographyDirector : MonoBehaviour
     {
         if (_cam == null) _cam = Camera.main;
         if (_running != null) StopCoroutine(_running);
+        // Eine noch wartende Stimme vom vorherigen Intro mit abraeumen, sonst spricht die
+        // alte Fee in die neue Choreo hinein.
+        if (_stimme != null) { StopCoroutine(_stimme); _stimme = null; }
         _running = StartCoroutine(Co_Intro(mode));
     }
 
@@ -297,6 +314,11 @@ public class FairyChoreographyDirector : MonoBehaviour
         // Die GetEnergy-Animation zuerst zu Ende bringen. Der Trigger faellt bereits beim 20.
         // zerstoerten Element, die Energiekugel ist zu dem Zeitpunkt aber noch unterwegs zur Fee --
         // ohne dieses Warten wuerde der Faustschlag mittendrin abgeschnitten.
+        // Stimme laeuft nebenher mit eigener Verzoegerung, damit sie sich je Fee unabhaengig
+        // vom GetEnergy-Warten nach vorn oder hinten schieben laesst.
+        if (lead >= 0 && fairies[lead].voiceClip != null)
+            _stimme = StartCoroutine(Co_Stimme(fairies[lead]));
+
         if (lead >= 0 && waitForGetEnergy)
             yield return Co_WaitForGetEnergy(fairies[lead].animator);
 
@@ -423,6 +445,37 @@ public class FairyChoreographyDirector : MonoBehaviour
     // Zwei Phasen, weil sie beim Aufruf meist noch gar nicht begonnen hat (die Energiekugel fliegt
     // noch). Beide Phasen haben ein Zeitlimit -- ein haengendes Intro waere schlimmer als ein
     // abgeschnittener Faustschlag.
+    private IEnumerator Co_Stimme(FairyEntry fee)
+    {
+        // An einen Animationszustand gehaengt ist die Stimme unabhaengig davon, wie lang der
+        // Anflug gerade eingestellt ist -- eine feste Zeit muesste man dabei nachziehen.
+        if (!string.IsNullOrEmpty(fee.voiceStateName))
+        {
+            float t = 0f;
+            while (t < voiceStateTimeout && !IstInZustand(fee.animator, fee.voiceStateName))
+            {
+                t += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        if (fee.voiceDelay > 0f) yield return new WaitForSeconds(fee.voiceDelay);
+        SfxManager.Instance?.PlayOneShot(fee.voiceClip, fee.voiceVolume);
+        _stimme = null;
+    }
+
+    // Zaehlt auch den Uebergang IN den Zustand: die Arme fangen schon dort an auszufahren.
+    private bool IstInZustand(Animator anim, string name)
+    {
+        if (anim == null || anim.runtimeAnimatorController == null) return false;
+        for (int i = 0; i < anim.layerCount; i++)
+        {
+            if (anim.GetCurrentAnimatorStateInfo(i).IsName(name)) return true;
+            if (anim.IsInTransition(i) && anim.GetNextAnimatorStateInfo(i).IsName(name)) return true;
+        }
+        return false;
+    }
+
     private IEnumerator Co_WaitForGetEnergy(Animator anim)
     {
         if (anim == null || anim.runtimeAnimatorController == null) yield break;

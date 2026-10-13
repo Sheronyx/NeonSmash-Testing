@@ -64,6 +64,9 @@ public class ThunderPoint : MonoBehaviour
 
         HideAndDisable();
         SpawnEffect(tapEffect, 1f);
+        // Ueber den SfxManager, nicht ueber eine eigene AudioSource: das Objekt wird gleich
+        // zerstoert, eine AudioSource darauf wuerde mitten im Klang abbrechen.
+        SfxManager.Instance?.PlayShockerTap();
 
         if (LivesManager.Instance != null)
         {

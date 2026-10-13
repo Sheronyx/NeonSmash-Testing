@@ -93,7 +93,6 @@ public class UgsBootstrap : MonoBehaviour
             // 2) Fortschritt aus Cloud laden — vor Initialization, damit Scenes direkt korrekte Werte sehen
             await TutorialProgress.LoadFromCloudAsync();
             await DreamEnergyManager.LoadFromCloudAsync();
-            await DailyRewardManager.LoadFromCloudAsync();
             await AchievementManager.LoadFromCloudAsync();
             // Bug gefunden 2026-08-22 (Night Shift): Diamonds/Splinter wurden zwar bei jeder
             // Änderung ZUR Cloud gespeichert (AddDiamonds/AddSplinters -> SaveToCloudAsync), aber

@@ -113,7 +113,7 @@ public class VortexModeSystem : MonoBehaviour
 
         NeonAnalytics.LogSpecialModeTriggered("vortex");
         AchievementManager.OnSpecialModeTriggered("vortex");
-        MissionManager.OnSpecialModeTriggered();
+        WeeklyQuestManager.OnSpecialModeTriggered();
 
         StartCoroutine(Co_VortexMode(maxSpawnCount, diamondBonusActive));
     }

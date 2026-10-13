@@ -766,6 +766,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sfxSource: {fileID: 911940148}
   infinityGameOverClip: {fileID: 8300000, guid: acbcb75601b0082458fda8807f67c813, type: 3}
+  shockerTapClip: {fileID: 8300000, guid: 95200492e12eb4ec7ba3ec9a97612297, type: 3}
+  shockerTapVolume: 1
   defaultVolume: 1
 --- !u!4 &911940147
 Transform:
@@ -2098,6 +2100,12 @@ MonoBehaviour:
   sfxSource: {fileID: 1820891518}
   normalPointClip: {fileID: 8300000, guid: 19344cc1f191bbdfd52436e70360719b, type: 3}
   swipePointClip: {fileID: 8300000, guid: 85a02a123ea53356a76cc69b096f1743, type: 3}
+  pitchStufen:
+  - 0.8
+  - 0.9
+  - 1
+  - 1.1
+  - 1.2
 --- !u!4 &1820891517
 Transform:
   m_ObjectHideFlags: 0

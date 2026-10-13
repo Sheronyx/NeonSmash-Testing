@@ -199,6 +199,8 @@ private void CheckDestroy()
 
     void ApplyShockerPenalty(Vector3 pos)
     {
+        SfxManager.Instance?.PlayShockerTap();
+
         if (LivesManager.Instance != null)
         {
             bool stillAlive = LivesManager.Instance.LoseLife(pos);

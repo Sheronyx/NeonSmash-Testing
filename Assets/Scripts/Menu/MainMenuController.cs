@@ -62,6 +62,6 @@ public class MainMenuController : MonoBehaviour
 
     public void OpenTasks()
     {
-        TasksPopupController.Instance?.Open();
+        WeeklyQuestsController.Instance?.Open();
     }
 }
