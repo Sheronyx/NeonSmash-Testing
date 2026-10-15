@@ -307,6 +307,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopBarBinding
   scoreText: {fileID: 138229033313823058}
+  scoreRoot: {fileID: 0}
   personalBestText: {fileID: 158268830786737714}
   lifePoint1: {fileID: 5072387148074333629}
   lifePoint2: {fileID: 2762400273248962317}
@@ -1367,7 +1368,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &8338464090511809872
 GameObject:
   m_ObjectHideFlags: 0

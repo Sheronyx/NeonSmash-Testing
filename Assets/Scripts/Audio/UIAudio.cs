@@ -7,6 +7,13 @@ public class UIAudio : MonoBehaviour
 
     private AudioSource src;
 
+    [Header("Standard-Klaenge")]
+    [Tooltip("Fuer Knoepfe, die ein Fenster OEFFNEN oder den Tab WECHSELN.")]
+    [SerializeField] private AudioClip openSwitchClip;
+    [Tooltip("Fuer Knoepfe, die ein Fenster SCHLIESSEN.")]
+    [SerializeField] private AudioClip closeClip;
+    [Range(0f, 1f)] [SerializeField] private float uiVolume = 1f;
+
     [Header("Audio Routing")]
     [SerializeField] private AudioMixerGroup uiGroup; // <-- MasterMixer/UI zuweisen
 
@@ -38,6 +45,12 @@ public class UIAudio : MonoBehaviour
         if (clip == null) return;
         src.PlayOneShot(clip, volume); // läuft nun durch die UI-Group
     }
+
+    /// <summary>Oeffnen eines Fensters oder Wechseln des Tabs.</summary>
+    public void PlayOpenSwitch() => PlayOneShot(openSwitchClip, uiVolume);
+
+    /// <summary>Schliessen eines Fensters.</summary>
+    public void PlayClose() => PlayOneShot(closeClip, uiVolume);
 
     public bool IsPlaying => src != null && src.isPlaying;
 }

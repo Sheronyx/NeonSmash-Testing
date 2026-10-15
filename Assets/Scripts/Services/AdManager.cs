@@ -24,6 +24,9 @@ public class AdManager : MonoBehaviour
     InterstitialAd _interstitialAd;
     int            _gameOverCount;
     bool           _initStarted;
+    // Wird gesetzt, wenn der Nutzer die Einwilligung im Datenschutz-Formular widerrufen hat.
+    // Verhindert, dass in derselben Sitzung noch Anzeigen nachgeladen werden.
+    bool           _einwilligungEntzogen;
     float          _lastInterstitialTime = -9999f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -88,16 +91,122 @@ public class AdManager : MonoBehaviour
     /// <summary>Öffnet das UMP-Datenschutz-Formular (Einwilligung ändern/widerrufen) — GDPR-Pflicht.</summary>
     public void ShowPrivacyOptions()
     {
+        // Das Formular gibt es nur, wenn UMP es fuer diesen Nutzer vorsieht -- ausserhalb des
+        // EWR und im Editor in der Regel nicht. Vorher pruefen, sonst passiert beim Antippen
+        // kommentarlos nichts und es sieht nach einem kaputten Knopf aus.
+        try
+        {
+            var status = ConsentInformation.PrivacyOptionsRequirementStatus;
+            if (status != PrivacyOptionsRequirementStatus.Required)
+            {
+                Debug.Log("[Ads] Datenschutz-Formular nicht erforderlich (Status: " + status
+                        + "). Das ist kein Fehler -- ausserhalb des EWR und im Editor ist das normal.");
+                return;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[Ads] Status des Datenschutz-Formulars nicht abfragbar: " + e.Message);
+        }
+
+#if UNITY_EDITOR
+        // Im Editor laeuft nur der Platzhalter des Plugins (GoogleMobileAds.Ump.Unity). Der hat
+        // kein echtes Formular und meldet immer "Form not found!" -- das ist kein Fehler und
+        // sagt nichts ueber das Verhalten auf dem Geraet. Gar nicht erst versuchen.
+        Debug.Log("[Ads] Datenschutz-Formular: im Editor nicht verfuegbar (Platzhalter des Plugins). "
+                + "Nur auf einem echten Geraet testbar.");
+        return;
+#else
+        Zeige(ersterVersuch: true);
+#endif
+    }
+
+    // UMP haelt das Formular nur im Speicher, wenn es in dieser Sitzung geladen wurde. Wurde die
+    // Einwilligung frueher schon erteilt, steigt LoadAndShowConsentFormIfRequired beim Start
+    // sofort aus -- dann ist spaeter nichts da und ShowPrivacyOptionsForm meldet "Form not found".
+    // Beim ersten Fehlschlag deshalb die Einwilligungsdaten neu anfordern und ein Mal wiederholen.
+    void Zeige(bool ersterVersuch)
+    {
         try
         {
             ConsentForm.ShowPrivacyOptionsForm(error =>
             {
-                if (error != null) Debug.LogWarning("[Ads] Privacy-Options-Form Fehler: " + error.Message);
+                if (error == null)
+                {
+                    Debug.Log("[Ads] Datenschutz-Formular geschlossen.");
+                    NachFormularNeuBewerten();
+                    return;
+                }
+
+                Debug.LogWarning("[Ads] Privacy-Options-Form Fehler: " + error.Message);
+                if (!ersterVersuch)
+                {
+                    Debug.LogWarning("[Ads] Auch der zweite Versuch schlug fehl. Moegliche Ursachen: "
+                                   + "die Datenschutz-Nachricht ist in der AdMob-Konsole nicht angelegt "
+                                   + "oder nicht veroeffentlicht, oder der Nutzer liegt ausserhalb des "
+                                   + "Geltungsbereichs der Nachricht.");
+                    return;
+                }
+
+                Debug.Log("[Ads] Formular nicht geladen -- fordere Einwilligungsdaten neu an und versuche es erneut.");
+                try
+                {
+                    ConsentInformation.Update(new ConsentRequestParameters(), updateError =>
+                    {
+                        if (updateError != null)
+                        {
+                            Debug.LogWarning("[Ads] Update der Einwilligungsdaten fehlgeschlagen: " + updateError.Message);
+                            return;
+                        }
+                        Zeige(ersterVersuch: false);
+                    });
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[Ads] Zweiter Versuch nicht moeglich: " + e.Message);
+                }
             });
         }
         catch (Exception e)
         {
             Debug.LogWarning("[Ads] ShowPrivacyOptions nicht verfügbar: " + e.Message);
+        }
+    }
+
+    // Nach dem Datenschutz-Formular kann der Stand ein anderer sein als beim Start. Ohne diese
+    // Auswertung wuerde ein Widerruf erst beim naechsten App-Start greifen -- Messung und
+    // Absturzberichte liefen in der laufenden Sitzung weiter. Deshalb hier sofort nachziehen.
+    void NachFormularNeuBewerten()
+    {
+        bool canRequest;
+        try { canRequest = ConsentInformation.CanRequestAds(); }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[Ads] Einwilligungsstand nach dem Formular nicht lesbar: " + e.Message);
+            return;
+        }
+
+        NeonAnalytics.ApplyConsent(canRequest);
+
+        if (!canRequest)
+        {
+            // Widerruf: geladene Anzeigen verwerfen und nichts mehr nachladen. Das SDK selbst
+            // laesst sich nicht zurueckdrehen, aber ab hier wird keine Anzeige mehr angefordert
+            // oder gezeigt.
+            _einwilligungEntzogen = true;
+            _rewardedAd?.Destroy();     _rewardedAd     = null;
+            _interstitialAd?.Destroy(); _interstitialAd = null;
+            Debug.Log("[Ads] Einwilligung widerrufen -- keine weiteren Anzeigen, Messung aus.");
+            return;
+        }
+
+        // Umgekehrter Fall: erst abgelehnt, jetzt zugestimmt. Dann soll es ohne Neustart laufen.
+        _einwilligungEntzogen = false;
+        if (!_initStarted) InitializeAds();
+        else if (IsInitialized)
+        {
+            if (_rewardedAd     == null) LoadRewarded();
+            if (_interstitialAd == null) LoadInterstitial();
         }
     }
 
@@ -108,6 +217,11 @@ public class AdManager : MonoBehaviour
         bool canRequest;
         try { canRequest = ConsentInformation.CanRequestAds(); }
         catch { canRequest = true; }   // Editor-Fallback
+
+        // Analytics und Crashlytics an denselben Stand koppeln. CanRequestAds ist true, wenn
+        // der Nutzer eingewilligt hat ODER UMP fuer ihn keine Einwilligung verlangt (ausserhalb
+        // des EWR). Ein Nutzer, der ablehnt, bekommt damit weder Werbung noch Messung.
+        NeonAnalytics.ApplyConsent(canRequest);
 
         if (!canRequest)
         {
@@ -134,6 +248,7 @@ public class AdManager : MonoBehaviour
 
     void LoadRewarded()
     {
+        if (_einwilligungEntzogen) return;
         _rewardedAd?.Destroy();
         _rewardedAd = null;
 
@@ -182,6 +297,7 @@ public class AdManager : MonoBehaviour
     // ----------------------------------------------------------------- Interstitial
     void LoadInterstitial()
     {
+        if (_einwilligungEntzogen) return;
         _interstitialAd?.Destroy();
         _interstitialAd = null;
 

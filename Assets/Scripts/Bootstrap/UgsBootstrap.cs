@@ -101,6 +101,15 @@ public class UgsBootstrap : MonoBehaviour
             // werden (echte Ingame-Währung, kein totes Feature).
             await DiamondManager.LoadFromCloudAsync();
             await DiamondSplinterManager.LoadFromCloudAsync();
+            // Besitz und freigeschaltete Welten gehoeren zum Konto, nicht zum Geraet -- sonst ist
+            // eine mit echtem Geld bezahlte Welt nach einer Neuinstallation weg. Bewusst NACH den
+            // Waehrungen, damit ein Kauf, der beides betrifft, in der richtigen Reihenfolge ankommt.
+            await ShopInventory.LoadFromCloudAsync();
+            await WorldUnlockManager.LoadFromCloudAsync();
+
+            // Aktivitaetsmeldung: Grundlage fuer die Loeschung inaktiver Konten. Bewusst nach
+            // dem Laden und nebenher -- sie darf den Start nicht aufhalten.
+            if (!Application.isEditor) StartCoroutine(ActivityStamp.MeldenCoroutine());
 
             // 3) Online bereit
             _tcs.TrySetResult(true);
@@ -122,6 +131,62 @@ public class UgsBootstrap : MonoBehaviour
             StartCoroutine(PlatformNameCoroutine());
         }
     }
+
+   /// <summary>Setzt den Startvorgang vollstaendig zurueck -- fuer den Fall, dass das Konto
+   /// geloescht wurde und die App mit einer frischen Identitaet neu hochfahren muss.
+   ///
+   /// Noetig, weil dieses Objekt den Szenenwechsel ueberlebt und seinen Zustand statisch haelt:
+   /// Ohne das Zuruecksetzen steigt Begin() wegen _started sofort wieder aus, die Anmeldung
+   /// liefe nie erneut, und die drei TaskCompletionSources wuerden weiterhin den Erfolg der
+   /// ALTEN, inzwischen geloeschten Sitzung melden.</summary>
+   public static void ResetForRestart()
+   {
+       _started = false;
+       _tcs = null;
+       _platformAuthTcs = null;
+       _friendsTcs = null;
+
+       if (Instance != null)
+       {
+           Destroy(Instance.gameObject);
+           Instance = null;
+       }
+       Debug.Log("[UGS] Startvorgang zurueckgesetzt -- der naechste Begin() faehrt frisch hoch.");
+   }
+
+   /// <summary>Verknuepfung mit Google Play Games bzw. Apple Game Center erneut versuchen.
+   /// Beim Start laeuft das automatisch -- diese Methode ist fuer den Fall, dass der Spieler
+   /// damals abgelehnt hat oder offline war und es aus den Einstellungen nachholen will.</summary>
+   public void RetryPlatformLink()
+   {
+       StopCoroutine(nameof(PlatformNameCoroutine));
+       StartCoroutine(PlatformNameCoroutine());
+   }
+
+   /// <summary>True, sobald das Konto mit einer Plattform-Identitaet verknuepft ist. Nur dann
+   /// uebersteht der Spielstand eine Neuinstallation.</summary>
+   public static bool IsPlatformLinked
+   {
+       get
+       {
+           try
+           {
+               var ids = AuthenticationService.Instance.PlayerInfo?.Identities;
+               return ids != null && ids.Count > 0;
+           }
+           catch { return false; }
+       }
+   }
+
+   /// <summary>Spieler-Kennung zum Anzeigen im Support-Fall. Leer, wenn noch nicht angemeldet.</summary>
+   public static string PlayerIdOrEmpty
+   {
+       get
+       {
+           try { return AuthenticationService.Instance.PlayerId ?? ""; }
+           catch { return ""; }
+       }
+   }
 
    System.Collections.IEnumerator PlatformNameCoroutine()
 {

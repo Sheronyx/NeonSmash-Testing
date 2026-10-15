@@ -1534,7 +1534,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: -581468701738588005, guid: c075fc85134a941108dbd06351cbef79, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 033766cc31c97904bae4404b8a079544, type: 3}
+  m_Resource: {fileID: 8300000, guid: 2212672f9ebf41a6a7649562f9d3cc4d, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -2518,6 +2518,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   consentCanvas: {fileID: 0}
   impressumCanvas: {fileID: 0}
+  privacyUrl: https://sheronyx.com/privacy
+  termsUrl: https://sheronyx.com/terms
 --- !u!4 &1898402936
 Transform:
   m_ObjectHideFlags: 0
@@ -2562,6 +2564,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7b0bc9619bac40ffa9cc9fa6ae14104, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  openSwitchClip: {fileID: 8300000, guid: 5b660fe28dc4455597778423e19b795f, type: 3}
+  closeClip: {fileID: 8300000, guid: 808257dad76542b191053ff03f69f976, type: 3}
+  uiVolume: 1
   uiGroup: {fileID: -3440255200917650483, guid: c075fc85134a941108dbd06351cbef79, type: 2}
 --- !u!4 &2041684216
 Transform:

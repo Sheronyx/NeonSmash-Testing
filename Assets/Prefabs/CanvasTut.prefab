@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8549867338754784375}
   - component: {fileID: 8143066571638798416}
   - component: {fileID: 9210813571123477357}
+  - component: {fileID: 8620537398072721840}
   m_Layer: 5
   m_Name: NextButton
   m_TagString: Untagged
@@ -120,6 +121,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8620537398072721840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 433684917123422882}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &1299573413799165440
 GameObject:
   m_ObjectHideFlags: 0
@@ -619,7 +634,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!1 &2957014118516891685
 GameObject:
   m_ObjectHideFlags: 0
@@ -632,6 +648,7 @@ GameObject:
   - component: {fileID: 1749000018382564325}
   - component: {fileID: 5202403267944946847}
   - component: {fileID: 6436476108141718311}
+  - component: {fileID: 624732975640777072}
   m_Layer: 5
   m_Name: BackButton
   m_TagString: Untagged
@@ -740,6 +757,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &624732975640777072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2957014118516891685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &3106342004641924227
 GameObject:
   m_ObjectHideFlags: 0

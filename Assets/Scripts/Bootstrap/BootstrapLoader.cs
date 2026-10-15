@@ -55,7 +55,19 @@ public class BootstrapLoader : MonoBehaviour
 
         // VFX Warmup abwarten — SceneFader ist noch schwarz und versteckt die Effekte
         if (vfxWarmup != null)
-            yield return new WaitUntil(() => vfxWarmup.IsComplete);
+        {
+            // Mit Zeitlimit: haengt der Warmup (z.B. weil Camera.main in einer neu geladenen
+            // Szene noch fehlt), blieb die App frueher stumm in der BootstrapScene stehen.
+            float wartezeit = 0f;
+            while (!vfxWarmup.IsComplete && wartezeit < 5f)
+            {
+                wartezeit += Time.unscaledDeltaTime;
+                yield return null;
+            }
+            if (!vfxWarmup.IsComplete)
+                Debug.LogWarning("[Bootstrap] VFX-Warmup nach 5 s nicht fertig — es geht trotzdem weiter.");
+        }
+        Debug.Log("[Bootstrap] Warmup durch, Logo wird gezeigt.");
 
         // Logo einblenden
         SceneFader.Instance?.Clear();
@@ -69,6 +81,8 @@ public class BootstrapLoader : MonoBehaviour
 
         // NetworkManager sauber herunterfahren bevor BootstrapScene entladen wird
         NetworkManager.Singleton?.Shutdown();
+
+        Debug.Log("[Bootstrap] Lade " + firstScene + ".");
 
         // IntroScene laden — bleibt schwarz, IntroScene ruft Clear() auf und zeigt Ladebildschirm
         if (SceneFader.Instance != null)

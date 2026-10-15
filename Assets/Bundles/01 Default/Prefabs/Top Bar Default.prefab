@@ -1331,6 +1331,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TopBarBinding
   scoreText: {fileID: 7361526174981015688}
+  scoreRoot: {fileID: 0}
   personalBestText: {fileID: 6943533336139616629}
   lifePoint1: {fileID: 0}
   lifePoint2: {fileID: 0}
@@ -1626,7 +1627,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &6845916213862318917
 GameObject:
   m_ObjectHideFlags: 0
@@ -1900,6 +1902,7 @@ MonoBehaviour:
   pinkRewardPreview: {fileID: 0}
   greenRewardPreview: {fileID: 0}
   blueRewardPreview: {fileID: 0}
+  countdownSmoothSpeed: 1.5
 --- !u!1 &8118287011322781181
 GameObject:
   m_ObjectHideFlags: 0

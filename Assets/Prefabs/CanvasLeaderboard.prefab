@@ -1018,6 +1018,7 @@ GameObject:
   - component: {fileID: 7320426738635103242}
   - component: {fileID: 2108940036096563068}
   - component: {fileID: 6224470445997042094}
+  - component: {fileID: 1724687353490628347}
   m_Layer: 5
   m_Name: InfinityModeHighscoreButton
   m_TagString: Untagged
@@ -1158,6 +1159,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &1724687353490628347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5301168312251068627}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &5830815963537261484
 GameObject:
   m_ObjectHideFlags: 0
@@ -1291,7 +1306,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!1 &5945515950872674568
 GameObject:
   m_ObjectHideFlags: 0
@@ -1482,12 +1498,12 @@ MonoBehaviour:
   loadingOverlay: {fileID: 3683088123114551846}
   closeButton: {fileID: 5354206697947797855}
   scrollRect: {fileID: 4393559406600947893}
-  timeModeButton: {fileID: 2351834216413091583}
   infinityModeButton: {fileID: 6224470445997042094}
-  timeNormalSprite: {fileID: 21300000, guid: 414fcd6012b514d768fd80eaa619b16e, type: 3}
-  timeActiveSprite: {fileID: 21300000, guid: dab2866c234844941bc17c09c2c8caf2, type: 3}
+  multiplayerModeButton: {fileID: 0}
   infinityNormalSprite: {fileID: 21300000, guid: 9cd0aa1fc75534d2b90e822f10473630, type: 3}
   infinityActiveSprite: {fileID: 21300000, guid: 3dc4dec2c7add468aa538b7cb2508f4c, type: 3}
+  multiplayerNormalSprite: {fileID: 0}
+  multiplayerActiveSprite: {fileID: 0}
   contentRoot: {fileID: 1728771094910850093}
   entryPrefab: {fileID: 196775981604867669, guid: 56de0f6e71352499eb170809c966c0f3, type: 3}
 --- !u!1 &6479046620171785783
@@ -1503,6 +1519,7 @@ GameObject:
   - component: {fileID: 3241864429421740986}
   - component: {fileID: 1328706782537548796}
   - component: {fileID: 2351834216413091583}
+  - component: {fileID: 3740858067088355861}
   m_Layer: 5
   m_Name: TimeModeHighscoreButton
   m_TagString: Untagged
@@ -1643,6 +1660,20 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &3740858067088355861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6479046620171785783}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &6890442748693528721
 GameObject:
   m_ObjectHideFlags: 0

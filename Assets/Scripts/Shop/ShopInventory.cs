@@ -1,10 +1,18 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.Services.CloudSave;
 using UnityEngine;
 
 public static class ShopInventory
 {
     const string PrefKey     = "shop_owned";
     const string EquipPrefix = "shop_equipped_";
+    const string CloudKey    = "shop_owned";
+    const string CloudDirtyPrefKey = "shop_owned_cloud_dirty";
+
+    static readonly SemaphoreSlim _saveLock = new SemaphoreSlim(1, 1);
 
     // Feuert bei JEDEM SetEquipped-Aufruf (ein Bundle-Equip ruft es z.B. 3x auf, für
     // Bundle/Skin/Sound) — für UI, die unabhängig davon aktualisiert werden muss, WER den
@@ -139,5 +147,94 @@ public static class ShopInventory
     {
         PlayerPrefs.SetString(PrefKey, string.Join(",", Owned));
         PlayerPrefs.Save();
+        _ = SaveToCloudAsync();
+    }
+
+    // ── Cloud Save ────────────────────────────────────────────────────────────
+    // Besitz gehoert zum Konto, nicht zum Geraet: eine freigeschaltete Welt oder ein gekaufter
+    // Skin muss eine Neuinstallation ueberleben. Muster wie DiamondManager, aber mit einem
+    // wichtigen Unterschied beim Zusammenfuehren -- siehe LoadFromCloudAsync.
+
+    /// <summary>Beim App-Start aufzurufen, nachdem die Anmeldung steht.</summary>
+    public static async Task LoadFromCloudAsync()
+    {
+        try
+        {
+            var result = await CloudSaveService.Instance.Data.Player.LoadAsync(
+                new HashSet<string> { CloudKey });
+
+            if (result.TryGetValue(CloudKey, out var item))
+            {
+                var ausCloud = Zerlegen(item.Value.GetAs<string>());
+
+                // VEREINIGUNG, nicht "groesserer Wert gewinnt": Besitz geht nie verloren. Was auf
+                // einem Geraet gekauft wurde, gilt auch auf dem anderen -- und ein lokaler Kauf,
+                // der noch nicht hochgeladen war, darf nicht von der Cloud ueberschrieben werden.
+                int vorher = Owned.Count;
+                Owned.UnionWith(ausCloud);
+
+                if (Owned.Count != vorher)
+                {
+                    PlayerPrefs.SetString(PrefKey, string.Join(",", Owned));
+                    PlayerPrefs.Save();
+                    Debug.Log($"[ShopInventory] Aus der Cloud ergaenzt: {Owned.Count - vorher} Eintraege, jetzt {Owned.Count}.");
+                    OnEquippedChanged?.Invoke();   // damit Shop und Portal den neuen Besitz zeigen
+                }
+
+                // Hatte die Cloud weniger als wir, den vereinigten Stand gleich zurueckschreiben.
+                if (ausCloud.Count != Owned.Count) await SaveToCloudAsync();
+            }
+            else if (Owned.Count > 0)
+            {
+                // Noch nichts in der Cloud (z. B. erster Start nach dem Update) -- lokalen Stand sichern.
+                await SaveToCloudAsync();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[ShopInventory] Cloud Load fehlgeschlagen: " + e.Message);
+        }
+
+        await RetryPendingCloudSaveIfNeeded();
+    }
+
+    static HashSet<string> Zerlegen(string roh)
+    {
+        var menge = new HashSet<string>();
+        if (string.IsNullOrEmpty(roh)) return menge;
+        foreach (var id in roh.Split(','))
+            if (!string.IsNullOrEmpty(id)) menge.Add(id);
+        return menge;
+    }
+
+    static async Task SaveToCloudAsync()
+    {
+        await _saveLock.WaitAsync();
+        try
+        {
+            string wert = string.Join(",", Owned);
+            await CloudSaveService.Instance.Data.Player.SaveAsync(
+                new Dictionary<string, object> { { CloudKey, wert } });
+            Debug.Log($"[ShopInventory] Cloud gespeichert: {Owned.Count} Eintraege.");
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 0);
+            PlayerPrefs.Save();
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[ShopInventory] Cloud Save fehlgeschlagen: " + e.Message);
+            PlayerPrefs.SetInt(CloudDirtyPrefKey, 1);
+            PlayerPrefs.Save();
+        }
+        finally
+        {
+            _saveLock.Release();
+        }
+    }
+
+    public static async Task RetryPendingCloudSaveIfNeeded()
+    {
+        if (PlayerPrefs.GetInt(CloudDirtyPrefKey, 0) == 0) return;
+        Debug.Log("[ShopInventory] Offener Cloud-Save aus vorherigem Fehlversuch wird nachgeholt.");
+        await SaveToCloudAsync();
     }
 }

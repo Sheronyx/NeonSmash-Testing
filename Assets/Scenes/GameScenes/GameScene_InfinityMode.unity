@@ -7406,7 +7406,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &431859348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7699,7 +7700,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &451037180
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8281,7 +8283,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &529983421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9582,7 +9585,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!114 &701881585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9703,6 +9707,7 @@ GameObject:
   - component: {fileID: 703074774}
   - component: {fileID: 703074773}
   - component: {fileID: 703074772}
+  - component: {fileID: 703074775}
   m_Layer: 5
   m_Name: Skip Button
   m_TagString: Untagged
@@ -9812,6 +9817,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 703074770}
   m_CullTransparentMesh: 1
+--- !u!114 &703074775
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 703074770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &703702144
 GameObject:
   m_ObjectHideFlags: 0
@@ -10724,7 +10743,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!114 &815234511
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18992,7 +19012,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &1174388236
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19153,7 +19174,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!114 &1181123147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20018,7 +20040,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &1300209735
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20218,6 +20241,10 @@ PrefabInstance:
     - target: {fileID: 2954196190696871323, guid: 53687ad7ff4b545388ac0c79b1d36e5d, type: 3}
       propertyPath: m_Name
       value: Top Bar Heavenly Heights
+      objectReference: {fileID: 0}
+    - target: {fileID: 6582099216264635745, guid: 53687ad7ff4b545388ac0c79b1d36e5d, type: 3}
+      propertyPath: clickSound
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8888545836471780790, guid: 53687ad7ff4b545388ac0c79b1d36e5d, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -21514,7 +21541,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &1509845931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21881,7 +21909,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &1581488518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23487,6 +23516,10 @@ PrefabInstance:
     - target: {fileID: 3194923495044252531, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3286546112814440388, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
+      propertyPath: clickSound
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3776831586767542402, guid: 69200b5e25e774c0cb426bd4d1592853, type: 3}
       propertyPath: m_LocalScale.x
@@ -26916,7 +26949,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 1
+  clickSound: {fileID: 0}
 --- !u!114 &536616019024475347
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27241,7 +27275,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!222 &2289332220645241168
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -27930,6 +27965,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6066848292616618233, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
+      propertyPath: art
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6066848292616618233, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
+      propertyPath: clickSound
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 6544216494581854752, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_IsOn
       value: 1
@@ -27989,6 +28032,14 @@ PrefabInstance:
     - target: {fileID: 8518076759289733402, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 150.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 8602822611094507193, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
+      propertyPath: art
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8602822611094507193, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
+      propertyPath: clickSound
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 9032790436305475123, guid: f2566eaba30db46be913721c3e3862e0, type: 3}
       propertyPath: m_text
@@ -28462,6 +28513,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7517679640621085876, guid: f82994330e21d4cd58fec67a97ea9759, type: 3}
+      propertyPath: clickSound
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -28663,7 +28718,7 @@ PrefabInstance:
     - target: {fileID: 5121483942631206898, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: faea0a31a00a642eb8fb91294bba6ae7, type: 3}
+      objectReference: {fileID: 21300000, guid: cfd423b421d804fcf952d6bfadb7f2a0, type: 3}
     - target: {fileID: 5121483942631206898, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -28687,7 +28742,7 @@ PrefabInstance:
     - target: {fileID: 5679833354830730809, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: faea0a31a00a642eb8fb91294bba6ae7, type: 3}
+      objectReference: {fileID: 21300000, guid: cfd423b421d804fcf952d6bfadb7f2a0, type: 3}
     - target: {fileID: 5679833354830730809, guid: ac934668e299643c7b63bf7694da03fb, type: 3}
       propertyPath: m_Color.b
       value: 1

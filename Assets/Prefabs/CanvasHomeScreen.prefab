@@ -859,7 +859,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &4608253955880353088
 GameObject:
   m_ObjectHideFlags: 0
@@ -1156,6 +1157,7 @@ GameObject:
   - component: {fileID: 4151306451376722896}
   - component: {fileID: 9194977910867506837}
   - component: {fileID: 300958158849434335}
+  - component: {fileID: 4853209446064008063}
   m_Layer: 5
   m_Name: infoButton
   m_TagString: Untagged
@@ -1273,6 +1275,20 @@ MonoBehaviour:
     y: 0
     width: 1
     height: 1
+--- !u!114 &4853209446064008063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5554685801502804560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSound
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &5718412230972554897
 GameObject:
   m_ObjectHideFlags: 0
@@ -1491,7 +1507,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &7993758299996863318
 GameObject:
   m_ObjectHideFlags: 0
@@ -1638,7 +1655,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d27a18f9f2b814536a1fcd983ff41bb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  clickSound: {fileID: 8300000, guid: 146d4b19f95fe6d40832414952b4ea39, type: 3}
+  art: 0
+  clickSound: {fileID: 0}
 --- !u!1 &8018957271133240872
 GameObject:
   m_ObjectHideFlags: 0

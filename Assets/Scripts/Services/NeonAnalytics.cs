@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Firebase.Analytics;
 using UnityEngine;
 
@@ -10,10 +11,106 @@ public static class NeonAnalytics
     // Release builds from the App Store / Play Store have isDebugBuild = false.
     // NEON_ANALYTICS_TEST overrides this for DebugView testing on device.
 #if NEON_ANALYTICS_TEST
-    static bool Active => !Application.isEditor;
+    static bool Active => !Application.isEditor && ConsentGranted;
 #else
-    static bool Active => !Debug.isDebugBuild && !Application.isEditor;
+    static bool Active => !Debug.isDebugBuild && !Application.isEditor && ConsentGranted;
 #endif
+
+    // ── Einwilligung ──────────────────────────────────────────────────────────
+    // Analytics und Crashlytics laufen NICHT ohne Einwilligung. Bis der UMP-Dialog
+    // ausgewertet ist, bleibt beides aus -- lieber ein paar Ereignisse verlieren als ohne
+    // Rechtsgrundlage sammeln. AdManager meldet das Ergebnis ueber ApplyConsent().
+    public static bool ConsentGranted { get; private set; }
+
+    /// <summary>Vom AdManager aufzurufen, sobald der UMP-Status feststeht.</summary>
+    public static void ApplyConsent(bool granted)
+    {
+        bool warVorherAn = ConsentGranted;
+        ConsentGranted = granted;
+        ReapplyToFirebase();
+
+        // Echter Widerruf: SetAnalyticsCollectionEnabled(false) stoppt nur das Sammeln. Bereits
+        // lokal gepufferte Ereignisse wuerden sonst noch hochgeladen. ResetAnalyticsData leert
+        // diesen Puffer und vergibt eine neue Instanz-ID.
+        if (warVorherAn && !granted)
+        {
+            try
+            {
+                FirebaseAnalytics.ResetAnalyticsData();
+                Debug.Log("[Analytics] Widerruf -- lokale Ereignisse verworfen, neue Instanz-ID.");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Analytics] Lokale Daten konnten nicht verworfen werden: " + e.Message);
+            }
+        }
+        Debug.Log("[Analytics] Einwilligung: " + (granted ? "erteilt" : "nicht erteilt")
+                + " -- Analytics und Crashlytics " + (granted ? "aktiv" : "aus") + ".");
+    }
+
+    /// <summary>Nach dem Loeschen des Kontos: trennt kuenftige Daten vom bisherigen Spieler.
+    ///
+    /// Was das KANN: die Analytics-Instanz-ID neu wuerfeln und die Nutzerkennung leeren, sodass
+    /// ab jetzt erhobene Daten nicht mehr mit den bisherigen zusammenhaengen.
+    /// Was das NICHT kann: bereits an Firebase uebermittelte Ereignisse und Absturzberichte
+    /// loeschen -- dafuer gibt es keine Schnittstelle im Client.</summary>
+    public static void ResetAfterAccountDeletion()
+    {
+        try
+        {
+            FirebaseAnalytics.SetUserId(null);
+            FirebaseAnalytics.ResetAnalyticsData();   // neue Instanz-ID, lokale Daten weg
+            Debug.Log("[Analytics] Zuruckgesetzt -- neue Instanz-ID, Nutzerkennung geleert.");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[Analytics] Zuruecksetzen fehlgeschlagen: " + e.Message);
+        }
+
+        try
+        {
+            Firebase.Crashlytics.Crashlytics.SetUserId("");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[Crashlytics] Nutzerkennung konnte nicht geleert werden: " + e.Message);
+        }
+    }
+
+    /// <summary>Setzt den aktuellen Stand auf Firebase durch. Auch nach der Firebase-
+    /// Initialisierung aufzurufen: vorher laufen die Aufrufe ins Leere.</summary>
+    public static void ReapplyToFirebase()
+    {
+        bool an = ConsentGranted;
+
+        try
+        {
+            // Harter Schalter: ohne Einwilligung sammelt Analytics gar nichts.
+            FirebaseAnalytics.SetAnalyticsCollectionEnabled(an);
+
+            // Zusaetzlich Googles Consent Mode -- das ist der Weg, den Google neben UMP erwartet.
+            FirebaseAnalytics.SetConsent(new Dictionary<ConsentType, ConsentStatus>
+            {
+                { ConsentType.AnalyticsStorage,  an ? ConsentStatus.Granted : ConsentStatus.Denied },
+                { ConsentType.AdStorage,         an ? ConsentStatus.Granted : ConsentStatus.Denied },
+                { ConsentType.AdUserData,        an ? ConsentStatus.Granted : ConsentStatus.Denied },
+                { ConsentType.AdPersonalization, an ? ConsentStatus.Granted : ConsentStatus.Denied },
+            });
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[Analytics] Einwilligung konnte nicht gesetzt werden: " + e.Message);
+        }
+
+        try
+        {
+            Firebase.Crashlytics.Crashlytics.IsCrashlyticsCollectionEnabled = an;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[Crashlytics] Einwilligung konnte nicht gesetzt werden: " + e.Message);
+        }
+    }
 
     const string KeyInstallDate = "na_install_ts";
     const string KeySessionNum  = "na_session_num";
