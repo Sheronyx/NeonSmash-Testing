@@ -38,10 +38,10 @@ public class WeeklyQuestRowUI : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] private float claimedDim = 0.4f;
 
     [Header("Farben")]
-    [Tooltip("Titelfarbe, solange die Aufgabe laeuft.")]
-    [SerializeField] private Color unfinishedColor = new Color(1f, 1f, 1f, 0.6f);
-    [Tooltip("Titelfarbe, sobald die Aufgabe erfuellt ist.")]
-    [SerializeField] private Color finishedColor   = Color.white;
+    [Tooltip("Titelfarbe. Gilt unabhaengig davon, ob die Aufgabe schon erfuellt ist -- der "
+           + "Fortschritt steht im Balken, der Text soll immer gut lesbar bleiben. Nur nach dem "
+           + "Abholen wird er mit abgedunkelt.")]
+    [SerializeField] private Color finishedColor = Color.white;
     [Tooltip("Knopffarbe, solange nichts abzuholen ist -- und wieder, nachdem abgeholt wurde.")]
     [SerializeField] private Color rewardLockedColor = new Color(0.45f, 0.45f, 0.45f, 1f);
     [Tooltip("Knopffarbe, sobald abholbar: weiss, damit das Sprite seine eigene Farbe zeigt.")]
@@ -111,7 +111,7 @@ public class WeeklyQuestRowUI : MonoBehaviour
         float dim = quest.Claimed ? claimedDim : 1f;
 
         if (titleLabel != null)
-            titleLabel.color = Abdunkeln(quest.IsCompleted ? finishedColor : unfinishedColor, dim);
+            titleLabel.color = Abdunkeln(finishedColor, dim);
 
         if (dimWhenClaimed != null && _dimRuhefarben != null
             && _dimRuhefarben.Length == dimWhenClaimed.Length)

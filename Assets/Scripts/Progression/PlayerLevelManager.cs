@@ -108,6 +108,8 @@ public static class PlayerLevelManager
         foreach (var reward in tier.rewards)
         {
             if (reward == null) continue;
+            // Vorerst abgeschaltete Inhalte werden weder vergeben noch angezeigt.
+            if (!InhaltsSchalter.Sichtbar(reward)) continue;
             switch (reward.kind)
             {
                 case RewardKind.DiamondSplinters:

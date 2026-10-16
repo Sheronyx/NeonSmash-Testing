@@ -286,6 +286,14 @@ public class MenuPortalSwitcher : MonoBehaviour
 
     private void Update()
     {
+        // Solange es nur eine Welt gibt, gibt es auch nichts zu wischen. Die Portale selbst
+        // bleiben sichtbar -- gesperrt ist nur der Wechsel.
+        if (!InhaltsSchalter.WeltenAktiv)
+        {
+            _dragging = false;
+            return;
+        }
+
         // Sobald ein Overlay offen ist (Shop, Tasks, Daily Reward, ...), Wisch-Erkennung komplett
         // aussetzen — DimOverlay.blocksRaycasts blockiert nur UI-Events, nicht diese rohe
         // Pointer-Abfrage, deshalb der eigene Check hier.
@@ -333,6 +341,10 @@ public class MenuPortalSwitcher : MonoBehaviour
 
     private void Step(int direction)
     {
+        // Zweite Sperre: Next()/Prev() sind oeffentlich und koennten von einem Knopf in der
+        // Szene kommen, der die Wisch-Abfrage gar nicht durchlaeuft.
+        if (!InhaltsSchalter.WeltenAktiv) return;
+
         int newIndex = _index + direction;
         if (wrapAround)
             newIndex = (newIndex % _skinItems.Length + _skinItems.Length) % _skinItems.Length;

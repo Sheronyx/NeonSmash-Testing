@@ -104,6 +104,10 @@ public class RewardWindowController : MonoBehaviour
         _open = true;
 
         RefreshHeader();
+        // Sticker sind vorerst abgeschaltet -- der Knopf bleibt in der Szene, wird aber
+        // ausgeblendet, solange InhaltsSchalter.StickerAktiv false ist.
+        if (tabStickersButton != null)
+            tabStickersButton.gameObject.SetActive(InhaltsSchalter.StickerAktiv);
         SwitchTab(RewardWindowTab.Levels);
         DimOverlay.Instance?.Show();
         StartCoroutine(Co_Open());
@@ -130,11 +134,14 @@ public class RewardWindowController : MonoBehaviour
         if (nextTierIcon != null)
         {
             nextTierIcon.gameObject.SetActive(hasNext);
-            if (hasNext && tiers[nextTierIndex].rewards != null && tiers[nextTierIndex].rewards.Length > 0)
+            if (hasNext && tiers[nextTierIndex].rewards != null)
             {
-                var firstReward = tiers[nextTierIndex].rewards[0];
-                if (firstReward != null && firstReward.icon != null)
-                    nextTierIcon.sprite = firstReward.icon;
+                foreach (var reward in tiers[nextTierIndex].rewards)
+                {
+                    if (!InhaltsSchalter.Sichtbar(reward) || reward.icon == null) continue;
+                    nextTierIcon.sprite = reward.icon;
+                    break;
+                }
             }
         }
     }
@@ -143,6 +150,8 @@ public class RewardWindowController : MonoBehaviour
 
     void SwitchTab(RewardWindowTab tab)
     {
+        if (tab == RewardWindowTab.Stickers && !InhaltsSchalter.StickerAktiv)
+            tab = RewardWindowTab.Levels;
         _activeTab = tab;
         UpdateTabHighlights();
 

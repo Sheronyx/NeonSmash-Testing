@@ -158,8 +158,21 @@ public class CharacterProgressButtonUI : MonoBehaviour
 
         bool hasNext = nextTierIndex >= 0;
         if (nextItemRoot != null) nextItemRoot.SetActive(hasNext);
-        if (hasNext && nextItemIcon != null && tiers[nextTierIndex].rewards != null && tiers[nextTierIndex].rewards.Length > 0)
-            nextItemIcon.Bind(tiers[nextTierIndex].rewards[0]);
+        if (hasNext && nextItemIcon != null)
+        {
+            var naechste = ErsteSichtbare(tiers[nextTierIndex].rewards);
+            if (naechste != null) nextItemIcon.Bind(naechste);
+            else if (nextItemRoot != null) nextItemRoot.SetActive(false);
+        }
+    }
+
+    // Die erste Belohnung einer Stufe kann ein abgeschalteter Inhalt sein -- dann wuerde die
+    // Vorschau etwas zeigen, das es im Spiel gar nicht gibt.
+    static RewardDefinition ErsteSichtbare(RewardDefinition[] rewards)
+    {
+        if (rewards == null) return null;
+        foreach (var r in rewards) if (InhaltsSchalter.Sichtbar(r)) return r;
+        return null;
     }
 
     IEnumerator Co_AnimateFill(int from, int to, LevelRewardTrack.LevelTier[] tiers)

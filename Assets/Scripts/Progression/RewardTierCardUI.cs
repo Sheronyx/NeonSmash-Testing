@@ -49,7 +49,7 @@ public class RewardTierCardUI : MonoBehaviour
             if (_tier.rewards != null)
                 foreach (var reward in _tier.rewards)
                 {
-                    if (reward == null) continue;
+                    if (!InhaltsSchalter.Sichtbar(reward)) continue;
                     var icon = Instantiate(rewardIconPrefab, rewardIconParent);
                     icon.Bind(reward);
                 }

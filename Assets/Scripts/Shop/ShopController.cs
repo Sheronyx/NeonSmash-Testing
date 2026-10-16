@@ -163,7 +163,8 @@ public class ShopController : MonoBehaviour
         _open = true;
         RefreshDreamEnergyDisplay(DreamEnergyManager.Balance);
         RefreshDailyBanner();
-        SwitchTab(ShopItemType.Bundle);
+        TabsAusblenden();
+        SwitchTab(ErsterSichtbarerTab());
         DimOverlay.Instance?.Show();
         StartCoroutine(Co_Open());
     }
@@ -178,8 +179,29 @@ public class ShopController : MonoBehaviour
 
     // ── Tabs ─────────────────────────────────────────────────────────────────
 
+    // Blendet die Knoepfe der vorerst abgeschalteten Bereiche aus. Die Objekte bleiben in der
+    // Szene -- ein Schalter in InhaltsSchalter holt sie zurueck, ohne dass jemand die Szene
+    // anfassen muss.
+    void TabsAusblenden()
+    {
+        if (tabBundles  != null) tabBundles.gameObject.SetActive(InhaltsSchalter.Sichtbar(ShopItemType.Bundle));
+        if (tabSounds   != null) tabSounds.gameObject.SetActive(InhaltsSchalter.Sichtbar(ShopItemType.Sound));
+        if (tabStickers != null) tabStickers.gameObject.SetActive(InhaltsSchalter.Sichtbar(ShopItemType.Sticker));
+        if (stickerTabRoot != null && !InhaltsSchalter.StickerAktiv) stickerTabRoot.SetActive(false);
+    }
+
+    // Welcher Tab beim Oeffnen zuerst gezeigt wird. Frueher war das fest der Bundle-Tab -- den
+    // gibt es jetzt moeglicherweise gar nicht mehr.
+    ShopItemType ErsterSichtbarerTab()
+    {
+        if (InhaltsSchalter.Sichtbar(ShopItemType.Bundle)) return ShopItemType.Bundle;
+        return ShopItemType.Skin;
+    }
+
     void SwitchTab(ShopItemType tab)
     {
+        // Schutz gegen Aufrufe von aussen (z.B. ein Knopf, der in der Szene haengengeblieben ist).
+        if (!InhaltsSchalter.Sichtbar(tab)) tab = ErsterSichtbarerTab();
         _activeTab = tab;
         UpdateTabHighlights();
         PopulateGrid();
